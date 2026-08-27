@@ -1,4 +1,4 @@
--### Hi, I'm Shreyam 👋
+ Hi, I'm Shreyam 👋
 
 Founder & CEO of **Raexel Media LLC** — an AI automation and performance marketing agency working across MedTech, industrial, and professional-services clients.
 
