@@ -4,7 +4,7 @@ Founder & CEO of **Raexel Media LLC** — an AI automation and performance marke
 
 - 🔧 Currently building **n8n-based automation systems** — lead generation engines, multi-channel outreach workflows, and Google-Sheets-backed data pipelines for real client projects
 - 🏗️ Hands-on with workflow orchestration, API integrations (Unipile, Google Workspace, Apollo.io), and backend-first system architecture
-- 🌍 Based in Gujarat, India — working with clients across India, the US, and beyond
+- 🌍 Based in New York, NY — working with clients across India, the US, and beyond
 - 📫 Reach me at **shreyam@shuklashreyam.com**
 
 ---
