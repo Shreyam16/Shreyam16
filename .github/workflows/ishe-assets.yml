@@ -90,12 +90,6 @@ jobs:
         if: steps.plan.outputs.lite == 'true'
         run: node scripts/render-lite-backdrops.mjs
 
-      - name: End-to-end checks
-        id: e2e
-        continue-on-error: true
-        timeout-minutes: 75
-        run: mkdir -p e2e/output && node e2e/run.mjs 2>&1 | tee e2e/output/log.txt; exit ${PIPESTATUS[0]}
-
       - name: Commit baked lighting and lite stills
         if: always() && (steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true')
         run: |
@@ -106,6 +100,12 @@ jobs:
           git commit -m "Re-bake lighting and re-capture lite stills (CI)"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: End-to-end checks
+        id: e2e
+        continue-on-error: true
+        timeout-minutes: 75
+        run: mkdir -p e2e/output && node e2e/run.mjs 2>&1 | tee e2e/output/log.txt; exit ${PIPESTATUS[0]}
 
       - name: Publish screenshots to qa-screenshots
         if: always()
