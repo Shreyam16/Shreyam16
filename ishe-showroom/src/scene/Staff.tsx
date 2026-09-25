@@ -25,7 +25,7 @@ function Person({ spot }: { spot: StaffSpot }) {
   const yaw = useRef(0);
   const headYaw = useRef(0);
 
-  const { model, mixer, head, scale } = useMemo(() => {
+  const { model, mixer, head, scale, fix } = useMemo(() => {
     const model = cloneSkinned(gltf.scene) as THREE.Group;
     let height = spot.height;
     model.traverse((o) => {
@@ -43,13 +43,34 @@ function Person({ spot }: { spot: StaffSpot }) {
       mat.metalness = 0;
     });
     const mixer = new THREE.AnimationMixer(model);
-    for (const clip of gltf.animations) {
-      const action = mixer.clipAction(clip);
-      action.play();
-      action.time = (spot.x * 7.31 + spot.z * 3.17) % clip.duration; // staff are not in lock-step
-      if (action.time < 0) action.time += clip.duration;
+    const actions = gltf.animations.map((clip) => { const a = mixer.clipAction(clip); a.play(); return a; });
+    // The idle clips can carry a root turn and drift from the capture. Sample the clip, measure
+    // which way the shoulders face and where the hips sit, and cancel both so every person faces
+    // their spot's direction and stands on it.
+    const fix = { yaw: 0, x: 0, z: 0 };
+    const L = model.getObjectByName('LeftArm'), R = model.getObjectByName('RightArm'), hips = model.getObjectByName('Hips');
+    const dur = gltf.animations[0]?.duration ?? 0;
+    if (L && R && hips) {
+      const f = new THREE.Vector3(), h = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+      const n = dur > 0 ? 8 : 1;
+      for (let i = 0; i < n; i++) {
+        mixer.setTime((i / n) * dur);
+        model.updateMatrixWorld(true);
+        L.getWorldPosition(a); R.getWorldPosition(b);
+        f.add(new THREE.Vector3().crossVectors(up, b.sub(a)).setY(0).normalize());
+        h.add(hips.getWorldPosition(new THREE.Vector3()));
+      }
+      h.divideScalar(n);
+      fix.yaw = -Math.atan2(f.x, f.z);
+      const c = Math.cos(fix.yaw), s = Math.sin(fix.yaw);
+      fix.x = -(h.x * c + h.z * s);
+      fix.z = -(-h.x * s + h.z * c);
     }
-    return { model, mixer, head: model.getObjectByName('Head') ?? null, scale: spot.height / height };
+    // Staff are not in lock-step.
+    const offset = Math.abs(spot.x * 7.31 + spot.z * 3.17);
+    mixer.setTime(0);
+    for (const act of actions) act.time = dur > 0 ? offset % dur : 0;
+    return { model, mixer, head: model.getObjectByName('Head') ?? null, scale: spot.height / height, fix };
   }, [gltf, spot]);
 
   useEffect(() => () => { mixer.stopAllAction(); }, [mixer]);
@@ -75,6 +96,8 @@ function Person({ spot }: { spot: StaffSpot }) {
     headYaw.current += (THREE.MathUtils.clamp(target - bodyTarget, -HEAD_RANGE, HEAD_RANGE) - headYaw.current) * k;
     root.current.rotation.y = spot.rotY + yaw.current;
     root.current.userData.headYaw = headYaw.current;
+    root.current.userData.animTime = mixer.time;
+    root.current.userData.facingFix = fix.yaw;
     root.current.userData.bodyYaw = yaw.current;
     if (head?.parent && Math.abs(headYaw.current) > 1e-3) {
       // Rotate the (already animated) head about world up: local' = parentWorld⁻¹ · R · parentWorld · local.
@@ -96,7 +119,9 @@ function Person({ spot }: { spot: StaffSpot }) {
   return (
     <group ref={root} position={[spot.x, 0, spot.z]} rotation={[0, spot.rotY, 0]} name={`staff-${spot.id}`}>
       <group scale={scale}>
-        <primitive object={model} />
+        <group rotation={[0, fix.yaw, 0]} position={[fix.x, 0, fix.z]}>
+          <primitive object={model} />
+        </group>
       </group>
       {/* Invisible, cheap hit volume: raycasting a 30k-vertex skinned mesh is not needed. */}
       <mesh position={[0, spot.height / 2, 0]} material={HIT} onClick={onClick} name={`staff-hit-${spot.id}`}
@@ -132,6 +157,10 @@ function QaHook() {
         toe: toe ? toe.getWorldPosition(new THREE.Vector3()).toArray().map((n) => +n.toFixed(3)) : null,
         headQuat: head ? head.quaternion.toArray().map((n) => +n.toFixed(4)) : null,
         headYaw: +(g?.userData.headYaw ?? 0).toFixed(3),
+        animTime: +(g?.userData.animTime ?? 0).toFixed(3),
+        facingFix: +(g?.userData.facingFix ?? 0).toFixed(3),
+        hips: g?.getObjectByName('Hips')?.getWorldPosition(new THREE.Vector3()).toArray().map((n) => +n.toFixed(3)) ?? null,
+        spine: g?.getObjectByName('Spine')?.quaternion.toArray().map((n) => +n.toFixed(5)) ?? null,
         bodyYaw: +(g?.userData.bodyYaw ?? 0).toFixed(3),
       };
     });

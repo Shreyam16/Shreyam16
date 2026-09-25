@@ -7,11 +7,11 @@ import { duskSkyTexture, mats } from './materials';
 import { bakedGain } from './BakedSurfaces';
 
 const DAY = {
-  hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1,
+  hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1,
   fog: new THREE.Color('#2a3140'), bg: new THREE.Color('#1b2330'), sunColor: new THREE.Color('#fff4e6'),
 };
 const DUSK = {
-  hemi: 0.3, sun: 0.14, env: 0.72, baked: 0.84, sconce: 4.2, neighbour: 1.5, glass: 0.55, cove: 1.6,
+  hemi: 0.22, sun: 0.1, env: 0.62, baked: 0.84, sconce: 5, neighbour: 1.8, glass: 0.7, cove: 1.6, street: 0.34,
   fog: new THREE.Color('#161b29'), bg: new THREE.Color('#0d1120'), sunColor: new THREE.Color('#9fb0d4'),
 };
 
@@ -27,6 +27,12 @@ export default function Evening() {
   const t = useRef(-1);
   const sky = useMemo(() => ({ day: (mats().sky as THREE.MeshBasicMaterial).map, dusk: duskSkyTexture() }), []);
   const fog = useMemo(() => new THREE.Color(), []);
+  // Street-side finishes lose most of their daylight at dusk; remember their day colours.
+  const street = useMemo(() => {
+    const M = mats();
+    return (['wallExterior', 'paving', 'asphalt', 'kerb', 'plinth', 'neighbourA', 'neighbourB', 'planter', 'plant', 'darkWindow'] as const)
+      .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
+  }, []);
 
   useFrame((_, dtRaw) => {
     const s = useShowroom.getState();
@@ -51,6 +57,7 @@ export default function Evening() {
     (M.warmWindow as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.neighbour, DUSK.neighbour);
     (M.doorGlass as THREE.MeshPhysicalMaterial).emissiveIntensity = L(DAY.glass, DUSK.glass);
     (M.cove as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.cove, DUSK.cove);
+    for (const { m, day } of street) m.color.copy(day).multiplyScalar(L(1, DUSK.street));
     // Sky: dip and swap textures halfway so the change reads as a fade.
     const skyMat = M.sky as THREE.MeshBasicMaterial;
     const map = next > 0.5 ? sky.dusk : sky.day;

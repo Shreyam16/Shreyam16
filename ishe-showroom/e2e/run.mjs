@@ -10,7 +10,8 @@ const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const EXEC = process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const OUT = 'e2e/output';
 fs.mkdirSync(OUT, { recursive: true });
-const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+// A fake camera exists, but camera permission is never granted: exercises the "refused" path.
+const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-fake-device-for-media-stream'];
 
 const results = [];
 async function check(name, fn) {
@@ -19,6 +20,13 @@ async function check(name, fn) {
   catch (e) { results.push({ name, ok: false, err: e.message }); console.log(`  ✗ ${name}\n      ${e.message.split('\n')[0]}`); }
 }
 function assert(c, m) { if (!c) throw new Error(m); }
+// Keep partial results if a section's setup throws outside a check.
+process.on('uncaughtException', (e) => {
+  results.push({ name: 'uncaught error', ok: false, err: e.message });
+  console.log(`  ✗ uncaught error\n      ${e.message.split('\n')[0]}`);
+  fs.writeFileSync(`${OUT}/results.json`, JSON.stringify({ results, metrics: globalThis.__metrics }, null, 2));
+  process.exit(1);
+});
 
 const state = (page) => page.evaluate(() => {
   const s = window.__ishe.getState();
@@ -26,12 +34,14 @@ const state = (page) => page.evaluate(() => {
 });
 const waitIdle = (page, ms = 20000) => page.waitForFunction(() => !window.__ishe.getState().moving, null, { timeout: ms });
 /** The branded loader covers the page until the first frame is on screen. */
-const waitReady = async (page, ms = 60000) => {
+// Cold loads compile every shader in software (SwiftShader), which can take minutes on CI.
+const waitReady = async (page, ms = 240000) => {
   await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: ms });
   await page.getByTestId('loading-screen').waitFor({ state: 'detached', timeout: 10000 });
 };
 const enterNow = (page) => page.evaluate(() => { const s = window.__ishe.getState(); s.setEntrance(1); s.enter(); });
 const metrics = {};
+globalThis.__metrics = metrics;
 
 async function canvasNotBlank(page, file) {
   const buf = await page.screenshot({ path: `${OUT}/${file}` });
@@ -62,7 +72,7 @@ console.log('Desktop 3D (1440x900)');
     await page.screenshot({ path: `${OUT}/00-loading.png` });
     const seen = new Set();
     const t0 = Date.now();
-    while (Date.now() - t0 < 60000) {
+    while (Date.now() - t0 < 240000) {
       const v = await page.getByTestId('loading-progress').getAttribute('aria-valuenow').catch(() => null);
       if (v === null) break;
       seen.add(Number(v));
@@ -70,6 +80,7 @@ console.log('Desktop 3D (1440x900)');
       await page.waitForTimeout(100);
     }
     await waitReady(page);
+    metrics.coldLoadMs = Date.now() - t0;
     const s = await page.evaluate(() => ({ p: window.__ishe.getState().loadProgress, phase: window.__ishe.getState().phase }));
     metrics.loadingProgressSeen = [...seen].sort((a, b) => a - b);
     assert(s.p === 1 && s.phase === 'outside', JSON.stringify(s));
@@ -125,15 +136,16 @@ console.log('Desktop 3D (1440x900)');
   await check('staff: all four load at human scale with feet on the floor, idle animation playing', async () => {
     await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 });
     const a = await page.evaluate(() => window.__isheStaff());
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(3000);
     const b = await page.evaluate(() => window.__isheStaff());
-    metrics.staff = a;
+    metrics.staff = b;
     for (const p of a) {
       assert(p.head[1] > 1.35 && p.head[1] < 1.8, `${p.id} head at ${p.head[1]}`);
       assert(p.toe[1] > -0.05 && p.toe[1] < 0.2, `${p.id} toe at ${p.toe[1]}`);
     }
-    const moved = a.filter((p, i) => p.headQuat.some((v, k) => Math.abs(v - b[i].headQuat[k]) > 1e-4));
-    assert(moved.length === 4, `idle not playing for ${a.filter((p) => !moved.includes(p)).map((p) => p.id)}`);
+    // The idle clip is advancing and actually moves the skeleton.
+    const still = a.filter((p, i) => !(b[i].animTime !== p.animTime && [...p.spine, ...p.hips, ...p.headQuat].some((v, k) => Math.abs(v - [...b[i].spine, ...b[i].hips, ...b[i].headQuat][k]) > 1e-5)));
+    assert(still.length === 0, `idle not playing for ${still.map((p) => p.id)} ${JSON.stringify(still)}`);
   });
 
   await check('staff: the attendant turns her head toward the visitor and opens a greeting when clicked', async () => {
@@ -389,7 +401,7 @@ console.log('Keyboard walking and collision (3D, small viewport)');
   const ctx = await browser.newContext({ viewport: { width: 420, height: 300 } });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/?mode=3d`);
-  await waitReady(page);
+  await check('section loads', () => waitReady(page));
   await page.waitForTimeout(1000);
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
   await page.waitForTimeout(800);
@@ -424,7 +436,7 @@ console.log('Every product is reachable and framed (3D)');
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/?mode=3d`);
-  await waitReady(page);
+  await check('section loads', () => waitReady(page));
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
   await page.waitForTimeout(500);
   const skus = await page.evaluate(() => Array.from({ length: 24 }, (_, i) => ['N01','N02','N03','N04','B01','B02','B03','B04','B05','B06','E01','E02','E03','E04','E05','E06','P01','P02','R01','R02','R03','R04','R05','R06'][i]));
@@ -534,7 +546,7 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/?mode=3d`);
-  await waitReady(page);
+  await check('section loads', () => waitReady(page));
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
   await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 }).catch(() => undefined);
   await check('every room renders, day and evening, with draw calls recorded', async () => {

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import { PRODUCT_BY_SKU } from '@/data/catalogue';
-import { TIME_SLOTS, appointmentSummary, whatsappLink } from '@/lib/appointment';
+import { TIME_SLOTS, appointmentSummary, validateAppointment, whatsappLink } from '@/lib/appointment';
 import { useShowroom } from '@/store/showroom';
 import { Button, Icon, Sheet, SheetHeader } from './ui/primitives';
 
@@ -39,6 +39,9 @@ export default function AppointmentDrawer() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    // Same rules as the server; an incomplete form never leaves the browser.
+    const v = validateAppointment(form);
+    if (!v.ok) { setOutcome({ kind: 'invalid', errors: v.errors }); return; }
     setOutcome({ kind: 'sending' });
     try {
       const res = await fetch('/api/appointment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });

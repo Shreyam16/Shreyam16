@@ -29,7 +29,7 @@ export default function LoadingScreen() {
             <div className="mt-10 h-px w-full bg-bone/20" role="progressbar" aria-label="Loading" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} data-testid="loading-progress">
               <div className="h-px bg-bone transition-[width] duration-300 ease-out" style={{ width: `${pct}%` }} />
             </div>
-            <p className="plaque-label mt-4 text-bone/60">Private showroom · by appointment</p>
+            <p className="plaque-label mt-4 whitespace-nowrap text-center text-[10px] text-bone/60">Private showroom · by appointment</p>
           </div>
         </motion.div>
       )}
