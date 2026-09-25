@@ -228,11 +228,13 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 
 ### Asset credits
 
-- **Staff figures** (`public/staff/*.glb`): AI-generated, textured and auto-rigged with an idle
-  animation using Higgsfield (Meshy image-to-3D), commissioned for this project. Re-packed for the
-  web: 2048 px PNG textures resized to 1024 px WebP (`EXT_texture_webp`), the duplicated emissive
-  texture and exaggerated specular removed. Geometry is not mesh-compressed (see limitations).
-  They are illustrative figures, not portraits of ISHÉ staff.
+- **Staff figures** (`public/staff/*.glb`): generated for this project with Higgsfield. A
+  photoreal full-body reference image of each person (GPT Image 2.5) was converted with Meshy 7
+  image-to-3D (ultra detail), auto-rigged with the Idle_02 clip. Re-packed for the web with
+  `scripts/repack-staff.cjs` (textures to 1024 px WebP via `EXT_texture_webp`, duplicated emissive
+  and exaggerated specular removed) and `scripts/quantize-staff.py` (`KHR_mesh_quantization`:
+  normals int8, UVs uint16, skin weights uint8): 2.0–2.8 MB each. They are illustrative figures,
+  not portraits of ISHÉ staff or of real people.
 - Everything else is procedural: geometry built in code, textures generated in code or rendered
   from the scene. No third-party HDRIs or images.
 
@@ -266,10 +268,12 @@ the `qa-screenshots` branch for review.
 - Automated browser tests run on software WebGL (SwiftShader) at low frame rates. Motion quality
   and frame rate on real phones should be checked by hand.
 - The Jewel Box and saved list are stored in the browser (localStorage), per device.
-- Staff GLBs are texture-compressed only; meshopt/Draco geometry compression was not applied
-  (no encoder was reachable from the build environment). Each is still under 2.3 MB.
-- Staff faces are AI-generated and slightly faceted at very close range; the camera never frames
-  a face closely.
+- Staff positions are quantized but not meshopt/Draco-compressed (no encoder was reachable from
+  the build environment).
+- Staff are AI-generated: faces are natural at conversational distance but slightly faceted at
+  very close range (the camera never frames a face closely), and they have no facial animation
+  (no blinking or speech). Photoreal staff would need licensed scanned or Character Creator
+  figures with motion-capture idles.
 - Try-on placement is approximate (face landmarks plus an assumed face width), not a fit tool.
   It needs camera permission, WebGL and a connection for the first model download. It has been
   tested for the refused-permission path in automated tests; live camera tracking has to be
