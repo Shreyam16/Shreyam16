@@ -8,6 +8,8 @@ import {
 } from './layout';
 import { useShowroom } from '@/store/showroom';
 import { DISPLAYS } from './layout';
+import Merged from './Merged';
+import { useFontsReady } from './fonts';
 
 type V3 = [number, number, number];
 
@@ -30,13 +32,10 @@ function Span({ a, b, mat }: { a: V3; b: V3; mat: MatKey }) {
 const FACADE_H = 4.7;
 const WIN = { x0: 2.2, x1: 6.5, y0: 0.45, y1: 3.1 };
 
-function Facade() {
+function Facade({ plaque }: { plaque: THREE.Texture }) {
   const hw = HALF_W + 0.1;
   const dw = FRONT_DOOR.halfWidth;
   const z0 = -0.1, z1 = 0.1;
-  const plaque = useLoader(THREE.TextureLoader, '/brand/ishe-logo-plaque.png');
-  plaque.colorSpace = THREE.SRGBColorSpace;
-  plaque.anisotropy = 8;
   return (
     <group>
       {/* Piers and spandrels around two shop windows and the door. */}
@@ -212,7 +211,7 @@ function Wayfinding() {
   );
 }
 
-function Interior() {
+function Interior({ logoWall }: { logoWall: THREE.Texture }) {
   const M = mats();
   const hw = HALF_W;
   const wallH = CEILING;
@@ -221,8 +220,6 @@ function Interior() {
     for (let x = -6; x <= 6; x += 3) for (let z = -1.5; z >= -13; z -= 2.8) out.push([x, CEILING - 0.005, z]);
     return out;
   }, []);
-  const logoWall = useLoader(THREE.TextureLoader, '/brand/ishe-wordmark-black.png');
-  logoWall.colorSpace = THREE.SRGBColorSpace;
   return (
     <group>
       {/* Floor and ceiling. */}
@@ -270,7 +267,7 @@ function Interior() {
       <Atmosphere />
       {/* Brand wall behind the cashier. */}
       <mesh position={[0, 2.35, -DEPTH + 0.115]}>
-        <planeGeometry args={[1.9, 0.77]} />
+        <planeGeometry args={[1.5, 0.61]} />
         <meshBasicMaterial map={logoWall} transparent toneMapped={false} />
       </mesh>
       <Span a={[CASHIER.x - 2.2, 0.1, -DEPTH + 0.1]} b={[CASHIER.x + 2.2, 3.5, -DEPTH + 0.11]} mat="linen" />
@@ -331,13 +328,19 @@ function Atmosphere() {
 }
 
 export default function Architecture() {
+  // Load textures here so nothing below suspends while it is being merged.
+  const [plaque, logoWall] = useLoader(THREE.TextureLoader, ['/brand/ishe-logo-plaque.png', '/brand/ishe-wordmark-black.png']);
+  for (const t of [plaque, logoWall]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; }
+  const fontsReady = useFontsReady();
   return (
     <group>
-      <Street />
-      <Facade />
+      {fontsReady && <Merged>
+        <Street />
+        <Facade plaque={plaque} />
+        <Interior logoWall={logoWall} />
+        <Wayfinding />
+      </Merged>}
       <Doors />
-      <Interior />
-      <Wayfinding />
     </group>
   );
 }

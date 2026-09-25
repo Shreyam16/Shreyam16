@@ -51,6 +51,7 @@ export default function CameraRig() {
   const tween = useRef<gsap.core.Tween | null>(null);
   const yawDrag = useRef<{ x: number; y: number } | null>(null);
   const wasInside = useRef(false);
+  const offset = useRef(0);
 
   // Field of view suits portrait phones as well as desktop; it narrows gently ("leaning in")
   // when a single display is in focus.
@@ -99,6 +100,20 @@ export default function CameraRig() {
 
   useEffect(() => () => { tween.current?.kill(); }, []);
 
+  // Read-only hooks for automated QA (e2e/run.mjs): project a world point to screen pixels and
+  // read the current camera pose.
+  useEffect(() => {
+    const w = window as unknown as Record<string, unknown>;
+    w.__isheProject = (x: number, y: number, z: number) => {
+      const v = new THREE.Vector3(x, y, z).project(camera);
+      const r = gl.domElement.getBoundingClientRect();
+      return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height, visible: v.z < 1 };
+    };
+    w.__isheCamera = () => ({ ...pose.current });
+    w.__isheRenderInfo = () => ({ ...gl.info.render, programs: gl.info.programs?.length, geometries: gl.info.memory.geometries, textures: gl.info.memory.textures });
+    return () => { delete w.__isheProject; delete w.__isheCamera; delete w.__isheRenderInfo; };
+  }, [camera, gl]);
+
   function startNav() {
     const s = useShowroom.getState();
     lastNonce.current = s.viewNonce;
@@ -118,7 +133,9 @@ export default function CameraRig() {
     const curve = new THREE.CatmullRomCurve3(route.map((p) => new THREE.Vector3(p.x, 0, p.z)), false, 'centripetal', 0.5);
     const length = route.length > 1 ? curve.getLength() : 0;
     const reduced = s.reducedMotion;
-    const duration = reduced ? 0 : THREE.MathUtils.clamp(length / 1.9 + 0.9, 1.1, 7);
+    const turn = Math.hypot(from.tx - dest.tx, from.ty - dest.ty, from.tz - dest.tz);
+    const trivial = length < 0.05 && Math.hypot(from.x - dest.x, from.z - dest.z) < 0.05 && turn < 0.05;
+    const duration = reduced || trivial ? 0 : THREE.MathUtils.clamp(length / 1.9 + 0.9, 1.1, 7);
     const startT = new THREE.Vector3(from.tx, from.ty, from.tz);
     const endT = new THREE.Vector3(dest.tx, dest.ty, dest.tz);
     const ahead = new THREE.Vector3();
@@ -155,18 +172,17 @@ export default function CameraRig() {
   }
 
   useFrame((_, dtRaw) => {
-    const dt = Math.min(dtRaw, 0.05);
+    const dt = Math.min(dtRaw, 0.1);
     const s = useShowroom.getState();
     if (s.phase === 'outside') {
       Object.assign(pose.current, entrancePose(s.entrance));
     } else {
       if (!wasInside.current) {
         // Crossing the threshold: finish the entrance exactly at the junction, then hand over.
+        // Any view requested meanwhile (e.g. a room chosen before this frame) still runs below.
         wasInside.current = true;
         Object.assign(pose.current, entrancePose(1));
-        lastNonce.current = s.viewNonce;
-        s.setMoving(false);
-        s.setRoom('foyer');
+        lastNonce.current = -1;
       }
       if (s.viewNonce !== lastNonce.current) startNav();
       if (!s.moving && s.view.kind === 'node' && !s.drawer) walk(dt);
@@ -175,10 +191,20 @@ export default function CameraRig() {
     camera.position.set(p.x, p.y, p.z);
     camera.lookAt(p.tx, p.ty, p.tz);
     const cam = camera as THREE.PerspectiveCamera;
-    const focus = s.phase === 'inside' && s.view.kind === 'product';
-    const want = focus ? baseFov * 0.6 : baseFov;
-    const next = s.reducedMotion ? want : cam.fov + (want - cam.fov) * Math.min(1, dt * 2.5);
-    if (Math.abs(next - cam.fov) > 0.01) { cam.fov = next; cam.updateProjectionMatrix(); }
+    const k = s.reducedMotion ? 1 : Math.min(1, Math.min(dtRaw, 1) * 2.5);
+    const zoom = s.phase === 'inside' && s.view.kind === 'product' ? focusPose(s.view.sku).zoom ?? 1 : 1;
+    const want = baseFov * zoom;
+    const nextFov = cam.fov + (want - cam.fov) * k;
+    // Shift the projection so the focused piece sits in the space left of the side panel (desktop).
+    const panel = s.phase === 'inside' && s.view.kind !== 'node' && size.width >= 768 ? (s.view.kind === 'product' ? 416 : 476) : 0;
+    const nextOff = offset.current + (panel / 2 - offset.current) * k;
+    if (Math.abs(nextFov - cam.fov) > 0.01 || Math.abs(nextOff - offset.current) > 0.1) {
+      cam.fov = nextFov;
+      offset.current = nextOff;
+      if (Math.abs(nextOff) > 0.5) cam.setViewOffset(size.width, size.height, nextOff, 0, size.width, size.height);
+      else cam.clearViewOffset();
+      cam.updateProjectionMatrix();
+    }
   });
 
   function walk(dt: number) {

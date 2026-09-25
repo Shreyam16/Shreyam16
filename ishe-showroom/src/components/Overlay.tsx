@@ -54,7 +54,7 @@ export default function Overlay({ slow, onDismissSlow }: { slow: boolean; onDism
       {inside && (
         <>
           <AnimatePresence>{atJunction && !drawer && <JunctionChooser key="jc" />}</AnimatePresence>
-          {!atJunction && !(detailOpen && coarse) && <RoomNav />}
+          {!atJunction && !detailOpen && <RoomNav />}
           {mode === '3d' && coarse && view.kind === 'node' && !drawer && !atJunction && <MovePad />}
           {mode === '3d' && !coarse && view.kind === 'node' && !moving && !drawer && (
             <p className="pointer-events-none fixed bottom-4 right-4 z-10 hidden bg-paper/80 px-3 py-2 font-ui text-[11px] tracking-[0.08em] text-ink/70 md:block">

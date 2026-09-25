@@ -124,12 +124,14 @@ function build() {
     ctx.fillRect(0, 0, 4, 128);
   });
   const washTex = canvasTexture(256, 512, (ctx) => {
-    const g = ctx.createRadialGradient(128, 40, 0, 128, 120, 300);
+    // Elliptical falloff that reaches zero before every edge, so no rectangle outline shows.
+    ctx.setTransform(1, 0, 0, 2, 0, 0);
+    const g = ctx.createRadialGradient(128, 34, 0, 128, 40, 124);
     g.addColorStop(0, 'rgba(255,214,160,0.85)');
-    g.addColorStop(0.45, 'rgba(255,214,160,0.25)');
+    g.addColorStop(0.5, 'rgba(255,214,160,0.22)');
     g.addColorStop(1, 'rgba(255,214,160,0)');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 512);
+    ctx.fillRect(0, 0, 256, 256);
   });
 
   const metal = (color: string) => std({ color, metalness: 1, roughness: 0.2, envMapIntensity: 1.4 });

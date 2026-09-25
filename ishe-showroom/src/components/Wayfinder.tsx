@@ -137,7 +137,11 @@ function RoomButton({ active, onClick, label, icon, testId }: { active: boolean;
 /** Thumb-friendly hold-to-walk pad (touch devices), mirroring W / S / Q / E. */
 export function MovePad() {
   const bind = (k: HeldKey) => ({
-    onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); (e.target as HTMLElement).setPointerCapture?.(e.pointerId); held[k] = true; },
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault();
+      held[k] = true;
+      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* synthetic pointer */ }
+    },
     onPointerUp: () => { held[k] = false; },
     onPointerCancel: () => { held[k] = false; },
     onPointerLeave: () => { held[k] = false; },

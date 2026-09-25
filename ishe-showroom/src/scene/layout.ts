@@ -84,14 +84,14 @@ export const DISPLAYS: DisplaySpec[] = [
   // RIGHT back corner: two earring tables, two pendant stands.
   { sku: 'ISH-E05', kind: 'earringStand', x: 4.2, z: -9.6, rotY: FACE_STREET, ...TABLE, itemY: 0.96 },
   { sku: 'ISH-E06', kind: 'earringStand', x: 6.2, z: -9.6, rotY: FACE_STREET, ...TABLE, itemY: 0.96 },
-  { sku: 'ISH-P01', kind: 'pendantStand', x: 4.2, z: -12.0, rotY: FACE_STREET, ...TABLE, h: 1.45, itemY: 1.08 },
-  { sku: 'ISH-P02', kind: 'pendantStand', x: 6.2, z: -12.0, rotY: FACE_STREET, ...TABLE, h: 1.45, itemY: 1.08 },
+  { sku: 'ISH-P01', kind: 'pendantStand', x: 4.2, z: -12.0, rotY: FACE_STREET, ...TABLE, h: 1.45, itemY: 1.01 },
+  { sku: 'ISH-P02', kind: 'pendantStand', x: 6.2, z: -12.0, rotY: FACE_STREET, ...TABLE, h: 1.45, itemY: 1.01 },
 ];
 
 export const DISPLAY_BY_SKU: Record<string, DisplaySpec> = Object.fromEntries(DISPLAYS.map((d) => [d.sku, d]));
 
-export const COMBO_TABLE = { x: 0, z: -9.7, r: 0.42, h: 0.95 };
-export const CASHIER = { x: 0, z: -12.85, w: 2.8, d: 0.6, h: 1.02, customerZ: -10.75 };
+export const COMBO_TABLE = { x: 0, z: -9.9, r: 0.42, h: 0.95 };
+export const CASHIER = { x: 0, z: -12.85, w: 2.8, d: 0.6, h: 1.02, customerZ: -10.85 };
 
 /** Axis-aligned footprint of a display, accounting for its rotation (multiples of 90°). */
 export function displayFootprint(d: DisplaySpec): Box2 {
@@ -212,7 +212,7 @@ export function slideMove(x: number, z: number, dx: number, dz: number, r = BODY
   return { x, z };
 }
 
-export interface Pose { x: number; y: number; z: number; tx: number; ty: number; tz: number }
+export interface Pose { x: number; y: number; z: number; tx: number; ty: number; tz: number; /** FOV multiplier while focused (1 = normal). */ zoom?: number }
 
 export function nodePose(id: NodeId): Pose {
   const n = NODES[id];
@@ -222,11 +222,12 @@ export function nodePose(id: NodeId): Pose {
 /** Camera pose that frames one display from the front at close range. */
 export function focusPose(sku: string): Pose {
   const d = DISPLAY_BY_SKU[sku];
-  const dist = { bust: 1.05, cushion: 0.72, earringStand: 0.8, pendantStand: 0.85, ringCushion: 0.66 }[d.kind];
+  const dist = { bust: 1.05, cushion: 0.66, earringStand: 0.8, pendantStand: 0.85, ringCushion: 0.62 }[d.kind];
+  const zoom = { bust: 0.62, cushion: 0.5, earringStand: 0.48, pendantStand: 0.56, ringCushion: 0.36 }[d.kind];
   const fx = Math.sin(d.rotY), fz = Math.cos(d.rotY);
   // A visitor leans in a little over the low table vitrines.
   const eye = d.style === 'tall' ? 1.6 : 1.5;
-  return { x: d.x + fx * dist, y: eye, z: d.z + fz * dist, tx: d.x, ty: d.itemY + 0.02, tz: d.z };
+  return { x: d.x + fx * dist, y: eye, z: d.z + fz * dist, tx: d.x, ty: d.itemY + 0.02, tz: d.z, zoom };
 }
 
 export function comboPose(): Pose {
@@ -234,7 +235,7 @@ export function comboPose(): Pose {
 }
 
 export function cashierPose(): Pose {
-  return { x: 0, y: EYE, z: CASHIER.customerZ, tx: 0, ty: 1.45, tz: CASHIER.z - 0.45 };
+  return { x: 0, y: EYE, z: CASHIER.customerZ, tx: 0, ty: 1.3, tz: CASHIER.z - 0.45 };
 }
 
 function neighbours(id: NodeId): NodeId[] {
