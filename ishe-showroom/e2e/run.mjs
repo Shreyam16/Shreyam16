@@ -14,10 +14,12 @@ fs.mkdirSync(OUT, { recursive: true });
 const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-fake-device-for-media-stream'];
 
 const results = [];
-async function check(name, fn) {
+async function check(name, fn, limitMs = 300000) {
   const t = Date.now();
-  try { await fn(); results.push({ name, ok: true, ms: Date.now() - t }); console.log(`  ✓ ${name}`); }
-  catch (e) { results.push({ name, ok: false, err: e.message }); console.log(`  ✗ ${name}\n      ${e.message.split('\n')[0]}`); }
+  let timer;
+  const limit = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`check timed out after ${limitMs / 1000}s`)), limitMs); });
+  try { await Promise.race([fn(), limit]); clearTimeout(timer); results.push({ name, ok: true, ms: Date.now() - t }); console.log(`  ✓ ${name}`); }
+  catch (e) { clearTimeout(timer); results.push({ name, ok: false, err: e.message }); console.log(`  ✗ ${name}\n      ${e.message.split('\n')[0]}`); }
 }
 function assert(c, m) { if (!c) throw new Error(m); }
 // Keep partial results if a section's setup throws outside a check.
@@ -450,7 +452,7 @@ console.log('Every product is reachable and framed (3D)');
       await page.waitForTimeout(700);
       tiles.push(await page.screenshot({ clip: { x: 0, y: 0, width: 820, height: 800 } }));
     }
-  });
+  }, 900000);
   if (tiles.length === 24) {
     const small = await Promise.all(tiles.map((t) => sharp(t).resize(328, 320).toBuffer()));
     await sharp({ create: { width: 328 * 6, height: 320 * 4, channels: 3, background: '#000' } })
@@ -578,7 +580,7 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
         await page.keyboard.press('Escape').catch(() => undefined);
       }
     }
-  });
+  }, 900000);
   await check('staff close-ups (cashier and consultant behind the counter)', async () => {
     await page.evaluate(() => window.__ishe.getState().setEvening(false));
     for (const [id, x] of [['cashier', -0.5], ['consultant', 0.8]]) {

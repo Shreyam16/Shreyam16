@@ -93,10 +93,11 @@ jobs:
       - name: End-to-end checks
         id: e2e
         continue-on-error: true
+        timeout-minutes: 75
         run: mkdir -p e2e/output && node e2e/run.mjs 2>&1 | tee e2e/output/log.txt; exit ${PIPESTATUS[0]}
 
       - name: Commit baked lighting and lite stills
-        if: steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true'
+        if: always() && (steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
