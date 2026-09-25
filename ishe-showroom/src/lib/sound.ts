@@ -31,6 +31,23 @@ export function setAmbience(on: boolean) {
       o.start();
       nodes.push(o, gain);
     }
+    // Room tone: brown noise, heavily low-passed, like a quiet air-conditioned boutique.
+    const len = ctx.sampleRate * 4;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; data[i] = last * 3.2; }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    noise.loop = true;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 380;
+    const ng = ctx.createGain();
+    ng.gain.value = 0.35;
+    noise.connect(lp).connect(ng).connect(master);
+    noise.start();
+    nodes.push(noise, lp, ng);
     master.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 2.5);
   } else if (ctx && master) {
     const m = master, list = nodes;
@@ -58,4 +75,39 @@ export function chime() {
     o.start(t);
     o.stop(t + d);
   }
+}
+
+function noiseBurst(duration: number, freq: number, q: number, gain: number, when = 0) {
+  if (!ctx || !master) return;
+  const t = ctx.currentTime + when;
+  const len = Math.floor(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = freq;
+  bp.Q.value = q;
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  src.connect(bp).connect(g).connect(ctx.destination);
+  src.start(t);
+}
+
+/** Soft footstep on stone: a short, muffled tap with slight variation. */
+export function footstep() {
+  noiseBurst(0.09, 520 + Math.random() * 180, 1.4, 0.18);
+  noiseBurst(0.05, 2400, 3, 0.03, 0.01);
+}
+
+/** Glass door swinging open: low air movement plus a quiet latch click. */
+export function doorOpen() {
+  noiseBurst(0.04, 3200, 6, 0.06);
+  noiseBurst(1.4, 260, 0.7, 0.12, 0.05);
+}
+
+export function soundOn() {
+  return !!master;
 }

@@ -108,9 +108,80 @@ function skyTexture() {
   });
 }
 
+/** Tangent-space normal map from a height function, for fabric pile, weave and brushing. */
+function normalMap(size: number, height: (x: number, y: number) => number, strength: number, repeat: number) {
+  const h = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) h[y * size + x] = height(x, y);
+  const t = canvasTexture(size, size, (ctx) => {
+    const img = ctx.createImageData(size, size);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const at = (xx: number, yy: number) => h[((yy + size) % size) * size + ((xx + size) % size)];
+      const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      const len = Math.hypot(dx, dy, 1);
+      const i = (y * size + x) * 4;
+      img.data[i] = ((-dx / len) * 0.5 + 0.5) * 255;
+      img.data[i + 1] = ((dy / len) * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (1 / len) * 255;
+      img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }, false);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  return t;
+}
+
+function linenTexture() {
+  const r = rng(11);
+  const t = canvasTexture(256, 256, (ctx) => {
+    ctx.fillStyle = '#e7e0d4';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 256; i += 2) {
+      ctx.fillStyle = `rgba(120,100,80,${0.03 + r() * 0.05})`;
+      ctx.fillRect(0, i, 256, 1);
+      ctx.fillStyle = `rgba(255,255,255,${0.03 + r() * 0.05})`;
+      ctx.fillRect(i, 0, 1, 256);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(6, 6);
+  return t;
+}
+
+/** Quiet abstract canvas for the foyer artwork: layered warm washes and one gold arc. */
+export function artworkTexture() {
+  const r = rng(21);
+  return canvasTexture(768, 1024, (ctx) => {
+    ctx.fillStyle = '#ece5d8';
+    ctx.fillRect(0, 0, 768, 1024);
+    for (let i = 0; i < 26; i++) {
+      const g = ctx.createRadialGradient(r() * 768, 300 + r() * 700, 0, r() * 768, 300 + r() * 700, 160 + r() * 260);
+      const tone = ['rgba(186,160,128,', 'rgba(120,108,96,', 'rgba(222,208,186,', 'rgba(60,56,52,'][i % 4];
+      g.addColorStop(0, tone + (0.1 + r() * 0.12) + ')');
+      g.addColorStop(1, tone + '0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 768, 1024);
+    }
+    ctx.strokeStyle = 'rgba(176,141,87,0.9)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(384, 560, 250, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(20,20,20,0.85)';
+    ctx.fillRect(0, 900, 768, 4);
+  });
+}
+
 function build() {
   const std = (p: THREE.MeshStandardMaterialParameters) => new THREE.MeshStandardMaterial(p);
   const phys = (p: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(p);
+
+  const r = rng(5);
+  const pile = new Float32Array(128 * 128).map(() => r());
+  const velvetNormal = normalMap(128, (x, y) => pile[y * 128 + x], 0.6, 8);
+  const weave = normalMap(128, (x, y) => Math.sin(x * 0.8) * 0.5 + Math.sin(y * 0.8) * 0.5, 0.35, 10);
+  const brushed = normalMap(128, (x, y) => pile[(y % 128) * 128] * 0.8 + Math.sin(x * 0.05) * 0.02, 0.9, 4);
 
   const shadowTex = radial('rgba(0,0,0,0.55)', 'rgba(0,0,0,0)');
   const poolTex = radial('rgba(255,226,180,0.9)', 'rgba(255,226,180,0)');
@@ -151,10 +222,27 @@ function build() {
     darkWindow: std({ color: '#2a3038', roughness: 0.35, metalness: 0 }),
     warmWindow: std({ color: '#2b2622', emissive: '#f3cf94', emissiveIntensity: 0.35, roughness: 0.3 }),
     // Furniture
-    blackSatin: std({ color: '#121212', roughness: 0.42, metalness: 0.1 }),
-    blackMetal: std({ color: '#0b0b0b', roughness: 0.3, metalness: 0.75 }),
-    velvet: phys({ color: '#141414', roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#4a4a4a'), sheenRoughness: 0.6 }),
-    linen: std({ color: '#e7e0d4', roughness: 1 }),
+    // Lacquered cabinetry: dark satin base with a clear coat that picks up the lights.
+    blackSatin: phys({ color: '#111111', roughness: 0.5, metalness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.22, envMapIntensity: 0.9 }),
+    blackMetal: std({ color: '#0b0b0b', roughness: 0.32, metalness: 0.8, normalMap: brushed, normalScale: new THREE.Vector2(0.25, 0.25) }),
+    velvet: phys({
+      color: '#141414', roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#5a5552'), sheenRoughness: 0.55,
+      normalMap: velvetNormal, normalScale: new THREE.Vector2(0.35, 0.35),
+    }),
+    linen: std({ color: '#ffffff', map: linenTexture(), roughness: 1, normalMap: weave, normalScale: new THREE.Vector2(0.3, 0.3) }),
+    floorGloss: std({
+      color: '#000000', roughness: 0.26, metalness: 0, envMapIntensity: 0.55,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+    }),
+    // Decor
+    ceramic: phys({ color: '#f3f0ea', roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 }),
+    stem: std({ color: '#3f5a36', roughness: 0.7 }),
+    leaf: std({ color: '#2f4a2c', roughness: 0.6, side: THREE.DoubleSide }),
+    petal: phys({ color: '#fbf8f2', roughness: 0.55, sheen: 0.6, sheenColor: new THREE.Color('#ffffff'), side: THREE.DoubleSide }),
+    petalHeart: std({ color: '#c9a36b', roughness: 0.5 }),
+    travertine: std({ color: '#e3d8c6', roughness: 0.55 }),
+    downlightTrim: std({ color: '#1a1a1a', roughness: 0.4, metalness: 0.6 }),
+    downlightLens: std({ color: '#fff8ee', emissive: '#ffe6c4', emissiveIntensity: 2.4 }),
     glass: phys({
       color: '#ffffff', transparent: true, opacity: 0.1, roughness: 0.02, metalness: 0,
       envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide,

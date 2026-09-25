@@ -87,10 +87,6 @@ function Case({ spec }: { spec: DisplaySpec }) {
           <Box size={[0.007, 0.007, gd]} pos={[-gw / 2, glassTop, 0]} mat="blackMetal" />
         </>
       )}
-      {/* Faked contact shadow. */}
-      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} material={M.shadow}>
-        <planeGeometry args={[w * 1.9, d * 1.9]} />
-      </mesh>
       {/* Warm pool of light on the deck. */}
       <mesh position={[0, top + 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}>
         <planeGeometry args={[w * 0.9, d * 0.9]} />
@@ -184,7 +180,6 @@ function ComboTableStatic() {
         <Box size={[0.3, 0.095, 0.008]} pos={[0, 0, -0.006]} mat="blackMetal" />
         <mesh><planeGeometry args={[0.29, 0.087]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>
       </group>
-      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} material={M.shadow}><circleGeometry args={[0.8, 32]} /></mesh>
     </group>
   );
 }
@@ -221,7 +216,6 @@ function CashierStatic() {
       <mesh position={[0, CASHIER.h + 0.021, 0.02]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}><planeGeometry args={[0.5, 0.4]} /></mesh>
       {/* Staff-side back shelf against the brand wall. */}
       <Box size={[CASHIER.w + 0.8, 0.9, 0.26]} pos={[0, 0.45, -0.92]} mat="blackSatin" />
-      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} material={M.shadow}><planeGeometry args={[CASHIER.w * 1.4, 1.6]} /></mesh>
     </group>
   );
 }

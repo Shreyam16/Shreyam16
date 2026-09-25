@@ -9,6 +9,8 @@ import {
 import { useShowroom } from '@/store/showroom';
 import { DISPLAYS } from './layout';
 import Merged from './Merged';
+import Decor from './Decor';
+import BakedSurfaces from './BakedSurfaces';
 import { useFontsReady } from './fonts';
 
 type V3 = [number, number, number];
@@ -215,25 +217,9 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
   const M = mats();
   const hw = HALF_W;
   const wallH = CEILING;
-  const panels = useMemo(() => {
-    const out: V3[] = [];
-    for (let x = -6; x <= 6; x += 3) for (let z = -1.5; z >= -13; z -= 2.8) out.push([x, CEILING - 0.005, z]);
-    return out;
-  }, []);
   return (
     <group>
-      {/* Floor and ceiling. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -DEPTH / 2]} material={M.floor}>
-        <planeGeometry args={[hw * 2, DEPTH]} />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, CEILING, -DEPTH / 2]} material={M.ceiling}>
-        <planeGeometry args={[hw * 2, DEPTH]} />
-      </mesh>
-      {panels.map((p, i) => (
-        <mesh key={i} rotation={[Math.PI / 2, 0, 0]} position={p} material={M.ceilingPanel}>
-          <planeGeometry args={[1.4, 0.18]} />
-        </mesh>
-      ))}
+      {/* Floor and ceiling surfaces with baked light live in BakedSurfaces.tsx. */}
       {/* Perimeter walls (interior faces). */}
       <Span a={[-hw - 0.1, 0, -DEPTH - 0.1]} b={[-hw + 0.1, wallH, 0]} mat="wall" />
       <Span a={[hw - 0.1, 0, -DEPTH - 0.1]} b={[hw + 0.1, wallH, 0]} mat="wall" />
@@ -275,37 +261,11 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
   );
 }
 
-/**
- * Cheap lighting cues instead of extra real-time lights: ambient-occlusion gradients where walls
- * meet the floor, warm wall-washes above each vitrine and a lit cove along the ceiling.
- */
+/** Warm wall-washes above each vitrine and the lit cove along the ceiling (on top of the bake). */
 function Atmosphere() {
   const M = mats();
-  const strips = useMemo(() => {
-    // [x, z, length, rotationY] for floor-level AO along each wall run.
-    const hw = HALF_W - 0.1;
-    const list: [number, number, number, number][] = [
-      [-hw, -DEPTH / 2, DEPTH, Math.PI / 2], [hw, -DEPTH / 2, DEPTH, -Math.PI / 2], [0, -DEPTH + 0.1, HALF_W * 2, 0],
-      [0, -0.1, HALF_W * 2, Math.PI],
-    ];
-    for (const s of [-1, 1]) {
-      list.push([s * (PARTITION_X + 0.1), (PARTITION_END_Z + SIDE_DOOR.z0) / 2, SIDE_DOOR.z0 - PARTITION_END_Z, s * Math.PI / 2]);
-      list.push([s * (PARTITION_X - 0.1), (PARTITION_END_Z + SIDE_DOOR.z0) / 2, SIDE_DOOR.z0 - PARTITION_END_Z, -s * Math.PI / 2]);
-      list.push([s * (PARTITION_X + 0.1), SIDE_DOOR.z1 / 2, -SIDE_DOOR.z1, s * Math.PI / 2]);
-      list.push([s * (PARTITION_X - 0.1), SIDE_DOOR.z1 / 2, -SIDE_DOOR.z1, -s * Math.PI / 2]);
-    }
-    return list;
-  }, []);
   return (
     <group>
-      {strips.map(([x, z, len, ry], i) => (
-        // Plane lies on the floor, dark edge against the wall, fading into the room.
-        <group key={i} position={[x, 0.003, z]} rotation={[0, ry, 0]}>
-          <mesh position={[0, 0, 0.3]} rotation={[-Math.PI / 2, 0, 0]} material={M.ao}>
-            <planeGeometry args={[len, 0.6]} />
-          </mesh>
-        </group>
-      ))}
       {/* Warm washes on the linen panels above each arm vitrine. */}
       {DISPLAYS.filter((d) => d.style === 'tall').map((d) => {
         const s = Math.sign(d.x);
@@ -339,7 +299,9 @@ export default function Architecture() {
         <Facade plaque={plaque} />
         <Interior logoWall={logoWall} />
         <Wayfinding />
+        <Decor />
       </Merged>}
+      <BakedSurfaces />
       <Doors />
     </group>
   );

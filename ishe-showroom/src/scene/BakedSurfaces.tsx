@@ -1,0 +1,81 @@
+'use client';
+import { useMemo } from 'react';
+import * as THREE from 'three';
+import { useLoader } from '@react-three/fiber';
+import { BAKE_SURFACES, type BakeSurface } from './bakeSurfaces';
+import { mats } from './materials';
+
+/** How much the baked irradiance is scaled up (MeshBasicMaterial divides light maps by π). */
+const GAIN = Math.PI * 1.3;
+/** Lift each surface off the old geometry toward the room so nothing z-fights. */
+const OFFSET = 0.003;
+
+function geometryFor(s: BakeSurface) {
+  const pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  const [a0, a1, b0, b1] = s.uv;
+  const c = s.c + s.normal * OFFSET;
+  for (const [ra0, ra1, rb0, rb1] of s.rects) {
+    const base = pos.length / 3;
+    for (const [a, b] of [[ra0, rb0], [ra1, rb0], [ra1, rb1], [ra0, rb1]]) {
+      if (s.plane === 'y') pos.push(a, c, b);
+      else if (s.plane === 'x') pos.push(c, b, a);
+      else pos.push(a, b, c);
+      uv.push((a - a0) / (a1 - a0), (b - b0) / (b1 - b0));
+    }
+    idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // Make every face point toward the lit side.
+  const want = new THREE.Vector3(s.plane === 'x' ? s.normal : 0, s.plane === 'y' ? s.normal : 0, s.plane === 'z' ? s.normal : 0);
+  const n = new THREE.Vector3().fromBufferAttribute(g.getAttribute('normal') as THREE.BufferAttribute, 0);
+  if (n.dot(want) < 0) {
+    for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]];
+    g.setIndex(idx);
+    g.computeVertexNormals();
+  }
+  return g;
+}
+
+/**
+ * Floor, ceiling and walls with light baked in Blender Cycles (bake/bake.py): soft shadows around
+ * every vitrine, pools under the downlights, daylight through the windows, bounce light in corners.
+ */
+export default function BakedSurfaces() {
+  const textures = useLoader(THREE.TextureLoader, BAKE_SURFACES.map((s) => `/bake/${s.name}.webp`));
+  const items = useMemo(() => {
+    const M = mats();
+    return BAKE_SURFACES.map((s, i) => {
+      const tex = textures[i];
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      let material: THREE.Material;
+      if (s.name === 'floor') {
+        const terrazzo = (M.floor as THREE.MeshStandardMaterial).map!;
+        const floorUv = terrazzo.clone();
+        // Terrazzo tiles every ~2 m across the plane's 0..1 UVs.
+        floorUv.repeat.set(7.5, 7);
+        floorUv.needsUpdate = true;
+        material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN });
+      } else {
+        const color = s.name === 'ceiling' ? '#ffffff' : '#fbfaf8';
+        material = new THREE.MeshBasicMaterial({ color, lightMap: tex, lightMapIntensity: GAIN });
+      }
+      return { s, geometry: geometryFor(s), material };
+    });
+  }, [textures]);
+  const M = mats();
+  const floor = items.find((i) => i.s.name === 'floor')!;
+  return (
+    <group>
+      {items.map(({ s, geometry, material }) => (
+        <mesh key={s.name} geometry={geometry} material={material} name={`baked-${s.name}`} />
+      ))}
+      {/* Specular-only layer on the terrazzo: honed-stone sheen and soft reflections of lights. */}
+      <mesh geometry={floor.geometry} material={M.floorGloss} position={[0, 0.0005, 0]} renderOrder={1} />
+    </group>
+  );
+}

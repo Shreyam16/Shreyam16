@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -7,6 +7,8 @@ import Architecture from './Architecture';
 import Displays from './Displays';
 import CameraRig from './CameraRig';
 import { useShowroom } from '@/store/showroom';
+import Polish from './Polish';
+import { detectQuality } from './quality';
 
 /** Image-based lighting from a procedural studio room: no downloads, no extra real-time lights. */
 function Environment() {
@@ -39,6 +41,7 @@ function PerformanceWatch({ onSlow }: { onSlow: () => void }) {
 
 export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
   const phase = useShowroom((s) => s.phase);
+  const [quality] = useState(detectQuality);
   return (
     <Canvas
       className="!fixed inset-0"
@@ -52,6 +55,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
         gl.outputColorSpace = THREE.SRGBColorSpace;
         gl.domElement.setAttribute('aria-hidden', 'true');
         gl.domElement.dataset.testid = 'showroom-canvas';
+        gl.domElement.dataset.quality = detectQuality();
         gl.domElement.addEventListener('webglcontextlost', (e) => {
           e.preventDefault();
           useShowroom.getState().setRenderMode('lite', 'The 3D view stopped responding on this device, so we switched to the lite showroom.');
@@ -67,6 +71,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
         <Displays />
       </Suspense>
       <CameraRig />
+      {quality === 'high' && <Polish />}
       <PerformanceWatch onSlow={onSlow} />
     </Canvas>
   );

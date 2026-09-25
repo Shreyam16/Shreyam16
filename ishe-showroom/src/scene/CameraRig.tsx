@@ -7,6 +7,7 @@ import { useShowroom, type View } from '@/store/showroom';
 import {
   EYE, cashierPose, comboPose, focusPose, nodePose, roomAt, routeTo, slideMove, type Pose,
 } from './layout';
+import { doorOpen, footstep, soundOn } from '@/lib/sound';
 import { clearHeld, held, notePointerDown, notePointerMove, pointerWasDrag, type HeldKey } from './input';
 
 const KEYS: Record<string, HeldKey> = {
@@ -52,6 +53,9 @@ export default function CameraRig() {
   const yawDrag = useRef<{ x: number; y: number } | null>(null);
   const wasInside = useRef(false);
   const offset = useRef(0);
+  const stride = useRef(0);
+  const lastXZ = useRef({ x: 0, z: 0 });
+  const doorPlayed = useRef(false);
 
   // Field of view suits portrait phones as well as desktop; it narrows gently ("leaning in")
   // when a single display is in focus.
@@ -190,6 +194,14 @@ export default function CameraRig() {
     const p = pose.current;
     camera.position.set(p.x, p.y, p.z);
     camera.lookAt(p.tx, p.ty, p.tz);
+    // Optional sound: a footstep every ~0.7 m walked, and the door as it starts to swing.
+    if (soundOn()) {
+      stride.current += Math.hypot(p.x - lastXZ.current.x, p.z - lastXZ.current.z);
+      if (stride.current > 0.7) { stride.current = 0; footstep(); }
+      if (!doorPlayed.current && s.phase === 'outside' && s.entrance > 0.2) { doorPlayed.current = true; doorOpen(); }
+    }
+    if (s.phase === 'outside' && s.entrance < 0.1) doorPlayed.current = false;
+    lastXZ.current = { x: p.x, z: p.z };
     const cam = camera as THREE.PerspectiveCamera;
     const k = s.reducedMotion ? 1 : Math.min(1, Math.min(dtRaw, 1) * 2.5);
     const zoom = s.phase === 'inside' && s.view.kind === 'product' ? focusPose(s.view.sku).zoom ?? 1 : 1;
