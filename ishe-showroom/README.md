@@ -5,8 +5,13 @@ black-framed glass double door under the white ISHÉ sign, scroll to open the do
 then explore a U-shaped showroom (15 m × 14 m, 3.8 m ceiling) in real-time 3D.
 
 - **Left:** Necklaces & Bracelets
-- **Straight:** Rings & Combos (with the cashier counter)
+- **Straight:** Rings & Combos: a walnut-panelled salon with the cashier counter
 - **Right:** Earrings & Pendants
+
+Interior: warm ivory limewash walls, honed travertine floor with brass inlays at each threshold,
+fluted walnut behind the wall vitrines, taupe velvet vitrine decks, bronze trims and black lacquer
+cabinetry. The salon sits under a lowered bronze-toned tray with a statement chandelier over the
+combos table, a small lounge (two armchairs, side table with a tea tray, rug) and four staff.
 
 ## Run it
 
@@ -26,6 +31,7 @@ npm run dev          # http://localhost:3000
 | `npm run assets` | Rebuild the logo files from `brand-source/` |
 | `node scripts/render-product-images.mjs` | Re-render the 24 sample product images (dev server running) |
 | `node scripts/render-lite-backdrops.mjs` | Re-capture the lite-mode stills (dev server running) |
+| `python3 bake/bake.py` (bpy 4.2, Python 3.11) | Re-bake lighting; see "Light bake" below |
 
 URL options: `?mode=3d` forces the 3D showroom, `?mode=lite` forces the lite showroom.
 
@@ -39,6 +45,15 @@ URL options: `?mode=3d` forces the 3D showroom, `?mode=lite` forces the lite sho
 | `src/scene/layout.ts` | Floor plan, display placement, colliders, navigation graph, camera poses (pure TS, unit-tested) |
 | `src/scene/*.tsx` | Three.js / React Three Fiber scene: architecture, vitrines, jewellery, camera rig |
 | `src/components/*` | Interface: wayfinding, product panel, Jewel Box, finder, cashier, lite showroom |
+| `src/scene/features.ts` | Decor, furniture, staff spots, salon tray, thresholds (pure data, shared with the bake) |
+| `src/scene/Staff.tsx` | The four staff: rigged GLBs, idle loop, head turn, click to talk |
+| `src/scene/Evening.tsx` | Day / evening lighting balance |
+| `src/components/StaffPanel.tsx`, `TourBar.tsx` | Staff greeting and guided tours |
+| `src/components/AppointmentDrawer.tsx`, `src/app/api/appointment/route.ts` | Private appointment requests |
+| `src/components/TryOnDialog.tsx` | Camera try-on (MediaPipe Face Landmarker, on-device) |
+| `src/lib/share.ts`, `src/components/SharedPanel.tsx` | Jewel Box share links |
+| `src/app/ring-size-guide/` | Printable ring-size guide (approximate) |
+| `public/staff/` | Staff models (compressed GLB) |
 | `public/brand/` | Logo files generated from the supplied brand board |
 
 ## Brand
@@ -91,15 +106,45 @@ payment, no stock reservation, and the UI says so.
 | `SHOPIFY_STOREFRONT_API_VERSION` | `2025-10` | Optional. Use a currently supported Storefront API version |
 | `SHOPIFY_VARIANT_MAP` | `{"ISH-N01":"gid://shopify/ProductVariant/123"}` | Optional override of `shopify-variants.ts` |
 
+Cashier extras (gift wrapping, gift note, engraving request) are sent with `cartCreate` as cart
+`attributes` ("Gift wrap", "Engraving request (to be confirmed by the store)") and the cart `note`,
+only when Shopify is configured. In demo mode they are listed in the demo summary instead.
+Engraving is always labelled a request confirmed by the store.
+
 `GET /api/checkout` reports `{ configured, mappedVariants, totalProducts }` (no secrets), which
 the cashier uses to decide whether to show the demo banner. If any SKU in an order is unmapped,
 that order stays in demo mode and says which SKU is missing.
+
+## Appointments and WhatsApp
+
+The appointment form (calendar icon, or from any member of staff) collects date, time slot, pieces
+of interest (from the Jewel Box and saved pieces), name, phone, email and notes. `POST
+/api/appointment` validates it on the server and then:
+
+- emails the store through Resend when `RESEND_API_KEY` and `APPOINTMENT_EMAIL_TO` are set, or
+- posts the request as JSON to `APPOINTMENT_WEBHOOK_URL` (a spreadsheet, CRM or automation), or
+- otherwise does nothing and says so: **demo mode, not sent, not booked**.
+
+Even when a request is delivered, the visitor is told the store will contact them to confirm; the
+site never claims a booking is confirmed. `GET /api/appointment` reports `{ configured }`.
+
+The WhatsApp concierge button opens `https://wa.me/<number>?text=…` with the visitor's details
+prefilled; nothing is sent until they press send in WhatsApp. Without
+`NEXT_PUBLIC_WHATSAPP_NUMBER` it shows "not configured".
+
+| Variable | Scope | Notes |
+| --- | --- | --- |
+| `RESEND_API_KEY` | server | Resend API key |
+| `APPOINTMENT_EMAIL_TO` | server | Store inbox(es), comma-separated |
+| `APPOINTMENT_EMAIL_FROM` | server | Optional verified sender; defaults to Resend's test sender |
+| `APPOINTMENT_WEBHOOK_URL` | server | Optional alternative to email (https only) |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | public | International format, e.g. `+91 98765 43210` |
 
 ## Deploying to Vercel
 
 The app lives in the `ishe-showroom/` folder of this repository. In Vercel, import the repo and set
 **Root Directory** to `ishe-showroom`. Everything is statically rendered except `/api/checkout`,
-which runs as a serverless function because the Storefront token must stay on the server.
+and `/api/appointment`, which run as serverless functions because their tokens must stay on the server.
 
 ## Experience notes
 
@@ -117,6 +162,30 @@ which runs as a serverless function because the Storefront token must stay on th
   Back / Esc returns to the exact prior camera position.
 - **Cashier.** Buy Now (or "Take to the cashier" in the Jewel Box) walks the camera to the cashier
   counter, places the piece on the counter tray and shows the order summary before Shopify.
+- **Loading.** A branded screen (the ISHÉ plaque and a thin line driven by real texture and model
+  loading) fades into the street once the first frame is drawn. Staff stream in afterwards so they
+  never hold the entrance back.
+- **Staff.** A cashier and a consultant behind the counter, and an attendant in each side room.
+  They play an idle loop and turn their head (and a little of the shoulders) toward a visitor who
+  comes within about 4.8 m. Selecting one, or "Ask the attendant" in the room bar, walks the camera
+  to a polite distance and opens a greeting with guided tours. The cashier greets the visitor in
+  the order summary. Staff are not shown in the lite showroom; there the same tours sit behind
+  "Guided tour".
+- **Guided tours.** Bridal, Everyday, Gifting and Festive visit every piece tagged with that
+  (sample) occasion in walking order; "Show me around" walks every room. Previous / Next / Stop;
+  Stop returns the visitor to where the tour began. Fully keyboard operable; instant under reduced
+  motion.
+- **Camera try-on** for earrings, necklaces and pendants. The camera is requested only when the
+  visitor taps "Start camera". MediaPipe Face Landmarker (tasks-vision 1.0.1 from jsDelivr, model
+  from Google's MediaPipe storage) loads only after permission is granted and runs on the device;
+  no image is uploaded or stored. The procedural 3D piece is drawn over the mirrored video, labelled
+  "Preview, not exact scale". Refused permission, no camera or no WebGL each get a plain fallback.
+- **Share your Jewel Box.** The link carries SKUs and quantities only (`?box=ISH-N01*2,ISH-E02`),
+  validated against the catalogue. Opening it still starts outside; the "Shared selection" panel
+  appears once inside, and nothing is added until the visitor chooses.
+- **Evening mode** (moon icon, default day): dusk sky, lit facade sconces, a warm glow in the shop
+  windows and neighbouring flats, slightly lower light inside. Instant under reduced motion. The
+  lite showroom uses a dusk tint over its daylight stills.
 - **Sound.** Off by default. A synthesised ambience (Web Audio, no files) plays only after the
   visitor turns it on.
 - **Reduced motion.** Honoured throughout: no smooth scrolling, instant camera moves, no zoom easing.
@@ -126,7 +195,10 @@ which runs as a serverless function because the Storefront token must stay on th
 - Lighting uses one hemisphere light, one directional light and image-based lighting from a
   procedural studio environment. Display glow, wall washes and contact shadows are baked decals,
   not extra lights. No shadow maps.
-- Static geometry is merged by material at load: about 110 draw calls inside and 190 outside.
+- Static geometry (including all new furniture, mouldings, curtains, mirrors and the chandelier)
+  is merged by material at load. Measured draw calls: DRAWCALLS_PLACEHOLDER
+- Try-on mirrors reflect the environment map (metal, low roughness): no render targets.
+- Staff: 4 skinned meshes, one material each, 1024 px WebP textures, 1.8–2.2 MB per GLB.
 - DPR is capped at 1.75.
 - The lite showroom is used when WebGL is missing, when the GPU is a software renderer, on
   devices reporting under 2 GB memory or 2 cores, or if the WebGL context is lost. It keeps the
@@ -142,11 +214,39 @@ which runs as a serverless function because the Storefront token must stay on th
 | Approved prices and copy | Replace sample values in `catalogue.ts` |
 | Shopify store, token and 24 variant IDs | Turn on real checkout |
 | (Optional) Licensed, optimised GLB jewellery models | Replace the procedural stylised pieces |
-| (Optional) Licensed realistic human figures (GLB, rigged) | Staff or visitors. None were available, so the showroom has no people rather than low-quality avatars |
 | (Optional) Vector (SVG) master of the wordmark | The plaque is cut from the supplied raster board, which is sharp at current sizes but not infinitely scalable |
 
-No third-party 3D models, HDRIs or images are used. All geometry is procedural and all textures
-are generated in code or rendered from the scene.
+### Asset credits
+
+- **Staff figures** (`public/staff/*.glb`): AI-generated, textured and auto-rigged with an idle
+  animation using Higgsfield (Meshy image-to-3D), commissioned for this project. Re-packed for the
+  web: 2048 px PNG textures resized to 1024 px WebP (`EXT_texture_webp`), the duplicated emissive
+  texture and exaggerated specular removed. Geometry is not mesh-compressed (see limitations).
+  They are illustrative figures, not portraits of ISHÉ staff.
+- Everything else is procedural: geometry built in code, textures generated in code or rendered
+  from the scene. No third-party HDRIs or images.
+
+## Light bake
+
+`bake/bake.py` rebuilds the room from `bake/layout.json` (exported from the TypeScript floor plan by
+`npx vitest run --config bake/vitest.config.ts`) and bakes direct + indirect diffuse lighting with
+Blender Cycles. Occluders carry their real albedo (ivory, travertine, walnut, bronze, taupe velvet,
+bouclé), so the walnut warms the bounce light; the maps themselves hold lighting only. Display
+spots are tight (22°) accents; the salon has lower, warmer (2700–2800 K) light from under the tray,
+its cove and the chandelier. Then:
+
+```bash
+node bake/to-png.mjs && mv public/bake/*.webp public/bake/exposure.npy bake/raw/
+node bake/postprocess.mjs   # partial white balance (35% of the warmth kept), denoise, ceiling lift
+```
+
+### CI workflow
+
+`.github/workflows/ishe-assets.yml` runs on pushes to `claude/**` branches whose commit message
+contains a tag: `[ishe-assets]` (lint, typecheck, unit tests, bake, lite stills, e2e; commits the
+bake and stills back), `[ishe-assets:stills]` or `[ishe-assets:qa]`. Add `samples=256` to the
+message to change bake quality. e2e screenshots (as JPEG) and `results.json` are force-pushed to
+the `qa-screenshots` branch for review.
 
 ## Known limitations
 
@@ -156,3 +256,13 @@ are generated in code or rendered from the scene.
 - Automated browser tests run on software WebGL (SwiftShader) at low frame rates. Motion quality
   and frame rate on real phones should be checked by hand.
 - The Jewel Box and saved list are stored in the browser (localStorage), per device.
+- Staff GLBs are texture-compressed only; meshopt/Draco geometry compression was not applied
+  (no encoder was reachable from the build environment). Each is still under 2.3 MB.
+- Staff faces are AI-generated and slightly faceted at very close range; the camera never frames
+  a face closely.
+- Try-on placement is approximate (face landmarks plus an assumed face width), not a fit tool.
+  It needs camera permission, WebGL and a connection for the first model download. It has been
+  tested for the refused-permission path in automated tests; live camera tracking has to be
+  checked by hand on real devices.
+- Appointment email / webhook delivery is tested against mocked responses only.
+- Evening mode in the lite showroom is a tint over daylight stills.

@@ -102,7 +102,7 @@ function Person({ spot }: { spot: StaffSpot }) {
       <mesh position={[0, spot.height / 2, 0]} material={HIT} onClick={onClick} name={`staff-hit-${spot.id}`}
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = ''; }}>
-        <cylinderGeometry args={[0.3, 0.3, spot.height, 10]} />
+        <cylinderGeometry args={[0.25, 0.25, spot.height, 10]} />
       </mesh>
     </group>
   );
