@@ -74,6 +74,8 @@ function Person({ spot }: { spot: StaffSpot }) {
     yaw.current += (bodyTarget - yaw.current) * k;
     headYaw.current += (THREE.MathUtils.clamp(target - bodyTarget, -HEAD_RANGE, HEAD_RANGE) - headYaw.current) * k;
     root.current.rotation.y = spot.rotY + yaw.current;
+    root.current.userData.headYaw = headYaw.current;
+    root.current.userData.bodyYaw = yaw.current;
     if (head?.parent && Math.abs(headYaw.current) > 1e-3) {
       // Rotate the (already animated) head about world up: local' = parentWorld⁻¹ · R · parentWorld · local.
       root.current.updateMatrixWorld();
@@ -129,6 +131,8 @@ function QaHook() {
         head: head ? head.getWorldPosition(v).toArray().map((n) => +n.toFixed(3)) : null,
         toe: toe ? toe.getWorldPosition(new THREE.Vector3()).toArray().map((n) => +n.toFixed(3)) : null,
         headQuat: head ? head.quaternion.toArray().map((n) => +n.toFixed(4)) : null,
+        headYaw: +(g?.userData.headYaw ?? 0).toFixed(3),
+        bodyYaw: +(g?.userData.bodyYaw ?? 0).toFixed(3),
       };
     });
     return () => { delete w.__isheStaff; };

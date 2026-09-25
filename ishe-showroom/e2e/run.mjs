@@ -25,6 +25,13 @@ const state = (page) => page.evaluate(() => {
   return { phase: s.phase, entrance: s.entrance, room: s.room, view: s.view, moving: s.moving, cart: s.cart, saved: s.saved, renderMode: s.renderMode };
 });
 const waitIdle = (page, ms = 20000) => page.waitForFunction(() => !window.__ishe.getState().moving, null, { timeout: ms });
+/** The branded loader covers the page until the first frame is on screen. */
+const waitReady = async (page, ms = 60000) => {
+  await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: ms });
+  await page.getByTestId('loading-screen').waitFor({ state: 'detached', timeout: 10000 });
+};
+const enterNow = (page) => page.evaluate(() => { const s = window.__ishe.getState(); s.setEntrance(1); s.enter(); });
+const metrics = {};
 
 async function canvasNotBlank(page, file) {
   const buf = await page.screenshot({ path: `${OUT}/${file}` });
@@ -48,13 +55,44 @@ console.log('Desktop 3D (1440x900)');
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
-  await check('loads the 3D showroom outside the store', async () => {
+  await check('branded loading screen shows the plaque and real progress, then fades into the street', async () => {
     await page.goto(`${BASE}/?mode=3d`);
+    await page.getByTestId('loading-screen').waitFor({ timeout: 10000 });
+    assert(await page.getByTestId('loading-screen').locator('img[alt="ISHÉ"]').isVisible(), 'plaque missing');
+    await page.screenshot({ path: `${OUT}/00-loading.png` });
+    const seen = new Set();
+    const t0 = Date.now();
+    while (Date.now() - t0 < 60000) {
+      const v = await page.getByTestId('loading-progress').getAttribute('aria-valuenow').catch(() => null);
+      if (v === null) break;
+      seen.add(Number(v));
+      if (await page.evaluate(() => window.__ishe?.getState().sceneReady)) break;
+      await page.waitForTimeout(100);
+    }
+    await waitReady(page);
+    const s = await page.evaluate(() => ({ p: window.__ishe.getState().loadProgress, phase: window.__ishe.getState().phase }));
+    metrics.loadingProgressSeen = [...seen].sort((a, b) => a - b);
+    assert(s.p === 1 && s.phase === 'outside', JSON.stringify(s));
+  });
+
+  await check('loads the 3D showroom outside the store', async () => {
     await page.waitForFunction(() => document.querySelector('[data-render-mode="3d"] canvas'), null, { timeout: 30000 });
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(3000);
     const s = await state(page);
     assert(s.renderMode === '3d' && s.phase === 'outside', `unexpected ${JSON.stringify(s)}`);
     await canvasNotBlank(page, '01-exterior.png');
+    metrics.drawCallsOutside = await page.evaluate(() => window.__isheRenderInfo());
+  });
+
+  await check('evening toggle: dusk sky outside, default is day, toggles back', async () => {
+    const pressed = await page.getByTestId('evening-toggle').getAttribute('aria-pressed');
+    assert(pressed === 'false', `evening default ${pressed}`);
+    await page.getByTestId('evening-toggle').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 15000 });
+    await canvasNotBlank(page, '01b-exterior-evening.png');
+    metrics.drawCallsOutsideEvening = await page.evaluate(() => window.__isheRenderInfo());
+    await page.getByTestId('evening-toggle').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'off', null, { timeout: 15000 });
   });
 
   await check('scrolling opens the doors and moves toward the entrance', async () => {
@@ -72,6 +110,7 @@ console.log('Desktop 3D (1440x900)');
     const cam = await page.evaluate(() => window.__isheCamera());
     assert(cam.z < -2 && Math.abs(cam.y - 1.65) < 0.01, `camera ${JSON.stringify(cam)}`);
     await canvasNotBlank(page, '03-junction.png');
+    metrics.drawCallsJunction = await page.evaluate(() => window.__isheRenderInfo());
   });
 
   await check('LEFT goes to Necklaces & Bracelets', async () => {
@@ -80,6 +119,36 @@ console.log('Desktop 3D (1440x900)');
     const t = await page.getByTestId('current-room').textContent();
     assert(/Necklaces & Bracelets/.test(t), `room label "${t}"`);
     await canvasNotBlank(page, '04-left-room.png');
+    metrics.drawCallsLeftRoom = await page.evaluate(() => window.__isheRenderInfo());
+  });
+
+  await check('staff: all four load at human scale with feet on the floor, idle animation playing', async () => {
+    await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 });
+    const a = await page.evaluate(() => window.__isheStaff());
+    await page.waitForTimeout(1200);
+    const b = await page.evaluate(() => window.__isheStaff());
+    metrics.staff = a;
+    for (const p of a) {
+      assert(p.head[1] > 1.35 && p.head[1] < 1.8, `${p.id} head at ${p.head[1]}`);
+      assert(p.toe[1] > -0.05 && p.toe[1] < 0.2, `${p.id} toe at ${p.toe[1]}`);
+    }
+    const moved = a.filter((p, i) => p.headQuat.some((v, k) => Math.abs(v - b[i].headQuat[k]) > 1e-4));
+    assert(moved.length === 4, `idle not playing for ${a.filter((p) => !moved.includes(p)).map((p) => p.id)}`);
+  });
+
+  await check('staff: the attendant turns her head toward the visitor and opens a greeting when clicked', async () => {
+    const left = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'left');
+    assert(Math.abs(left.headYaw) > 0.05, `no head turn (headYaw ${left.headYaw})`);
+    metrics.leftAttendantTurn = { headYaw: left.headYaw, bodyYaw: left.bodyYaw };
+    const pt = await page.evaluate(() => window.__isheProject(-5.6, 1.1, -4.6));
+    assert(pt.visible, 'attendant not in view');
+    await page.mouse.click(pt.x, pt.y);
+    await page.getByTestId('staff-panel').waitFor({ timeout: 8000 });
+    await waitIdle(page);
+    assert((await page.getByTestId('staff-greeting').textContent()).includes('Welcome'), 'greeting');
+    await canvasNotBlank(page, '04b-attendant-left.png');
+    await page.keyboard.press('Escape');
+    await waitIdle(page);
   });
 
   let before;
@@ -139,6 +208,76 @@ console.log('Desktop 3D (1440x900)');
     await page.keyboard.press('Escape');
   });
 
+  await check('guided tour: keyboard opens the attendant, Bridal walks the vitrines with Next / Stop', async () => {
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'left' }));
+    await waitIdle(page);
+    await page.getByTestId('talk-staff').focus();
+    await page.keyboard.press('Enter');
+    await page.getByTestId('staff-panel').waitFor({ timeout: 10000 });
+    await waitIdle(page);
+    await page.getByTestId('tour-bridal').focus();
+    await page.keyboard.press('Enter');
+    await page.getByTestId('tour-bar').waitFor();
+    await waitIdle(page);
+    const first = await page.evaluate(() => window.__ishe.getState().view);
+    const total = await page.evaluate(() => window.__ishe.getState().tour.stops.length);
+    assert(first.kind === 'product' && first.sku === 'ISH-N01', JSON.stringify(first));
+    assert((await page.getByTestId('tour-progress').textContent()) === `1 of ${total}`, 'progress');
+    await page.getByTestId('tour-next').focus();
+    await page.keyboard.press('Enter');
+    await waitIdle(page);
+    const second = await page.evaluate(() => window.__ishe.getState().view);
+    assert(second.kind === 'product' && second.sku !== 'ISH-N01', JSON.stringify(second));
+    await page.getByTestId('product-panel').waitFor();
+    await canvasNotBlank(page, '06b-tour-bridal.png');
+    await page.getByTestId('tour-stop').click();
+    await waitIdle(page);
+    const s = await state(page);
+    assert(s.view.kind === 'node' && !(await page.getByTestId('tour-bar').isVisible().catch(() => false)), JSON.stringify(s.view));
+    metrics.bridalTourStops = total;
+  });
+
+  await check('appointment form: field errors, then honest demo mode (nothing sent or booked)', async () => {
+    await page.getByTestId('open-appointment').click();
+    await page.getByTestId('appointment-demo-banner').waitFor({ timeout: 8000 });
+    assert(await page.getByTestId('whatsapp-unconfigured').isVisible(), 'WhatsApp should say not configured');
+    await page.getByTestId('appt-submit').click();
+    await page.getByText('Please check the highlighted fields.').waitFor();
+    assert(await page.getByTestId('appt-name').getAttribute('aria-invalid') === 'true', 'name not flagged');
+    const d = new Date(); d.setDate(d.getDate() + 5);
+    await page.getByTestId('appt-date').fill(d.toISOString().slice(0, 10));
+    await page.locator('[data-testid="appt-slot-14:00"]').check({ force: true });
+    await page.getByTestId('appt-name').fill('Test Visitor');
+    await page.getByTestId('appt-phone').fill('+91 98765 43210');
+    await page.getByTestId('appt-email').fill('visitor@example.com');
+    await page.getByTestId('appt-submit').click();
+    await page.getByText('Demo mode · not sent, not booked').waitFor({ timeout: 8000 });
+    assert(!(await page.getByText(/confirmed appointment|booking confirmed/i).isVisible().catch(() => false)), 'claimed a confirmation');
+    await page.screenshot({ path: `${OUT}/06c-appointment-demo.png` });
+    await page.keyboard.press('Escape');
+  });
+
+  await check('try-on: camera permission refused shows a clear fallback and loads nothing', async () => {
+    const cdn = [];
+    page.on('request', (r) => { if (/jsdelivr|mediapipe|storage\.googleapis/.test(r.url())) cdn.push(r.url()); });
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'product', sku: 'ISH-E02' }));
+    await waitIdle(page);
+    await page.getByTestId('try-on-open').click();
+    await page.getByTestId('try-on').waitFor();
+    assert(await page.getByTestId('try-on-scale-note').isVisible(), 'scale note missing');
+    await page.getByTestId('try-on-start').click();
+    await page.getByTestId('try-on-fallback').waitFor({ timeout: 10000 });
+    const st = await page.getByTestId('try-on-status').getAttribute('data-status');
+    assert(st === 'denied' || st === 'unavailable', `status ${st}`);
+    assert(cdn.length === 0, `fetched ${cdn[0]}`);
+    metrics.tryOnDeniedStatus = st;
+    await page.screenshot({ path: `${OUT}/06d-try-on-denied.png` });
+    await page.getByRole('button', { name: 'Back to the piece' }).click();
+    await page.getByTestId('product-panel').waitFor();
+    await page.keyboard.press('Escape');
+    await waitIdle(page);
+  });
+
   await check('Buy Now walks to the cashier, shows the order, and stays honest in demo mode', async () => {
     await page.getByTestId('open-finder').click();
     await page.getByTestId('finder-input').fill('ISH-R04');
@@ -152,10 +291,18 @@ console.log('Desktop 3D (1440x900)');
     assert(await page.getByTestId('demo-banner').isVisible(), 'demo banner missing');
     assert((await page.getByTestId('subtotal').textContent()).includes('6,400'), 'subtotal');
     await canvasNotBlank(page, '07-cashier.png');
+    metrics.drawCallsCashier = await page.evaluate(() => window.__isheRenderInfo());
+    assert((await page.getByTestId('cashier-greeting').textContent()).includes('Welcome to the counter'), 'cashier greeting');
+    await page.getByTestId('gift-wrap').check();
+    await page.getByTestId('gift-note').fill('Happy anniversary');
+    await page.getByTestId('engraving').fill('A & R');
+    assert((await page.getByTestId('ring-size-link').getAttribute('href')) === '/ring-size-guide', 'ring guide link');
     const url = page.url();
     await page.getByTestId('proceed-checkout').click();
     await page.getByText('Demo mode · no purchase made').waitFor({ timeout: 8000 });
     assert(page.url() === url, 'navigated away in demo mode');
+    const extras = await page.getByTestId('demo-extras').textContent();
+    assert(/Yes/.test(extras) && /Happy anniversary/.test(extras) && /A & R/.test(extras) && /confirmed by the store/.test(extras), extras);
     await page.screenshot({ path: `${OUT}/08-cashier-demo.png` });
   });
 
@@ -179,7 +326,41 @@ console.log('Desktop 3D (1440x900)');
     assert(s.cart.some((l) => l.sku === 'ISH-N02') && s.phase === 'outside', 'cart not persisted / entrance skipped');
   });
 
+  await check('share link: encodes the Jewel Box and shows "Shared selection" only after the entrance', async () => {
+    await waitReady(page);
+    await page.evaluate(() => { const s = window.__ishe.getState(); s.addToCart('ISH-E02', 2); });
+    await page.getByTestId('open-box').click();
+    await page.getByTestId('box-share').click();
+    const link = await page.getByTestId('share-link').inputValue();
+    const box = new URL(link).searchParams.get('box');
+    assert(/ISH-N02/.test(box) && /ISH-E02\*2/.test(box), `box=${box}`);
+    await page.keyboard.press('Escape');
+    const other = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const p2 = await other.newPage();
+    await p2.goto(`${link}&mode=3d`);
+    await waitReady(p2);
+    assert(!(await p2.getByTestId('shared-panel').isVisible().catch(() => false)), 'shared panel shown before entering');
+    assert((await p2.evaluate(() => window.__ishe.getState().cart.length)) === 0, 'cart changed without consent');
+    await p2.getByTestId('enter-button').click();
+    await p2.getByTestId('shared-panel').waitFor({ timeout: 30000 });
+    assert(await p2.getByTestId('shared-ISH-E02').isVisible(), 'E02 missing');
+    await p2.screenshot({ path: `${OUT}/08b-shared-selection.png` });
+    await p2.getByTestId('shared-add').click();
+    const cart = await p2.evaluate(() => window.__ishe.getState().cart);
+    assert(cart.some((l) => l.sku === 'ISH-E02' && l.qty === 2), JSON.stringify(cart));
+    await other.close();
+  });
+
+  await check('ring size guide page is printable and labelled approximate', async () => {
+    const p3 = await ctx.newPage();
+    await p3.goto(`${BASE}/ring-size-guide`);
+    await p3.getByText('Approximate · for guidance only').waitFor();
+    assert((await p3.locator('tbody tr').count()) >= 15, 'rows');
+    await p3.close();
+  });
+
   await check('combos table opens curated pairings', async () => {
+    await waitReady(page);
     await page.evaluate(() => { const s = window.__ishe.getState(); s.setEntrance(1); s.enter(); });
     await page.waitForTimeout(500);
     await page.getByTestId('choose-centre').click();
@@ -208,8 +389,8 @@ console.log('Keyboard walking and collision (3D, small viewport)');
   const ctx = await browser.newContext({ viewport: { width: 420, height: 300 } });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/?mode=3d`);
-  await page.waitForFunction(() => window.__ishe?.getState().renderMode === '3d');
-  await page.waitForTimeout(4000);
+  await waitReady(page);
+  await page.waitForTimeout(1000);
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
   await page.waitForTimeout(800);
   await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'left' }));
@@ -243,8 +424,7 @@ console.log('Every product is reachable and framed (3D)');
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/?mode=3d`);
-  await page.waitForFunction(() => window.__ishe?.getState().renderMode === '3d');
-  await page.waitForTimeout(4000);
+  await waitReady(page);
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
   await page.waitForTimeout(500);
   const skus = await page.evaluate(() => Array.from({ length: 24 }, (_, i) => ['N01','N02','N03','N04','B01','B02','B03','B04','B05','B06','E01','E02','E03','E04','E05','E06','P01','P02','R01','R02','R03','R04','R05','R06'][i]));
@@ -274,12 +454,17 @@ console.log('Reduced motion');
   await check('Enter goes straight inside and room moves are instant', async () => {
     await page.goto(`${BASE}/?mode=3d`);
     await page.waitForFunction(() => window.__ishe?.getState().reducedMotion === true);
+    await waitReady(page);
     await page.getByTestId('enter-button').click();
     await page.getByTestId('junction-chooser').waitFor({ timeout: 5000 });
     await page.getByTestId('choose-right').click();
     await page.waitForTimeout(300);
     const s = await state(page);
     assert(!s.moving && s.room === 'right', JSON.stringify(s));
+  });
+  await check('reduced motion: evening switches instantly', async () => {
+    await page.getByTestId('evening-toggle').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 1500 });
   });
   await ctx.close();
 }
@@ -291,8 +476,8 @@ console.log('Mobile 3D (390x844, touch)');
   const page = await ctx.newPage();
   await check('mobile layout: large targets, no horizontal overflow', async () => {
     await page.goto(`${BASE}/?mode=3d`);
-    await page.waitForFunction(() => window.__ishe?.getState().renderMode === '3d');
-    await page.waitForTimeout(4000);
+    await waitReady(page);
+    await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/11-mobile-exterior.png` });
     await page.getByTestId('enter-button').tap();
     await page.getByTestId('junction-chooser').waitFor({ timeout: 20000 });
@@ -317,6 +502,77 @@ console.log('Mobile 3D (390x844, touch)');
     await page.getByTestId('product-panel').waitFor();
     await waitIdle(page);
     await page.screenshot({ path: `${OUT}/13-mobile-product.png` });
+  });
+  await check('mobile: attendant greeting and tour controls fit the screen', async () => {
+    await page.keyboard.press('Escape');
+    await waitIdle(page);
+    await page.evaluate(() => { window.__ishe.getState().setReducedMotion(true); window.__ishe.getState().goTo({ kind: 'staff', id: 'right' }); });
+    await page.getByTestId('staff-panel').waitFor({ timeout: 10000 });
+    await page.screenshot({ path: `${OUT}/13b-mobile-attendant.png` });
+    await page.getByTestId('tour-everyday').tap();
+    await page.getByTestId('tour-bar').waitFor();
+    const bar = await page.getByTestId('tour-bar').boundingBox();
+    assert(bar.x >= 0 && bar.x + bar.width <= 390, `tour bar ${JSON.stringify(bar)}`);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert(overflow <= 0, `horizontal overflow ${overflow}px`);
+    await page.screenshot({ path: `${OUT}/13c-mobile-tour.png` });
+    await page.getByTestId('tour-stop').tap();
+  });
+  for (const evening of [false, true]) {
+    await page.evaluate((e) => { const s = window.__ishe.getState(); s.setEvening(e); }, evening);
+    for (const node of ['junction', 'left', 'leftBack', 'centre', 'right', 'rightBack']) {
+      await page.evaluate((n) => window.__ishe.getState().goTo({ kind: 'node', node: n }), node);
+      await page.waitForTimeout(900);
+      await page.screenshot({ path: `${OUT}/rooms-mobile-${evening ? 'evening' : 'day'}-${node}.png` });
+    }
+  }
+  await ctx.close();
+}
+
+console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(`${BASE}/?mode=3d`);
+  await waitReady(page);
+  await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
+  await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 }).catch(() => undefined);
+  await check('every room renders, day and evening, with draw calls recorded', async () => {
+    metrics.rooms = {};
+    for (const evening of [false, true]) {
+      await page.evaluate((e) => window.__ishe.getState().setEvening(e), evening);
+      const views = [
+        ...['junction', 'left', 'leftBack', 'centre', 'right', 'rightBack'].map((n) => ({ kind: 'node', node: n })),
+        { kind: 'combos' }, { kind: 'cashier' },
+        { kind: 'staff', id: 'left' }, { kind: 'staff', id: 'right' },
+      ];
+      for (const v of views) {
+        await page.evaluate((vv) => window.__ishe.getState().goTo(vv), v);
+        await page.waitForTimeout(1500);
+        const name = `${evening ? 'evening' : 'day'}-${v.node ?? (v.id ? `staff-${v.id}` : v.kind)}`;
+        await canvasNotBlank(page, `rooms-desktop-${name}.png`);
+        metrics.rooms[name] = (await page.evaluate(() => window.__isheRenderInfo())).calls;
+        await page.keyboard.press('Escape').catch(() => undefined);
+      }
+    }
+  });
+  await check('staff close-ups (cashier and consultant behind the counter)', async () => {
+    await page.evaluate(() => window.__ishe.getState().setEvening(false));
+    for (const [id, x] of [['cashier', -0.5], ['consultant', 0.8]]) {
+      await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'cashier' }));
+      await page.waitForTimeout(800);
+      const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.3, -13.38), x);
+      assert(pt.visible, `${id} not visible from the cashier`);
+      await page.screenshot({ path: `${OUT}/staff-${id}.png`, clip: { x: Math.max(0, pt.x - 260), y: Math.max(0, pt.y - 300), width: 520, height: 600 } });
+    }
+    for (const id of ['left', 'right']) {
+      await page.evaluate((i) => window.__ishe.getState().goTo({ kind: 'staff', id: i }), id);
+      await page.waitForTimeout(1500);
+      const x = id === 'left' ? -5.6 : 5.6;
+      const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.1, -4.6), x);
+      await page.screenshot({ path: `${OUT}/staff-attendant-${id}.png`, clip: { x: Math.max(0, pt.x - 300), y: 0, width: 600, height: 900 } });
+      await page.keyboard.press('Escape');
+    }
   });
   await ctx.close();
 }
@@ -365,11 +621,26 @@ console.log('No WebGL (lite fallback)');
     await page.getByText('Demo mode · no purchase made').waitFor({ timeout: 8000 });
     await page.screenshot({ path: `${OUT}/17-lite-cashier.png` });
   });
+  await check('lite: no staff models, guided tour still available, evening tint', async () => {
+    await page.getByRole('button', { name: 'Return to the showroom' }).click();
+    assert(await page.evaluate(() => typeof window.__isheStaff === 'undefined'), 'staff hook present in lite');
+    assert(await page.evaluate(() => !document.querySelector('canvas')), 'canvas in lite');
+    await page.getByTestId('talk-staff').click();
+    await page.getByTestId('staff-panel').waitFor();
+    await page.getByTestId('tour-festive').click();
+    await page.getByTestId('tour-bar').waitFor();
+    await page.getByTestId('tour-next').click();
+    await page.getByTestId('tour-stop').click();
+    await page.getByTestId('evening-toggle').click();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="lite-evening"]')).opacity === '1', null, { timeout: 3000 });
+    await page.screenshot({ path: `${OUT}/17b-lite-evening.png` });
+  });
   await check('lite: no page errors', async () => { assert(errors.length === 0, errors.join(' | ')); });
   await b2.close();
 }
 
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
-fs.writeFileSync(`${OUT}/results.json`, JSON.stringify(results, null, 2));
+fs.writeFileSync(`${OUT}/results.json`, JSON.stringify({ results, metrics }, null, 2));
+console.log('METRICS', JSON.stringify(metrics));
 process.exit(failed.length ? 1 : 0);
