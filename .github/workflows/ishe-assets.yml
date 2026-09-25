@@ -98,7 +98,8 @@ jobs:
           git add public/bake bake/raw bake/layout.json public/lite
           if git diff --cached --quiet; then echo "No asset changes"; exit 0; fi
           git commit -m "Re-bake lighting and re-capture lite stills (CI)"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
+          # Generated files: if another run touched them meanwhile, keep this run's output.
+          git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: End-to-end checks
@@ -110,6 +111,7 @@ jobs:
       - name: Publish screenshots to qa-screenshots
         if: always()
         run: |
+          mkdir -p e2e/output
           node scripts/ci-screenshots.mjs e2e/output /tmp/qa
           cp e2e/output/results.json e2e/output/log.txt /tmp/qa/ 2>/dev/null || true
           echo "${GITHUB_SHA} ${GITHUB_REF_NAME} e2e=${{ steps.e2e.outcome }}" > /tmp/qa/RUN.txt
