@@ -10,6 +10,8 @@ export default function TopBar() {
   const sound = useShowroom((s) => s.sound);
   const setSound = useShowroom((s) => s.setSound);
   const openDrawer = useShowroom((s) => s.openDrawer);
+  const evening = useShowroom((s) => s.evening);
+  const setEvening = useShowroom((s) => s.setEvening);
   const inside = phase === 'inside';
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between p-3 md:p-4">
@@ -22,8 +24,13 @@ export default function TopBar() {
         {inside && (
           <IconButton label="Find a piece" onClick={() => openDrawer('finder')} data-testid="open-finder"><Icon name="search" /></IconButton>
         )}
-        <IconButton label={`Saved pieces (${saved})`} badge={saved} onClick={() => openDrawer('jewelBox')}><Icon name="heart" /></IconButton>
+        {/* Saved pieces are also a tab in the Jewel Box; the shortcut is hidden on narrow phones. */}
+        <IconButton label={`Saved pieces (${saved})`} badge={saved} onClick={() => openDrawer('jewelBox')} className="!hidden sm:!inline-grid"><Icon name="heart" /></IconButton>
         <IconButton label={`Jewel Box (${count} items)`} badge={count} onClick={() => openDrawer('jewelBox')} data-testid="open-box"><Icon name="box" /></IconButton>
+        <IconButton label="Book a private appointment" onClick={() => openDrawer('appointment')} data-testid="open-appointment"><Icon name="calendar" /></IconButton>
+        <IconButton label="Evening mode" aria-pressed={evening} onClick={() => setEvening(!evening)} data-testid="evening-toggle">
+          <Icon name={evening ? 'sun' : 'moon'} />
+        </IconButton>
         <IconButton label={sound ? 'Turn sound off' : 'Turn sound on'} aria-pressed={sound} onClick={() => { setSound(!sound); setAmbience(!sound); }} data-testid="sound-toggle">
           <Icon name={sound ? 'soundOn' : 'soundOff'} />
         </IconButton>

@@ -410,3 +410,29 @@ export function buildPiece(product: Product, opts: { riser?: number } = {}): THR
   root.userData.sku = product.sku;
   return root;
 }
+
+/**
+ * The piece alone (no bust, stand or cushion) for the camera try-on, in metres.
+ * Earrings: one earring with the hook at the origin, hanging down -y.
+ * Necklaces and pendants: centred on x/z, with the top of the chain at y = 0.
+ */
+export function buildTryOnPiece(product: Product): { group: THREE.Group; kind: 'earring' | 'necklace' } | null {
+  const metal = toneMat(product.tone);
+  const p = new Parts();
+  if (product.category === 'earring') {
+    earringOne[product.sku]?.(p, metal);
+    return { group: p.build(), kind: 'earring' };
+  }
+  if (product.category === 'necklace') necklaces[product.sku]?.(p, metal);
+  else if (product.category === 'pendant') pendants[product.sku]?.(p, metal);
+  else return null;
+  const g = p.build();
+  const box = new THREE.Box3().setFromObject(g);
+  const c = box.getCenter(new THREE.Vector3());
+  g.position.set(-c.x, -box.max.y, -c.z);
+  const wrap = new THREE.Group();
+  wrap.add(g);
+  // Pendants are modelled on a smaller bust; bring them back to a wearable size.
+  if (product.category === 'pendant') wrap.scale.setScalar(1 / PENDANT_SCALE);
+  return { group: wrap, kind: 'necklace' };
+}

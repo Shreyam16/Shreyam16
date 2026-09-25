@@ -55,6 +55,12 @@ const paths: Record<string, ReactNode> = {
   turnRight: <path d="M15 7l5 5-5 5M20 12h-9a6 6 0 0 0-6 6" />,
   map: <path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z M9 4v14 M15 6v14" />,
   back: <path d="M10 6l-6 6 6 6M4 12h11a5 5 0 0 1 0 10h-2" />,
+  moon: <path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z" />,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" /></>,
+  calendar: <><rect x="4" y="5.5" width="16" height="14.5" /><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" /></>,
+  share: <><circle cx="6" cy="12" r="2.2" /><circle cx="18" cy="6" r="2.2" /><circle cx="18" cy="18" r="2.2" /><path d="M8 11l8-4M8 13l8 4" /></>,
+  camera: <><path d="M4 8h3.5l1.5-2h6l1.5 2H20v11H4z" /><circle cx="12" cy="13.5" r="3.5" /></>,
+  chat: <path d="M5 5h14v10H10l-4 4v-4H5z" />,
 };
 
 export function Icon({ name, className = 'h-5 w-5', filled }: { name: keyof typeof paths | string; className?: string; filled?: boolean }) {

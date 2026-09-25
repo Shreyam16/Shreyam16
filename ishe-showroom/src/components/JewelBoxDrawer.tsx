@@ -2,11 +2,22 @@
 import { useState } from 'react';
 import { PRODUCT_BY_SKU, formatINR } from '@/data/catalogue';
 import { cartCount, useShowroom } from '@/store/showroom';
+import { shareUrl } from '@/lib/share';
 import { Button, Icon, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
 
 export default function JewelBoxDrawer({ announce }: { announce: (m: string) => void }) {
   const s = useShowroom();
   const [tab, setTab] = useState<'box' | 'saved'>('box');
+  const [link, setLink] = useState<string | null>(null);
+  async function share() {
+    const url = shareUrl(window.location.origin, s.cart);
+    setLink(url);
+    try {
+      if (navigator.share && window.matchMedia('(pointer: coarse)').matches) { await navigator.share({ title: 'My ISHÉ Jewel Box', url }); return; }
+      await navigator.clipboard.writeText(url);
+      announce('Share link copied');
+    } catch { /* the link stays visible to copy by hand */ }
+  }
   const close = () => s.openDrawer(null);
   const subtotal = s.cart.reduce((n, l) => n + (PRODUCT_BY_SKU[l.sku]?.priceINR ?? 0) * l.qty, 0);
   return (
@@ -53,6 +64,16 @@ export default function JewelBoxDrawer({ announce }: { announce: (m: string) => 
                 onClick={() => s.startCheckout({ lines: s.cart.map((l) => ({ ...l })), source: 'jewelBox' })}>
                 Take to the cashier
               </Button>
+              <Button variant="secondary" className="mt-2 w-full" onClick={share} data-testid="box-share">
+                <Icon name="share" className="h-4 w-4" /> Share this Jewel Box
+              </Button>
+              {link && (
+                <div className="mt-2">
+                  <label htmlFor="share-link" className="font-ui text-[11px] text-ink/60">Link to this selection (pieces and quantities only)</label>
+                  <input id="share-link" readOnly value={link} onFocus={(e) => e.currentTarget.select()} data-testid="share-link"
+                    className="mt-1 block min-h-[40px] w-full border border-ink/25 bg-paper px-2 font-ui text-[12px]" />
+                </div>
+              )}
             </>
           ) : (
             <p className="editorial mt-6 text-[19px] italic text-ink/60">Your Jewel Box is empty. Choose “Add to Jewel Box” at any display.</p>

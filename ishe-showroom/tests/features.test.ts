@@ -84,7 +84,7 @@ describe('Jewel Box share links', () => {
 
 describe('appointments', () => {
   const today = new Date('2026-09-25T10:00:00');
-  const good = { date: '2026-10-02', slot: '14:00', skus: ['ISH-N01', 'ISH-X99'], name: 'A Visitor', phone: '+91 98765 43210', email: 'a@example.com', notes: 'Bridal' };
+  const good = { date: '2026-10-02', slot: '14:00' as const, skus: ['ISH-N01', 'ISH-X99'], name: 'A Visitor', phone: '+91 98765 43210', email: 'a@example.com', notes: 'Bridal' };
   it('validates fields and drops unknown SKUs', () => {
     const v = validateAppointment(good, today);
     expect(v.ok && v.value.skus).toEqual(['ISH-N01']);

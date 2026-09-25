@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { CATEGORY_LABEL, OCCASION_LABEL, PRODUCTS, PRODUCT_BY_SKU, ROOMS, formatINR } from '@/data/catalogue';
 import { useShowroom } from '@/store/showroom';
 import { Button, Icon, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
+import { isTryOnCategory } from '@/lib/tryon';
 
 export default function ProductPanel({ sku, announce }: { sku: string; announce: (msg: string) => void }) {
   const product = PRODUCT_BY_SKU[sku];
@@ -13,6 +14,7 @@ export default function ProductPanel({ sku, announce }: { sku: string; announce:
   const saved = useShowroom((s) => s.saved.includes(sku));
   const startCheckout = useShowroom((s) => s.startCheckout);
   const moving = useShowroom((s) => s.moving);
+  const openTryOn = useShowroom((s) => s.openTryOn);
 
   const roomItems = useMemo(() => PRODUCTS.filter((p) => p.room === product.room), [product.room]);
   const idx = roomItems.findIndex((p) => p.sku === sku);
@@ -59,6 +61,12 @@ export default function ProductPanel({ sku, announce }: { sku: string; announce:
             <Icon name="heart" filled={saved} />
           </button>
         </div>
+
+        {isTryOnCategory(product.category) && (
+          <Button variant="ghost" className="mt-2 w-full border border-ink/15" onClick={() => openTryOn(sku)} data-testid="try-on-open">
+            <Icon name="camera" className="h-4 w-4" /> Try on with your camera
+          </Button>
+        )}
 
         <section className="mt-7" aria-labelledby="pair-heading">
           <h3 id="pair-heading" className="plaque-label text-ink/60">Pair it with</h3>

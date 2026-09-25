@@ -67,6 +67,7 @@ export function RoomNav() {
   const room = useShowroom((s) => s.room);
   const goTo = useShowroom((s) => s.goTo);
   const moving = useShowroom((s) => s.moving);
+  const mode = useShowroom((s) => s.renderMode);
   const [open, setOpen] = useState(false);
   const here = room === 'foyer' ? [] : PRODUCTS.filter((p) => p.room === room);
   const pick = (r: RoomId | 'foyer') => goTo({ kind: 'node', node: ROOM_ENTRY[r] });
@@ -97,6 +98,10 @@ export function RoomNav() {
                     {st.label}
                   </button>
                 ))}
+                <button type="button" onClick={() => goTo({ kind: 'staff', id: room === 'centre' ? 'consultant' : room })} data-testid="talk-staff"
+                  className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 px-2.5 font-ui text-[11px] uppercase tracking-[0.18em] text-ink/80 underline-offset-4 hover:underline">
+                  <Icon name="chat" className="h-3.5 w-3.5" /> {mode === 'lite' ? 'Guided tour' : room === 'centre' ? 'Ask the consultant' : 'Ask the attendant'}
+                </button>
                 <button type="button" aria-expanded={open} aria-controls="displays-here" onClick={() => setOpen((o) => !o)}
                   className="ml-auto min-h-[40px] shrink-0 border border-ink/25 px-3 font-ui text-[11px] uppercase tracking-[0.18em] hover:border-ink" data-testid="displays-toggle">
                   Displays here ({here.length})

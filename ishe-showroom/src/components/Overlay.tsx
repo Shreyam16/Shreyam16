@@ -12,6 +12,14 @@ import CashierPanel from './CashierPanel';
 import FinderDrawer from './FinderDrawer';
 import JewelBoxDrawer from './JewelBoxDrawer';
 import HelpDialog from './HelpDialog';
+import StaffPanel from './StaffPanel';
+import TourBar from './TourBar';
+import AppointmentDrawer from './AppointmentDrawer';
+import dynamic from 'next/dynamic';
+import SharedPanel from './SharedPanel';
+
+// three.js and the camera code load only when a visitor opens the try-on.
+const TryOnDialog = dynamic(() => import('./TryOnDialog'), { ssr: false });
 
 export default function Overlay({ slow, onDismissSlow }: { slow: boolean; onDismissSlow: () => void }) {
   const phase = useShowroom((s) => s.phase);
@@ -21,6 +29,8 @@ export default function Overlay({ slow, onDismissSlow }: { slow: boolean; onDism
   const mode = useShowroom((s) => s.renderMode);
   const liteReason = useShowroom((s) => s.liteReason);
   const sound = useShowroom((s) => s.sound);
+  const tryOn = useShowroom((s) => s.tryOn);
+  const shared = useShowroom((s) => s.shared);
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const [coarse, setCoarse] = useState(false);
@@ -65,13 +75,19 @@ export default function Overlay({ slow, onDismissSlow }: { slow: boolean; onDism
       )}
 
       <AnimatePresence>
-        {inside && view.kind === 'product' && <ProductPanel key={`p-${view.sku}`} sku={view.sku} announce={announce} />}
+        {inside && view.kind === 'product' && !tryOn && <ProductPanel key={`p-${view.sku}`} sku={view.sku} announce={announce} />}
+        {inside && tryOn && <TryOnDialog key={`t-${tryOn}`} sku={tryOn} />}
+        {inside && view.kind === 'staff' && !moving && <StaffPanel key={`s-${view.id}`} id={view.id} />}
+        {inside && shared && view.kind === 'node' && !moving && !drawer && <SharedPanel key="shared" announce={announce} />}
+        {drawer === 'appointment' && <AppointmentDrawer key="appointment" />}
         {inside && view.kind === 'combos' && !moving && <CombosPanel key="combos" announce={announce} />}
         {inside && view.kind === 'cashier' && !moving && <CashierPanel key="cashier" />}
         {drawer === 'finder' && <FinderDrawer key="finder" />}
         {drawer === 'jewelBox' && <JewelBoxDrawer key="box" announce={announce} />}
         {drawer === 'help' && <HelpDialog key="help" />}
       </AnimatePresence>
+
+      {inside && <TourBar />}
 
       {inside && view.kind === 'cashier' && moving && (
         <p role="status" className="glass-panel fixed left-1/2 top-20 z-30 -translate-x-1/2 px-4 py-2 font-ui text-[12px] uppercase tracking-[0.2em]" data-testid="walking-to-cashier">

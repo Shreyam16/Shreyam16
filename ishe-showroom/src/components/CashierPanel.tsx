@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { STAFF_BY_ID } from '@/scene/features';
 import { PRODUCT_BY_SKU, formatINR } from '@/data/catalogue';
 import { useShowroom } from '@/store/showroom';
 import { Button, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
@@ -13,6 +14,11 @@ export default function CashierPanel() {
   const back = useShowroom((s) => s.back);
   const [status, setStatus] = useState<Status>(null);
   const [outcome, setOutcome] = useState<Outcome>({ kind: 'idle' });
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftNote, setGiftNote] = useState('');
+  const [engraving, setEngraving] = useState('');
+  const uid = useId();
+  const mode = useShowroom((s) => s.renderMode);
 
   useEffect(() => {
     let alive = true;
@@ -34,7 +40,7 @@ export default function CashierPanel() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lines: lines.map((l) => ({ sku: l.sku, quantity: l.qty })) }),
+        body: JSON.stringify({ lines: lines.map((l) => ({ sku: l.sku, quantity: l.qty })), extras: { giftWrap, giftNote, engraving } }),
       });
       const json = await res.json().catch(() => ({}));
       if (json.mode === 'live' && typeof json.checkoutUrl === 'string' && json.checkoutUrl.startsWith('https://')) {
@@ -54,6 +60,9 @@ export default function CashierPanel() {
       <SheetHeader eyebrow="Cashier" title="Your order" onClose={back} closeLabel="Return" />
       <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         {moving && <p className="mt-4 font-ui text-[12px] text-ink/60" role="status">Walking you to the cashier counter…</p>}
+        <p className="editorial mt-4 text-[19px] italic leading-snug text-ink/80" data-testid="cashier-greeting">
+          {mode === '3d' ? <span className="plaque-label not-italic text-ink/60">{STAFF_BY_ID.cashier.role} · </span> : null}“{STAFF_BY_ID.cashier.greeting}”
+        </p>
 
         {!live && (
           <div className="mt-4 border border-ink/80 bg-paper p-3" data-testid="demo-banner">
@@ -85,6 +94,28 @@ export default function CashierPanel() {
         </div>
         <p className="mt-1 font-ui text-[11px] text-ink/55">Taxes, shipping and final prices are confirmed by Shopify at checkout.</p>
 
+        <section className="mt-5 space-y-3 border-t border-ink/10 pt-4" aria-labelledby={`${uid}-extras`} data-testid="cashier-extras">
+          <h3 id={`${uid}-extras`} className="plaque-label text-ink/60">Finishing touches</h3>
+          <label className="flex min-h-[44px] cursor-pointer items-center justify-between gap-3 font-ui text-[14px]">
+            <span>Gift wrapping</span>
+            <input type="checkbox" role="switch" aria-checked={giftWrap} checked={giftWrap} onChange={(e) => setGiftWrap(e.target.checked)} className="h-5 w-5 accent-ink" data-testid="gift-wrap" />
+          </label>
+          <div>
+            <label htmlFor={`${uid}-note`} className="font-ui text-[13px] text-ink/80">Gift note <span className="text-ink/50">(optional, up to 240 characters)</span></label>
+            <textarea id={`${uid}-note`} rows={2} maxLength={240} value={giftNote} onChange={(e) => setGiftNote(e.target.value)} data-testid="gift-note"
+              className="mt-1 block w-full border border-ink/25 bg-paper px-3 py-2 font-ui text-[14px] focus:border-ink" />
+          </div>
+          <div>
+            <label htmlFor={`${uid}-engrave`} className="font-ui text-[13px] text-ink/80">Engraving <span className="text-ink/50">(optional, up to 30 characters)</span></label>
+            <input id={`${uid}-engrave`} maxLength={30} value={engraving} onChange={(e) => setEngraving(e.target.value)} aria-describedby={`${uid}-engrave-help`} data-testid="engraving"
+              className="mt-1 block min-h-[44px] w-full border border-ink/25 bg-paper px-3 font-ui text-[14px] focus:border-ink" />
+            <p id={`${uid}-engrave-help`} className="mt-1 font-ui text-[11px] text-ink/55">A request only: the store confirms whether and how a piece can be engraved before anything is done.</p>
+          </div>
+          <a href="/ring-size-guide" target="_blank" rel="noopener" className="inline-flex min-h-[40px] items-center gap-2 font-ui text-[12px] underline underline-offset-4" data-testid="ring-size-link">
+            Ring size guide (printable, approximate)
+          </a>
+        </section>
+
         <div className="mt-5 grid gap-2">
           <Button variant="primary" size="lg" onClick={proceed} disabled={moving || outcome.kind === 'working' || outcome.kind === 'redirecting' || !lines.length} data-testid="proceed-checkout">
             {outcome.kind === 'working' ? 'Preparing checkout…' : outcome.kind === 'redirecting' ? 'Opening Shopify checkout…' : live ? 'Continue to secure checkout' : 'Continue (demo)'}
@@ -97,6 +128,12 @@ export default function CashierPanel() {
             <div className="border-l-2 border-ink pl-3">
               <p className="plaque-label">Demo mode · no purchase made</p>
               <p className="mt-1 font-ui text-[13px] leading-snug text-ink/80">{outcome.reason}</p>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-ui text-[12px] text-ink/80" data-testid="demo-extras">
+                <dt className="text-ink/55">Gift wrap</dt><dd>{giftWrap ? 'Yes' : 'No'}</dd>
+                <dt className="text-ink/55">Gift note</dt><dd className="break-words">{giftNote.trim() || 'None'}</dd>
+                <dt className="text-ink/55">Engraving</dt><dd className="break-words">{engraving.trim() ? `“${engraving.trim()}” (request, confirmed by the store)` : 'None'}</dd>
+              </dl>
+              <p className="mt-1 font-ui text-[11px] text-ink/50">With Shopify connected, these go to the order as cart notes for the store.</p>
             </div>
           )}
           {outcome.kind === 'error' && (

@@ -5,6 +5,8 @@ import { useShowroom } from '@/store/showroom';
 import { detectRenderMode } from '@/lib/capabilities';
 import Entrance from './Entrance';
 import Overlay from './Overlay';
+import LoadingScreen from './LoadingScreen';
+import { decodeBox } from '@/lib/share';
 
 const Showroom3D = dynamic(() => import('@/scene/Showroom3D'), { ssr: false });
 const LiteShowroom = dynamic(() => import('./LiteShowroom'), { ssr: false });
@@ -20,7 +22,11 @@ export default function Experience() {
     // Exposed for automated QA (e2e/run.mjs); read-only use.
     (window as unknown as { __ishe?: typeof useShowroom }).__ishe = useShowroom;
     // `?capture=1` hides the interface so scripts/render-lite-backdrops.mjs can grab clean frames.
-    setCapture(new URLSearchParams(window.location.search).get('capture') === '1');
+    const params = new URLSearchParams(window.location.search);
+    setCapture(params.get('capture') === '1');
+    // A shared Jewel Box link is shown after the entrance; nothing is added automatically.
+    const shared = decodeBox(params.get('box'));
+    if (shared.length) useShowroom.getState().setShared(shared);
     const d = detectRenderMode(window.location.search);
     setRenderMode(d.mode, d.reason);
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -32,11 +38,7 @@ export default function Experience() {
 
   return (
     <main className="relative min-h-screen" data-render-mode={mode}>
-      {mode === 'detecting' && (
-        <div className="fixed inset-0 grid place-items-center bg-[#1b2330]">
-          <p className="plaque-label text-bone/70">Preparing the showroom</p>
-        </div>
-      )}
+      {!capture && <LoadingScreen />}
       {mode === '3d' && (
         <>
           <Showroom3D onSlow={() => setSlow(true)} />

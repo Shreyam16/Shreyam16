@@ -34,6 +34,7 @@ function backdropFor(view: View): string {
 
 function EntranceStage() {
   const p = useShowroom((s) => s.entrance);
+  const ready = () => { const s = useShowroom.getState(); s.setLoadProgress(1); s.setSceneReady(); };
   // Each frame owns a span of the scroll; neighbours cross-fade only briefly at the boundary.
   const n = ENTRANCE_FRAMES.length;
   return (
@@ -48,7 +49,7 @@ function EntranceStage() {
         const local = Math.min(1, Math.max(0, (p - start) / Math.max(0.01, Math.min(end, 1) - Math.max(start, 0))));
         return (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={src} src={src} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform"
+          <img key={src} src={src} alt="" onLoad={i === 0 ? ready : undefined} onError={i === 0 ? ready : undefined} className="absolute inset-0 h-full w-full object-cover will-change-transform"
             style={{ opacity, transform: `scale(${1 + local * 0.06})`, zIndex: i }} />
         );
       })}
@@ -90,6 +91,7 @@ export default function LiteShowroom() {
   const phase = useShowroom((s) => s.phase);
   const view = useShowroom((s) => s.view);
   const setRoom = useShowroom((s) => s.setRoom);
+  const evening = useShowroom((s) => s.evening);
 
   // In 3D the camera rig reports the room; here it follows the requested view.
   useEffect(() => {
@@ -114,6 +116,9 @@ export default function LiteShowroom() {
           </AnimatePresence>
         </div>
       )}
+      {/* Stills are captured in daylight; evening is approximated with a dusk tint. */}
+      <div aria-hidden data-testid="lite-evening"
+        className={`pointer-events-none fixed inset-0 z-[1] bg-[linear-gradient(180deg,rgba(14,18,40,0.62),rgba(70,44,40,0.4))] mix-blend-multiply transition-opacity duration-700 ${evening ? 'opacity-100' : 'opacity-0'}`} />
       {phase === 'inside' && <Rail />}
     </div>
   );
