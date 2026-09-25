@@ -53,12 +53,12 @@ def material(name, albedo, emit=None, strength=0.0):
     return m
 
 # Linear albedo of the scene's finishes.
-WHITE = material('ivory', (0.8, 0.75, 0.67))          # warm ivory limewash
-FLOOR = material('travertine', (0.6, 0.52, 0.41))     # honed travertine
+WHITE = material('white', (0.86, 0.84, 0.8))          # warm white limewash
+FLOOR = material('terrazzo', (0.74, 0.71, 0.66))     # polished white terrazzo
 BLACK = material('black', (0.04, 0.04, 0.04))         # black lacquer
 WALNUT = material('walnut', (0.13, 0.07, 0.035))
 BRONZE = material('bronze', (0.22, 0.15, 0.09))
-TAUPE = material('taupe', (0.13, 0.1, 0.085))
+TAUPE = material('champagne', (0.38, 0.29, 0.18))    # champagne suede decks
 BOUCLE = material('boucle', (0.7, 0.65, 0.57))
 
 def box(x0, y0, z0, x1, y1, z1, mat):
@@ -131,15 +131,15 @@ for x0, x1, y0, y1 in [(-7.6, -6.5, 0, H), (-6.5, -2.2, 0, 0.45), (-6.5, -2.2, 3
     box(x0, y0, -0.1, x1, y1, 0.1, WHITE)
 
 F = L['features']
-# Fluted walnut panelling behind the arm vitrines.
+# White pilasters between the arm vitrines.
 for s in (-1, 1):
-    x_in = s * (L['HALF_W'] - 0.13)
-    box(min(s * 7.4, x_in), 0.1, -8.2, max(s * 7.4, x_in), 3.1, -1.0, WALNUT)
-# Salon: walnut back wall (ivory centre panel), lowered bronze tray with walnut fascia.
+    for z in F['pilasterZ']:
+        x_in = s * (L['HALF_W'] - 0.1 - F['pilaster']['d'])
+        box(min(s * 7.4, x_in), 0.0, z - F['pilaster']['w'] / 2, max(s * 7.4, x_in), H, z + F['pilaster']['w'] / 2, WHITE)
+# Salon: black lacquered feature wall, lowered white tray.
 sal = F['salon']
-for x0, x1 in [(-2.6, -1.08), (1.08, 2.6)]:
-    box(x0, 0.1, -13.9, x1, sal['trayY'], -13.87, WALNUT)
-tray = box(sal['x0'], sal['trayY'], sal['z0'], sal['x1'], H, sal['z1'], BRONZE)
+box(-2.6, 0.1, -13.9, 2.6, sal['trayY'], -13.87, BLACK)
+tray = box(sal['x0'], sal['trayY'], sal['z0'], sal['x1'], H, sal['z1'], WHITE)
 # Lounge and try-on mirrors.
 for a in F['armchairs']:
     box(a['x'] - a['w'] / 2, 0, a['z'] - a['d'] / 2, a['x'] + a['w'] / 2, 0.6, a['z'] + a['d'] / 2, BOUCLE)

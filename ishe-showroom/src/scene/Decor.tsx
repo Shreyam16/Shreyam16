@@ -2,7 +2,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { mats } from './materials';
-import { artworkTexture } from './materials';
 import { ARTWORK, CONSOLE, DOWNLIGHTS, ceilingAt } from './features';
 import Furniture from './Furniture';
 import { CEILING } from './layout';
@@ -86,13 +85,12 @@ function Console() {
 
 function Artwork() {
   const a = ARTWORK;
-  const tex = useMemo(artworkTexture, []);
   return (
     <group position={[a.x, a.y, a.z]} rotation={[0, -Math.PI / 2, 0]}>
-      <Box size={[a.w + 0.08, a.h + 0.08, 0.04]} pos={[0, 0, 0.02]} mat="blackSatin" />
-      <mesh position={[0, 0, 0.042]}>
+      {/* Gold-leaf panel floating off the wall on a slim bronze tray frame. */}
+      <Box size={[a.w + 0.04, a.h + 0.04, 0.04]} pos={[0, 0, 0.02]} mat="bronze" />
+      <mesh position={[0, 0, 0.042]} material={mats().goldLeaf}>
         <planeGeometry args={[a.w, a.h]} />
-        <meshStandardMaterial map={tex} roughness={0.95} />
       </mesh>
       {/* Picture light. */}
       <Box size={[0.5, 0.03, 0.03]} pos={[0, a.h / 2 + 0.12, 0.12]} mat="blackMetal" />

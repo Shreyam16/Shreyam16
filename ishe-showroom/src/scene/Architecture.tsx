@@ -7,7 +7,7 @@ import {
   BENCHES, CEILING, DEPTH, FRONT_DOOR, HALF_W, PARTITION_END_Z, PARTITION_X, SIDE_DOOR, CASHIER,
 } from './layout';
 import { useShowroom } from '@/store/showroom';
-import { CURTAINS, SALON, THRESHOLDS } from './features';
+import { CURTAINS, PILASTER, PILASTER_Z, SALON, THRESHOLDS } from './features';
 import { DISPLAYS } from './layout';
 import Merged from './Merged';
 import Decor from './Decor';
@@ -35,7 +35,35 @@ function Span({ a, b, mat }: { a: V3; b: V3; mat: MatKey }) {
 const FACADE_H = 4.7;
 const WIN = { x0: 2.2, x1: 6.5, y0: 0.45, y1: 3.1 };
 
-function Facade({ plaque }: { plaque: THREE.Texture }) {
+/** The official wordmark recoloured white (same artwork, alpha kept), for dark signs and walls. */
+function whiteWordmark(src: THREE.Texture) {
+  const img = src.image as HTMLImageElement;
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(img, 0, 0);
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+const WORDMARK_ASPECT = 315 / 774;
+
+/** Rusticated limestone: shallow horizontal joints every 45 cm across a facade panel. */
+function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: number }) {
+  const rows: number[] = [];
+  for (let y = Math.ceil((y0 + 0.05) / 0.45) * 0.45; y < y1 - 0.05; y += 0.45) rows.push(y);
+  return (
+    <group>
+      {rows.map((y) => <Box key={y} size={[Math.abs(x1 - x0), 0.014, 0.01]} pos={[(x0 + x1) / 2, y, 0.103]} mat="limestoneJoint" />)}
+    </group>
+  );
+}
+
+function Facade({ logo }: { logo: THREE.Texture }) {
   const hw = HALF_W + 0.1;
   const dw = FRONT_DOOR.halfWidth;
   const z0 = -0.1, z1 = 0.1;
@@ -48,21 +76,24 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
           <Span a={[s * WIN.x0, 0, z0]} b={[s * dw, FACADE_H, z1]} mat="wallExterior" />
           <Span a={[s * WIN.x1, 0, z0]} b={[s * WIN.x0, WIN.y0, z1]} mat="wallExterior" />
           <Span a={[s * WIN.x1, WIN.y1, z0]} b={[s * WIN.x0, FACADE_H, z1]} mat="wallExterior" />
+          <Joints x0={s * hw} x1={s * (WIN.x1 + 0.04)} y0={0.3} y1={FACADE_H - 0.1} />
+          <Joints x0={s * (WIN.x0 - 0.04)} x1={s * (dw + 0.1)} y0={0.3} y1={FACADE_H - 0.1} />
+          <Joints x0={s * (WIN.x1 + 0.04)} x1={s * (WIN.x0 - 0.04)} y0={WIN.y1 + 0.04} y1={FACADE_H - 0.1} />
           {/* Window glass and black frame. */}
           <mesh position={[s * (WIN.x0 + WIN.x1) / 2, (WIN.y0 + WIN.y1) / 2, 0]} material={mats().doorGlass}>
             <planeGeometry args={[WIN.x1 - WIN.x0, WIN.y1 - WIN.y0]} />
           </mesh>
           <Frame x={s * (WIN.x0 + WIN.x1) / 2} y={(WIN.y0 + WIN.y1) / 2} w={WIN.x1 - WIN.x0} h={WIN.y1 - WIN.y0} t={0.07} z={0.1} />
           <Box size={[0.05, WIN.y1 - WIN.y0, 0.08]} pos={[s * (WIN.x0 + WIN.x1) / 2, (WIN.y0 + WIN.y1) / 2, 0.06]} mat="blackMetal" />
-          {/* Sconce beside the door. */}
-          <Box size={[0.08, 0.34, 0.1]} pos={[s * 1.65, 2.2, 0.16]} mat="blackMetal" />
-          <Box size={[0.05, 0.26, 0.02]} pos={[s * 1.65, 2.2, 0.215]} mat="sconce" />
-          {/* Planter. */}
-          <mesh position={[s * 1.75, 0.35, 0.55]} material={mats().planter}>
-            <cylinderGeometry args={[0.28, 0.24, 0.7, 32]} />
+          {/* Tall linear sconce on each pier beside the door: dark bronze body, warm glowing lens. */}
+          <Box size={[0.1, 0.62, 0.1]} pos={[s * 1.65, 2.35, 0.16]} mat="blackMetal" />
+          <Box size={[0.05, 0.52, 0.02]} pos={[s * 1.65, 2.35, 0.215]} mat="sconce" />
+          {/* Square tapered black planter with a clipped boxwood ball. */}
+          <mesh position={[s * 1.75, 0.38, 0.55]} rotation={[0, Math.PI / 4, 0]} material={mats().planter}>
+            <cylinderGeometry args={[0.36, 0.28, 0.76, 4]} />
           </mesh>
-          <mesh position={[s * 1.75, 0.95, 0.55]} material={mats().plant} scale={[1, 1.15, 1]}>
-            <icosahedronGeometry args={[0.36, 2]} />
+          <mesh position={[s * 1.75, 1.08, 0.55]} material={mats().plant} scale={[1, 1.05, 1]}>
+            <icosahedronGeometry args={[0.36, 3]} />
           </mesh>
         </group>
       ))}
@@ -74,12 +105,13 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
       <Span a={[dw + 0.09, 0, 0.1]} b={[hw, 0.3, 0.14]} mat="plinth" />
       {/* Cornice. */}
       <Span a={[-hw - 0.05, FACADE_H - 0.1, -0.1]} b={[hw + 0.05, FACADE_H + 0.05, 0.25]} mat="wallExterior" />
-      {/* Sign: official ISHÉ wordmark on a white rectangular plaque. */}
+      {/* Sign: the official ISHÉ wordmark in white on a black lacquered fascia with a bronze edge. */}
       <group position={[0, 3.62, 0.13]}>
-        <Box size={[2.3, 1.27, 0.06]} pos={[0, 0, 0]} mat="blackMetal" />
-        <mesh position={[0, 0, 0.032]}>
-          <planeGeometry args={[2.2, 1.2]} />
-          <meshBasicMaterial map={plaque} toneMapped={false} />
+        <Box size={[2.5, 1.1, 0.07]} pos={[0, 0, 0]} mat="bronze" />
+        <Box size={[2.42, 1.02, 0.08]} pos={[0, 0, 0.002]} mat="ebony" />
+        <mesh position={[0, 0, 0.043]}>
+          <planeGeometry args={[1.9, 1.9 * WORDMARK_ASPECT]} />
+          <meshBasicMaterial map={logo} transparent toneMapped={false} />
         </mesh>
       </group>
     </group>
@@ -239,13 +271,22 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
           <Span a={[s * PARTITION_X - 0.14, 0, SIDE_DOOR.z0 - 0.04]} b={[s * PARTITION_X + 0.14, SIDE_DOOR.lintel, SIDE_DOOR.z0]} mat="blackMetal" />
           <Span a={[s * PARTITION_X - 0.14, 0, SIDE_DOOR.z1]} b={[s * PARTITION_X + 0.14, SIDE_DOOR.lintel, SIDE_DOOR.z1 + 0.04]} mat="blackMetal" />
           <Span a={[s * PARTITION_X - 0.14, SIDE_DOOR.lintel, SIDE_DOOR.z0 - 0.04]} b={[s * PARTITION_X + 0.14, SIDE_DOOR.lintel + 0.04, SIDE_DOOR.z1 + 0.04]} mat="blackMetal" />
-          {/* Rounded black end column where each arm opens into the salon. */}
-          <mesh position={[s * PARTITION_X, wallH / 2, PARTITION_END_Z]} material={M.blackSatin}>
-            <cylinderGeometry args={[0.16, 0.16, wallH, 32]} />
+          {/* Rounded white column where each arm opens into the salon, on a black base. */}
+          <mesh position={[s * PARTITION_X, wallH / 2, PARTITION_END_Z]} material={M.wall}>
+            <cylinderGeometry args={[0.17, 0.17, wallH, 32]} />
           </mesh>
-          {/* Fluted walnut panelling behind the arm vitrines, with a bronze shadow-gap trim. */}
-          <Span a={[s * (hw - 0.1), 0.1, -8.2]} b={[s * (hw - 0.13), 3.1, -1.0]} mat="walnutFluted" />
-          <Span a={[s * (hw - 0.1), 3.1, -8.22]} b={[s * (hw - 0.14), 3.12, -0.98]} mat="bronze" />
+          <mesh position={[s * PARTITION_X, 0.05, PARTITION_END_Z]} material={M.blackSatin}>
+            <cylinderGeometry args={[0.175, 0.175, 0.1, 32]} />
+          </mesh>
+          {/* White pilasters between the arm vitrines, each with a tall brass linear sconce. */}
+          {PILASTER_Z.map((z) => (
+            <group key={z}>
+              <Box size={[PILASTER.d, wallH, PILASTER.w]} pos={[s * (hw - 0.1 - PILASTER.d / 2), wallH / 2, z]} mat="wall" />
+              <Box size={[PILASTER.d + 0.01, 0.1, PILASTER.w + 0.01]} pos={[s * (hw - 0.1 - PILASTER.d / 2), 0.05, z]} mat="blackSatin" />
+              <Box size={[0.03, 0.62, 0.07]} pos={[s * (hw - 0.1 - PILASTER.d - 0.015), 2.25, z]} mat="brass" />
+              <Box size={[0.01, 0.54, 0.035]} pos={[s * (hw - 0.1 - PILASTER.d - 0.032), 2.25, z]} mat="sconce" />
+            </group>
+          ))}
           {/* Long bench along the foyer-side of each arm. */}
           {BENCHES.filter((b) => Math.sign(b.x0) === s).map((b) => (
             <Box key={b.z0} size={[b.x1 - b.x0, 0.42, b.z1 - b.z0]} pos={[(b.x0 + b.x1) / 2, 0.21, (b.z0 + b.z1) / 2]} mat="velvet" />
@@ -253,9 +294,9 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
         </group>
       ))}
       <Atmosphere />
-      {/* Brand wall behind the cashier. */}
-      <mesh position={[0, 2.35, -DEPTH + 0.115]}>
-        <planeGeometry args={[1.5, 0.61]} />
+      {/* Brand wall behind the cashier: the wordmark in white on the black feature wall. */}
+      <mesh position={[0, 2.35, -DEPTH + 0.14]}>
+        <planeGeometry args={[1.5, 1.5 * WORDMARK_ASPECT]} />
         <meshBasicMaterial map={logoWall} transparent toneMapped={false} />
       </mesh>
       <SalonWalls />
@@ -290,28 +331,30 @@ function Atmosphere() {
 }
 
 /**
- * Rings & Combos salon: walnut panelling with an ivory, bronze-framed panel for the wordmark, under
- * a lowered bronze-toned ceiling tray edged with a warm cove.
+ * Rings & Combos salon: a black lacquered feature wall with thin warm light slits and a slim brass
+ * frame round the wordmark, under a lowered white tray edged with a warm cove.
  */
 function SalonWalls() {
   const z = -DEPTH + 0.1;
-  const panels: [number, number][] = [[-2.6, -1.9], [-1.86, -1.08], [1.08, 1.86], [1.9, 2.6]];
   const t = SALON.trayY;
+  const slits = [-1.9, -1.08, 1.08, 1.9];
   return (
     <group>
-      {panels.map(([x0, x1]) => <Span key={x0} a={[x0, 0.1, z]} b={[x1, t, z + 0.03]} mat="walnut" />)}
-      {/* Ivory feature panel behind the cashier keeps the black wordmark legible. */}
-      <Span a={[-1.04, 0.1, z]} b={[1.04, t, z + 0.012]} mat="wall" />
-      <Span a={[-1.08, 0.1, z]} b={[-1.04, t, z + 0.035]} mat="bronze" />
-      <Span a={[1.04, 0.1, z]} b={[1.08, t, z + 0.035]} mat="bronze" />
-      <Span a={[-2.6, t - 0.05, z]} b={[2.6, t, z + 0.05]} mat="bronze" />
-      {/* Lowered tray: bronze-toned soffit, walnut fascia, warm cove light along its edge. */}
+      <Span a={[-2.6, 0.1, z]} b={[2.6, t, z + 0.03]} mat="ebony" />
+      {slits.map((x) => <Span key={x} a={[x - 0.006, 0.25, z + 0.03]} b={[x + 0.006, t - 0.15, z + 0.034]} mat="lightStrip" />)}
+      {/* Brass frame round the wordmark panel. */}
+      <Span a={[-1.02, 1.72, z + 0.03]} b={[1.02, 1.74, z + 0.036]} mat="brass" />
+      <Span a={[-1.02, 2.96, z + 0.03]} b={[1.02, 2.98, z + 0.036]} mat="brass" />
+      <Span a={[-1.02, 1.72, z + 0.03]} b={[-1.0, 2.98, z + 0.036]} mat="brass" />
+      <Span a={[1.0, 1.72, z + 0.03]} b={[1.02, 2.98, z + 0.036]} mat="brass" />
+      <Span a={[-2.6, t - 0.03, z]} b={[2.6, t, z + 0.05]} mat="brass" />
+      {/* Lowered tray: white soffit and fascia, warm cove light along its edge. */}
       <mesh position={[0, t, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats().bronzeCeiling}>
         <planeGeometry args={[SALON.x1 - SALON.x0, SALON.z1 - SALON.z0]} />
       </mesh>
-      <Span a={[SALON.x0, t - 0.02, SALON.z1 - 0.02]} b={[SALON.x1, CEILING, SALON.z1]} mat="walnut" />
-      <Span a={[SALON.x0 - 0.02, t - 0.02, SALON.z0]} b={[SALON.x0, CEILING, SALON.z1]} mat="walnut" />
-      <Span a={[SALON.x1, t - 0.02, SALON.z0]} b={[SALON.x1 + 0.02, CEILING, SALON.z1]} mat="walnut" />
+      <Span a={[SALON.x0, t - 0.02, SALON.z1 - 0.02]} b={[SALON.x1, CEILING, SALON.z1]} mat="wall" />
+      <Span a={[SALON.x0 - 0.02, t - 0.02, SALON.z0]} b={[SALON.x0, CEILING, SALON.z1]} mat="wall" />
+      <Span a={[SALON.x1, t - 0.02, SALON.z0]} b={[SALON.x1 + 0.02, CEILING, SALON.z1]} mat="wall" />
       <mesh position={[0, t - 0.021, SALON.z1 - 0.06]} rotation={[Math.PI / 2, 0, 0]} material={mats().cove}>
         <planeGeometry args={[SALON.x1 - SALON.x0 - 0.1, 0.03]} />
       </mesh>
@@ -382,15 +425,15 @@ function Curtains() {
 
 export default function Architecture() {
   // Load textures here so nothing below suspends while it is being merged.
-  const [plaque, logoWall] = useLoader(THREE.TextureLoader, ['/brand/ishe-logo-plaque.png', '/brand/ishe-wordmark-black.png']);
-  for (const t of [plaque, logoWall]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; }
+  const wordmark = useLoader(THREE.TextureLoader, '/brand/ishe-wordmark-black.png');
+  const logo = useMemo(() => whiteWordmark(wordmark), [wordmark]);
   const fontsReady = useFontsReady();
   return (
     <group>
       {fontsReady && <Merged>
         <Street />
-        <Facade plaque={plaque} />
-        <Interior logoWall={logoWall} />
+        <Facade logo={logo} />
+        <Interior logoWall={logo} />
         <Wayfinding />
         <Moulding />
         <Thresholds />

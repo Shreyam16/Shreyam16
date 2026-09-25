@@ -63,18 +63,18 @@ export default function BakedSurfaces() {
       if (s.name === 'floor') {
         const stone = (M.floor as THREE.MeshStandardMaterial).map!;
         const floorUv = stone.clone();
-        // One travertine texture repeat covers 2 x 2 m of the plane's 0..1 UVs.
+        // One terrazzo texture repeat covers 2 x 2 m of the plane's 0..1 UVs.
         floorUv.repeat.set(7.5, 7);
         floorUv.needsUpdate = true;
         material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN });
       } else if (s.name === 'ceiling') {
         material = new THREE.MeshBasicMaterial({ color: '#fbf8f2', lightMap: tex, lightMapIntensity: GAIN });
       } else {
-        // Warm ivory limewash, tiled about every 2 m whatever the wall's size.
+        // Warm white limewash, tiled about every 2 m whatever the wall's size.
         const map = lime.clone();
         map.repeat.set((s.uv[1] - s.uv[0]) / 2, (s.uv[3] - s.uv[2]) / 2);
         map.needsUpdate = true;
-        material = new THREE.MeshBasicMaterial({ color: '#fbf7ef', map, lightMap: tex, lightMapIntensity: GAIN });
+        material = new THREE.MeshBasicMaterial({ color: '#ffffff', map, lightMap: tex, lightMapIntensity: GAIN });
       }
       baked.push(material as THREE.MeshBasicMaterial);
       return { s, geometry: geometryFor(s), material };

@@ -30,61 +30,61 @@ function rng(seed: number) {
   };
 }
 
-/** Honed travertine in 1.0 x 0.5 m running-bond tiles; one texture repeat covers 2 x 2 m. */
-function travertine() {
-  const r = rng(7);
+/**
+ * Polished white terrazzo: warm white matrix with fine grey, black, beige and white marble chips,
+ * laid in 1 x 1 m panels with hairline joints; one texture repeat covers 2 x 2 m.
+ */
+function terrazzo() {
+  const r = rng(29);
   const t = canvasTexture(1024, 1024, (ctx) => {
-    ctx.fillStyle = '#d9ccb5';
+    ctx.fillStyle = '#ece8e1';
     ctx.fillRect(0, 0, 1024, 1024);
-    for (let row = 0; row < 4; row++) {
-      const off = row % 2 ? 256 : 0;
-      for (let col = -1; col < 2; col++) {
-        const x0 = col * 512 + off, y0 = row * 256;
-        // Each tile has its own tone and horizontal vein banding.
-        const v = Math.floor(r() * 16) - 8;
-        ctx.fillStyle = `rgb(${217 + v},${204 + v},${181 + v})`;
-        ctx.fillRect(x0, y0, 512, 256);
-        for (let i = 0; i < 26; i++) {
-          const y = y0 + r() * 256, h = 1 + r() * 5;
-          const light = r() > 0.5;
-          ctx.fillStyle = light ? `rgba(246,238,222,${0.12 + r() * 0.2})` : `rgba(160,140,112,${0.06 + r() * 0.12})`;
-          ctx.beginPath();
-          ctx.moveTo(x0, y);
-          for (let x = 0; x <= 512; x += 32) ctx.lineTo(x0 + x, y + Math.sin((x + i * 40) * 0.013) * 3 + (r() - 0.5) * 1.5);
-          ctx.lineTo(x0 + 512, y + h);
-          ctx.lineTo(x0, y + h);
-          ctx.closePath();
-          ctx.fill();
-        }
-        // Small filled pits typical of honed travertine.
-        for (let i = 0; i < 40; i++) {
-          ctx.fillStyle = `rgba(150,128,98,${0.18 + r() * 0.2})`;
-          ctx.beginPath();
-          ctx.ellipse(x0 + r() * 512, y0 + r() * 256, 1 + r() * 4, 0.6 + r() * 1.2, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      // Fine joints.
-      ctx.fillStyle = 'rgba(176,158,130,0.8)';
-      ctx.fillRect(0, row * 256, 1024, 2);
-      for (let col = 0; col < 3; col++) ctx.fillRect(col * 512 + off, row * 256, 2, 256);
+    // Soft cloudiness in the matrix.
+    for (let i = 0; i < 60; i++) {
+      const x = r() * 1024, y = r() * 1024, rad = 60 + r() * 200;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      const tone = r() > 0.5 ? '250,248,244' : '222,215,204';
+      g.addColorStop(0, `rgba(${tone},${0.18 + r() * 0.2})`);
+      g.addColorStop(1, `rgba(${tone},0)`);
+      ctx.fillStyle = g;
+      for (const [dx, dy] of [[0, 0], [1024, 0], [-1024, 0], [0, 1024], [0, -1024]]) { ctx.save(); ctx.translate(dx, dy); ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); ctx.restore(); }
     }
+    const chips: [string, number, number][] = [
+      ['#8d8780', 5200, 2.2], ['#b9b1a5', 5200, 2.4], ['#2e2c2a', 1600, 1.8], ['#cdbb9c', 2600, 2.6], ['#fbfaf7', 2600, 2.4], ['#6f6a64', 900, 3.6], ['#a8927a', 500, 4.2],
+    ];
+    for (const [c, n, size] of chips) {
+      ctx.fillStyle = c;
+      for (let i = 0; i < n; i++) {
+        const x = r() * 1024, y = r() * 1024, a = 0.4 + r() * size, b = 0.4 + r() * size * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(x + a, y);
+        ctx.lineTo(x + a * 0.3, y + b);
+        ctx.lineTo(x - a * 0.8, y + b * 0.4);
+        ctx.lineTo(x - a * 0.5, y - b * 0.7);
+        ctx.lineTo(x + a * 0.4, y - b);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    // Hairline brass-toned joints between 1 m panels.
+    ctx.fillStyle = 'rgba(176,160,132,0.55)';
+    for (const k of [0, 512]) { ctx.fillRect(0, k, 1024, 2); ctx.fillRect(k, 0, 2, 1024); }
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(7.5, 7);
   return t;
 }
 
-/** Warm ivory limewash: soft, cloudy variation with faint brush direction. */
+/** Warm white limewash: soft, cloudy variation with faint brush direction. */
 export function limewashTexture() {
   const r = rng(17);
   const t = canvasTexture(512, 512, (ctx) => {
-    ctx.fillStyle = '#f1e9dc';
+    ctx.fillStyle = '#f7f4ee';
     ctx.fillRect(0, 0, 512, 512);
     for (let i = 0; i < 90; i++) {
       const x = r() * 512, y = r() * 512, rad = 30 + r() * 120;
       const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
-      const tone = r() > 0.5 ? '255,251,244' : '214,200,178';
+      const tone = r() > 0.5 ? '255,253,249' : '228,221,209';
       g.addColorStop(0, `rgba(${tone},${0.05 + r() * 0.07})`);
       g.addColorStop(1, `rgba(${tone},0)`);
       ctx.fillStyle = g;
@@ -92,7 +92,7 @@ export function limewashTexture() {
       for (const [dx, dy] of [[0, 0], [512, 0], [-512, 0], [0, 512], [0, -512]]) { ctx.save(); ctx.translate(dx, dy); ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); ctx.restore(); }
     }
     for (let i = 0; i < 260; i++) {
-      ctx.strokeStyle = `rgba(${r() > 0.5 ? '255,250,240' : '200,186,164'},${0.03 + r() * 0.04})`;
+      ctx.strokeStyle = `rgba(${r() > 0.5 ? '255,252,246' : '214,206,192'},${0.03 + r() * 0.04})`;
       ctx.lineWidth = 1 + r() * 3;
       const x = r() * 512, y = r() * 512, a = -0.6 + r() * 1.2, l = 20 + r() * 50;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
@@ -148,12 +148,16 @@ function rugTexture() {
 function paving() {
   const t = canvasTexture(512, 512, (ctx) => {
     const r = rng(3);
-    ctx.fillStyle = '#b9b5ae';
+    ctx.fillStyle = '#a9a196';
     ctx.fillRect(0, 0, 512, 512);
     for (let y = 0; y < 4; y++) for (let x = 0; x < 2; x++) {
-      const v = 176 + Math.floor(r() * 18);
-      ctx.fillStyle = `rgb(${v},${v - 3},${v - 8})`;
-      ctx.fillRect(x * 256 + 3, y * 128 + 3, 250, 122);
+      const v = 204 + Math.floor(r() * 16);
+      ctx.fillStyle = `rgb(${v},${v - 5},${v - 14})`;
+      ctx.fillRect(x * 256 + 2, y * 128 + 2, 252, 124);
+      for (let i = 0; i < 90; i++) {
+        ctx.fillStyle = `rgba(${r() > 0.5 ? '240,234,222' : '150,140,126'},${0.15 + r() * 0.2})`;
+        ctx.fillRect(x * 256 + 2 + r() * 250, y * 128 + 2 + r() * 122, 1 + r() * 2, 1 + r() * 2);
+      }
     }
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -241,25 +245,29 @@ function linenTexture() {
 
 /** Quiet abstract canvas for the foyer artwork: layered warm washes and one gold arc. */
 export function artworkTexture() {
+  // Gold-leaf panel: overlapping leaf squares with soft patina, like the gilded art in the salon.
   const r = rng(21);
   return canvasTexture(768, 1024, (ctx) => {
-    ctx.fillStyle = '#ece5d8';
+    ctx.fillStyle = '#b89452';
     ctx.fillRect(0, 0, 768, 1024);
-    for (let i = 0; i < 26; i++) {
-      const g = ctx.createRadialGradient(r() * 768, 300 + r() * 700, 0, r() * 768, 300 + r() * 700, 160 + r() * 260);
-      const tone = ['rgba(186,160,128,', 'rgba(120,108,96,', 'rgba(222,208,186,', 'rgba(60,56,52,'][i % 4];
-      g.addColorStop(0, tone + (0.1 + r() * 0.12) + ')');
+    const leaf = 96;
+    for (let y = -leaf / 2; y < 1024; y += leaf * 0.86) for (let x = -leaf / 2; x < 768; x += leaf * 0.9) {
+      const v = Math.floor(r() * 40) - 20;
+      ctx.fillStyle = `rgba(${206 + v},${170 + v},${104 + v},0.55)`;
+      ctx.fillRect(x + (r() - 0.5) * 8, y + (r() - 0.5) * 8, leaf, leaf);
+      ctx.strokeStyle = 'rgba(120,88,40,0.25)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, leaf, leaf);
+    }
+    for (let i = 0; i < 40; i++) {
+      const x = r() * 768, y = r() * 1024, rad = 40 + r() * 180;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      const tone = ['rgba(92,70,40,', 'rgba(240,214,150,', 'rgba(70,60,48,'][i % 3];
+      g.addColorStop(0, tone + (0.12 + r() * 0.18) + ')');
       g.addColorStop(1, tone + '0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 768, 1024);
     }
-    ctx.strokeStyle = 'rgba(176,141,87,0.9)';
-    ctx.lineWidth = 7;
-    ctx.beginPath();
-    ctx.arc(384, 560, 250, Math.PI * 1.08, Math.PI * 1.92);
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(20,20,20,0.85)';
-    ctx.fillRect(0, 900, 768, 4);
   });
 }
 
@@ -312,10 +320,12 @@ function build() {
 
   const m = {
     // Architecture
-    wall: std({ color: '#f3ece1', map: limewash, roughness: 0.94 }),
-    wallExterior: std({ color: '#f3f1ec', roughness: 0.85 }),
+    wall: std({ color: '#fbf8f3', map: limewash, roughness: 0.94 }),
+    // Warm cream limestone for the facade, with slightly darker, recessed joints.
+    wallExterior: std({ color: '#e6dcc9', roughness: 0.82 }),
+    limestoneJoint: std({ color: '#b8ab94', roughness: 0.9 }),
     ceiling: std({ color: '#fbfbf9', roughness: 1 }),
-    floor: std({ map: travertine(), roughness: 0.4, metalness: 0, envMapIntensity: 0.5 }),
+    floor: std({ map: terrazzo(), roughness: 0.3, metalness: 0, envMapIntensity: 0.6 }),
     paving: std({ map: paving(), roughness: 0.9 }),
     asphalt: std({ color: '#3b3d40', roughness: 0.95 }),
     kerb: std({ color: '#9f9b94', roughness: 0.9 }),
@@ -334,7 +344,7 @@ function build() {
     }),
     linen: std({ color: '#ffffff', map: linenTexture(), roughness: 1, normalMap: weave, normalScale: new THREE.Vector2(0.3, 0.3) }),
     floorGloss: std({
-      color: '#000000', roughness: 0.34, metalness: 0, envMapIntensity: 0.55,
+      color: '#000000', roughness: 0.2, metalness: 0, envMapIntensity: 0.8,
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
     }),
     // Warm ivory / walnut palette
@@ -342,9 +352,12 @@ function build() {
     walnutFluted: std({ color: '#ffffff', map: walnutFlutedMap, roughness: 0.5, normalMap: flutes, normalScale: new THREE.Vector2(1.4, 1.4), envMapIntensity: 0.6 }),
     bronze: std({ color: '#8f6c46', metalness: 1, roughness: 0.34, envMapIntensity: 1.2 }),
     brass: std({ color: '#c09a58', metalness: 1, roughness: 0.22, envMapIntensity: 1.3 }),
-    bronzeCeiling: std({ color: '#5e4631', metalness: 0.55, roughness: 0.5, envMapIntensity: 0.7 }),
+    bronzeCeiling: std({ color: '#f6f3ee', metalness: 0, roughness: 0.95 }),
+    // Black lacquered panelling for the salon feature wall.
+    ebony: phys({ color: '#0e0c0b', roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.7 }),
+    goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
     taupeVelvet: phys({
-      color: '#5f5249', roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#b9a797'), sheenRoughness: 0.5,
+      color: '#a88c64', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#ecd6ae'), sheenRoughness: 0.45,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
     boucle: std({ color: '#e7dfd1', roughness: 1, normalMap: velvetNormal, normalScale: new THREE.Vector2(0.8, 0.8) }),
@@ -362,7 +375,7 @@ function build() {
     leaf: std({ color: '#2f4a2c', roughness: 0.6, side: THREE.DoubleSide }),
     petal: phys({ color: '#fbf8f2', roughness: 0.55, sheen: 0.6, sheenColor: new THREE.Color('#ffffff'), side: THREE.DoubleSide }),
     petalHeart: std({ color: '#c9a36b', roughness: 0.5 }),
-    travertine: std({ color: '#e3d8c6', roughness: 0.55 }),
+    travertine: std({ color: '#f1ede6', roughness: 0.35 }),
     downlightTrim: std({ color: '#1a1a1a', roughness: 0.4, metalness: 0.6 }),
     downlightLens: std({ color: '#fff8ee', emissive: '#ffe6c4', emissiveIntensity: 2.4 }),
     glass: phys({

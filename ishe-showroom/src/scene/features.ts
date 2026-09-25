@@ -99,15 +99,24 @@ export const STAFF_BY_ID: Record<StaffId, StaffSpot> = Object.fromEntries(STAFF.
 export const WINDOW_DISPLAYS: { x: number; z: number }[] = [{ x: -4.9, z: -0.5 }, { x: 4.9, z: -0.5 }];
 export const WINDOW_PLINTH = { w: 0.62, d: 0.42, h: 0.92 };
 
+/** White pilasters along both arm walls, between the tall vitrines; each carries a brass sconce. */
+export const PILASTER = { w: 0.36, d: 0.1 };
+export const PILASTER_Z = [-1.0, -2.8, -4.6, -6.4, -8.2];
+
 /** Colliders for the furniture added in this file (all axis-aligned boxes). */
 export const FURNITURE_COLLIDERS: Box2[] = [
   ...ARMCHAIRS.map((a) => ({ x0: a.x - a.w / 2, z0: a.z - a.d / 2, x1: a.x + a.w / 2, z1: a.z + a.d / 2 })),
   { x0: SIDE_TABLE.x - SIDE_TABLE.r, z0: SIDE_TABLE.z - SIDE_TABLE.r, x1: SIDE_TABLE.x + SIDE_TABLE.r, z1: SIDE_TABLE.z + SIDE_TABLE.r },
   ...FLOOR_MIRRORS.map((m) => ({ x0: m.x - FLOOR_MIRROR_SIZE.d / 2, z0: m.z - FLOOR_MIRROR_SIZE.w / 2, x1: m.x + FLOOR_MIRROR_SIZE.d / 2, z1: m.z + FLOOR_MIRROR_SIZE.w / 2 })),
   ...WINDOW_DISPLAYS.map((w) => ({ x0: w.x - WINDOW_PLINTH.w / 2, z0: w.z - WINDOW_PLINTH.d / 2, x1: w.x + WINDOW_PLINTH.w / 2, z1: w.z + WINDOW_PLINTH.d / 2 })),
+  ...[-1, 1].flatMap((s) => PILASTER_Z.map((z) => {
+    const inner = s * (7.4 - PILASTER.d);
+    return { x0: Math.min(inner, s * 7.4), z0: z - PILASTER.w / 2, x1: Math.max(inner, s * 7.4), z1: z + PILASTER.w / 2 };
+  })),
 ];
 
 export const FEATURES = {
   console: CONSOLE, artwork: ARTWORK, downlights: DOWNLIGHTS, staff: STAFF, salon: SALON, chandelier: CHANDELIER,
   armchairs: ARMCHAIRS, sideTable: SIDE_TABLE, floorMirrors: FLOOR_MIRRORS, floorMirrorSize: FLOOR_MIRROR_SIZE,
+  pilaster: PILASTER, pilasterZ: PILASTER_Z,
 };

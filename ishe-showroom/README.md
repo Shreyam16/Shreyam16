@@ -5,13 +5,17 @@ black-framed glass double door under the white ISHÉ sign, scroll to open the do
 then explore a U-shaped showroom (15 m × 14 m, 3.8 m ceiling) in real-time 3D.
 
 - **Left:** Necklaces & Bracelets
-- **Straight:** Rings & Combos: a walnut-panelled salon with the cashier counter
+- **Straight:** Rings & Combos: a salon with a black lacquered feature wall and the cashier counter
 - **Right:** Earrings & Pendants
 
-Interior: warm ivory limewash walls, honed travertine floor with brass inlays at each threshold,
-fluted walnut behind the wall vitrines, taupe velvet vitrine decks, bronze trims and black lacquer
-cabinetry. The salon sits under a lowered bronze-toned tray with a statement chandelier over the
-combos table, a small lounge (two armchairs, side table with a tea tray, rug) and four staff.
+Look: a warm, gallery-like boutique. Outside, a cream limestone facade with rusticated joints, a
+black-framed shopfront, tall linear sconces, square black planters with boxwood, and the ISHÉ
+wordmark in white on a black lacquered fascia. Inside, warm white limewash walls with pilasters and
+brass linear sconces, a polished white terrazzo floor with brass inlays at each threshold, black
+lacquered vitrines with glass tops and champagne suede decks, and gold-leaf art. The salon's feature
+wall is black lacquer with thin warm light slits and the wordmark in white, under a lowered white
+tray, with a statement chandelier over the combos table, a small lounge (two armchairs, side table
+with a tea tray, rug) and four staff. Evening mode gives the dusk, lit-from-within street view.
 
 ## Run it
 
@@ -270,8 +274,9 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 
 `bake/bake.py` rebuilds the room from `bake/layout.json` (exported from the TypeScript floor plan by
 `npx vitest run --config bake/vitest.config.ts`) and bakes direct + indirect diffuse lighting with
-Blender Cycles. Occluders carry their real albedo (ivory, travertine, walnut, bronze, taupe velvet,
-bouclé), so the walnut warms the bounce light; the maps themselves hold lighting only. Display
+Blender Cycles. Occluders carry their real albedo (white limewash, terrazzo, black lacquer, walnut,
+bronze, champagne suede, bouclé), so the bounce light matches the finishes; the maps themselves hold
+lighting only. Display
 spots are tight (22°) accents; the salon has lower, warmer (2700–2800 K) light from under the tray,
 its cove and the chandelier. Then:
 
