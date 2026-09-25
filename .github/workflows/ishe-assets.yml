@@ -1,0 +1,124 @@
+# ISHÉ showroom: light bake, lite stills and browser QA on a GitHub runner.
+# Runs only when a commit on a claude/** branch carries a tag in its message:
+#   [ishe-assets]        checks + bake + lite stills + e2e (commits bake and stills back)
+#   [ishe-assets:qa]     checks + e2e only
+#   [ishe-assets:stills] checks + lite stills + e2e
+# e2e screenshots (JPEG) and results are force-pushed to the `qa-screenshots` branch for review.
+name: ISHÉ assets and QA
+
+on:
+  push:
+    branches: ['claude/**']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ishe-assets-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  assets:
+    if: contains(github.event.head_commit.message, '[ishe-assets')
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    defaults:
+      run:
+        working-directory: ishe-showroom
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide what to run
+        id: plan
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          bake=false; lite=false
+          if [[ "$MSG" == *"[ishe-assets]"* ]]; then bake=true; lite=true; fi
+          if [[ "$MSG" == *"[ishe-assets:stills]"* ]]; then lite=true; fi
+          samples=$(echo "$MSG" | grep -oP 'samples=\K[0-9]+' || echo 128)
+          echo "bake=$bake" >> "$GITHUB_OUTPUT"; echo "lite=$lite" >> "$GITHUB_OUTPUT"; echo "samples=$samples" >> "$GITHUB_OUTPUT"
+          echo "bake=$bake lite=$lite samples=$samples"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ishe-showroom/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Lint, typecheck, unit tests
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: Export floor plan for Blender
+        run: npx vitest run --config bake/vitest.config.ts
+
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.bake == 'true'
+        with:
+          python-version: '3.11'
+
+      - name: Blender Cycles light bake
+        if: steps.plan.outputs.bake == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libxrender1 libxxf86vm1 libxfixes3 libxi6 libxkbcommon0 libsm6 libgl1 libegl1 > /dev/null
+          pip install -q bpy==4.2.0 numpy
+          time python bake/bake.py --samples ${{ steps.plan.outputs.samples }}
+          node bake/to-png.mjs
+          mv public/bake/*.webp bake/raw/
+          mv public/bake/exposure.npy bake/raw/exposure.npy
+          node bake/postprocess.mjs
+          ls -la bake/raw public/bake
+
+      - name: Build and start
+        run: |
+          npm run build
+          (npx next start -p 3000 > /tmp/next.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/ > /dev/null && break; sleep 1; done
+
+      - name: Install Chromium
+        run: |
+          npx -y playwright@$(node -p "require('playwright-core/package.json').version") install --with-deps chromium
+          echo "CHROMIUM_PATH=$(node -p "require('playwright-core').chromium.executablePath()")" >> "$GITHUB_ENV"
+
+      - name: Re-capture lite stills
+        if: steps.plan.outputs.lite == 'true'
+        run: node scripts/render-lite-backdrops.mjs
+
+      - name: End-to-end checks
+        id: e2e
+        continue-on-error: true
+        run: mkdir -p e2e/output && node e2e/run.mjs 2>&1 | tee e2e/output/log.txt; exit ${PIPESTATUS[0]}
+
+      - name: Commit baked lighting and lite stills
+        if: steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/bake bake/raw bake/layout.json public/lite
+          if git diff --cached --quiet; then echo "No asset changes"; exit 0; fi
+          git commit -m "Re-bake lighting and re-capture lite stills (CI)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Publish screenshots to qa-screenshots
+        if: always()
+        run: |
+          node scripts/ci-screenshots.mjs e2e/output /tmp/qa
+          cp e2e/output/results.json e2e/output/log.txt /tmp/qa/ 2>/dev/null || true
+          echo "${GITHUB_SHA} ${GITHUB_REF_NAME} e2e=${{ steps.e2e.outcome }}" > /tmp/qa/RUN.txt
+          cd /tmp/qa
+          git init -q -b qa-screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "QA screenshots for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:qa-screenshots
+
+      - name: Fail if e2e failed
+        if: steps.e2e.outcome == 'failure'
+        run: exit 1

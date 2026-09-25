@@ -12,8 +12,8 @@ fs.mkdirSync('public/lite', { recursive: true });
 const browser = await chromium.launch({ executablePath: EXEC, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await page.goto(`${BASE}/?mode=3d&capture=1`);
-await page.waitForFunction(() => !!window.__ishe);
-await page.waitForTimeout(6000);
+await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: 90000 });
+await page.waitForTimeout(2000);
 await page.evaluate(() => window.__ishe.getState().setReducedMotion(true));
 
 const save = async (name) => {
@@ -28,6 +28,8 @@ for (const p of [0, 0.3, 0.45, 0.6, 0.8]) {
   await save(`entrance-${Math.round(p * 100)}`);
 }
 await page.evaluate(() => { const s = window.__ishe.getState(); s.setEntrance(1); s.enter(); });
+// Staff stream in after the room; wait so they appear in the stills.
+await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 }).catch(() => console.warn('staff not loaded'));
 await page.waitForTimeout(800);
 for (const node of ['junction', 'left', 'leftBack', 'centre', 'right', 'rightBack']) {
   await page.evaluate((n) => window.__ishe.getState().goTo({ kind: 'node', node: n }), node);
