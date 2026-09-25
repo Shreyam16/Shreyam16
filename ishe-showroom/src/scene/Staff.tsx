@@ -9,8 +9,11 @@ import { useShowroom } from '@/store/showroom';
 import { pointerWasDrag } from './input';
 
 const HIT = new THREE.MeshBasicMaterial({ visible: false });
-const HEAD_RANGE = 0.55;
-const BODY_RANGE = 0.3;
+const HEAD_RANGE = 0.45;
+const BODY_RANGE = 0.15;
+/** Share of the idle clip layered over the calm base pose, and its playback speed. */
+const IDLE_WEIGHT = 0.3;
+const IDLE_SPEED = 0.6;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 /**
@@ -25,6 +28,7 @@ function Person({ spot }: { spot: StaffSpot }) {
   const yaw = useRef(0);
   const headYaw = useRef(0);
   const fixGroup = useRef<THREE.Group>(null);
+  const glance = useRef({ looking: false, left: 1 + Math.random() * 2, rest: 0 });
 
   const { model, mixer, head, scale, fix, bones } = useMemo(() => {
     const model = cloneSkinned(gltf.scene) as THREE.Group;
@@ -40,37 +44,63 @@ function Person({ spot }: { spot: StaffSpot }) {
       m.frustumCulled = false; // skinned bounds go stale while animating
       const mat = m.material as THREE.MeshStandardMaterial;
       mat.envMapIntensity = 0.7;
-      mat.roughness = 0.78;
-      mat.metalness = 0;
+      if (!mat.roughnessMap) mat.roughness = 0.78;
+      if (!mat.metalnessMap) mat.metalness = 0;
     });
     const mixer = new THREE.AnimationMixer(model);
-    const actions = gltf.animations.map((clip) => { const a = mixer.clipAction(clip); a.play(); return a; });
-    // The idle clips can carry a root turn and drift from the capture. Sample the clip, measure
-    // which way the shoulders face and where the hips sit, and cancel both so every person faces
-    // their spot's direction and stands on it.
-    const fix = { yaw: 0, x: 0, z: 0 };
+    const clip = gltf.animations[0];
+    const dur = clip?.duration ?? 0;
     const L = model.getObjectByName('LeftArm'), R = model.getObjectByName('RightArm'), hips = model.getObjectByName('Hips');
-    const dur = gltf.animations[0]?.duration ?? 0;
-    if (L && R && hips) {
-      const f = new THREE.Vector3(), h = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
-      const n = dur > 0 ? 8 : 1;
-      for (let i = 0; i < n; i++) {
-        mixer.setTime((i / n) * dur);
+    const LH = model.getObjectByName('LeftHand'), RH = model.getObjectByName('RightHand');
+    // Generated idle clips are theatrical (big hip swings, gesturing hands). Find the calmest
+    // moment of the clip (hands lowest, hips near their mean) and hold it as the base pose, then
+    // layer the idle on top at low weight and slower speed: breathing and a little weight shift.
+    let calm = 0;
+    if (clip && hips && LH && RH) {
+      const samples: { t: number; hands: number; hip: THREE.Vector3 }[] = [];
+      const mean = new THREE.Vector3();
+      const probe = mixer.clipAction(clip);
+      probe.play();
+      for (let i = 0; i < 24; i++) {
+        const t = (i / 24) * dur;
+        mixer.setTime(t);
         model.updateMatrixWorld(true);
-        L.getWorldPosition(a); R.getWorldPosition(b);
-        f.add(new THREE.Vector3().crossVectors(up, b.sub(a)).setY(0).normalize());
-        h.add(hips.getWorldPosition(new THREE.Vector3()));
+        const hip = hips.getWorldPosition(new THREE.Vector3());
+        samples.push({ t, hands: LH.getWorldPosition(new THREE.Vector3()).y + RH.getWorldPosition(new THREE.Vector3()).y, hip });
+        mean.add(hip);
       }
-      h.divideScalar(n);
-      fix.yaw = -Math.atan2(f.x, f.z);
-      const c = Math.cos(fix.yaw), s = Math.sin(fix.yaw);
-      fix.x = -(h.x * c + h.z * s);
-      fix.z = -(-h.x * s + h.z * c);
+      mean.divideScalar(samples.length);
+      calm = samples.reduce((best, s) => {
+        const score = s.hands + s.hip.distanceTo(mean) * 4;
+        return score < best.score ? { score, t: s.t } : best;
+      }, { score: Infinity, t: 0 }).t;
+      probe.stop();
+      mixer.uncacheAction(clip);
     }
-    // Staff are not in lock-step.
-    const offset = Math.abs(spot.x * 7.31 + spot.z * 3.17);
-    mixer.setTime(0);
-    for (const act of actions) act.time = dur > 0 ? offset % dur : 0;
+    const actions: THREE.AnimationAction[] = [];
+    if (clip) {
+      const pose = mixer.clipAction(clip.clone());
+      pose.play(); pose.time = calm; pose.timeScale = 0; pose.setEffectiveWeight(1 - IDLE_WEIGHT);
+      const idle = mixer.clipAction(clip);
+      idle.play(); idle.timeScale = IDLE_SPEED; idle.setEffectiveWeight(IDLE_WEIGHT);
+      // Staff are not in lock-step.
+      idle.time = dur > 0 ? Math.abs(spot.x * 7.31 + spot.z * 3.17) % dur : 0;
+      actions.push(pose, idle);
+    }
+    // Measure the blended pose: which way the shoulders face and where the hips sit, so the person
+    // can be turned and centred onto their spot.
+    const fix = { yaw: 0, x: 0, z: 0 };
+    if (L && R && hips) {
+      mixer.update(0);
+      model.updateMatrixWorld(true);
+      const a = L.getWorldPosition(new THREE.Vector3()), b = R.getWorldPosition(new THREE.Vector3());
+      const f = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), b.sub(a)).setY(0).normalize();
+      const h = hips.getWorldPosition(new THREE.Vector3());
+      fix.yaw = -Math.atan2(f.x, f.z);
+      const c = Math.cos(fix.yaw), sn = Math.sin(fix.yaw);
+      fix.x = -(h.x * c + h.z * sn);
+      fix.z = -(-h.x * sn + h.z * c);
+    }
     return { model, mixer, head: model.getObjectByName('Head') ?? null, scale: spot.height / height, fix, bones: L && R && hips ? { L, R, hips } : null };
   }, [gltf, spot]);
 
@@ -97,7 +127,7 @@ function Person({ spot }: { spot: StaffSpot }) {
       const fx = tmp.b.z - tmp.a.z, fz = tmp.a.x - tmp.b.x; // up × (R − L), flattened
       let want = -Math.atan2(fx, fz);
       want = fix.yaw + Math.atan2(Math.sin(want - fix.yaw), Math.cos(want - fix.yaw));
-      const kf = s.reducedMotion ? 1 : Math.min(1, dt * 3);
+      const kf = s.reducedMotion ? 1 : Math.min(1, dt * 1.2);
       fix.yaw += (want - fix.yaw) * kf;
       const c = Math.cos(fix.yaw), sn = Math.sin(fix.yaw);
       fix.x += (-(tmp.h.x * c + tmp.h.z * sn) - fix.x) * kf;
@@ -105,15 +135,26 @@ function Person({ spot }: { spot: StaffSpot }) {
       fixGroup.current.rotation.y = fix.yaw;
       fixGroup.current.position.set(fix.x, 0, fix.z);
     }
-    // Look toward a nearby visitor, within a natural range of the resting direction: most of the
-    // turn in the head, a little in the shoulders.
+    // Attention: steady, polite eye contact while the visitor is talking to this person (or is at
+    // the counter, for the cashier and consultant); otherwise only an occasional glance when the
+    // visitor is near, then back to a relaxed resting gaze. Never a constant stare.
     const dx = camera.position.x - spot.x, dz = camera.position.z - spot.z;
-    let target = 0;
-    if (s.phase === 'inside' && Math.hypot(dx, dz) < 4.8) {
+    const near = s.phase === 'inside' && Math.hypot(dx, dz) < 4.5;
+    const engaged = s.phase === 'inside' && ((s.view.kind === 'staff' && (s.view.id === spot.id || (spot.id !== 'left' && spot.id !== 'right' && s.view.id !== 'left' && s.view.id !== 'right')))
+      || (s.view.kind === 'cashier' && (spot.id === 'cashier' || spot.id === 'consultant')));
+    const g = glance.current;
+    g.left -= dt;
+    if (g.left <= 0) {
+      g.looking = near && !g.looking;
+      g.left = g.looking ? 2.2 + Math.random() * 1.8 : 4 + Math.random() * 5;
+      g.rest = (Math.random() - 0.5) * 0.35;
+    }
+    let target = s.reducedMotion ? 0 : g.rest;
+    if (engaged || (near && g.looking && !s.reducedMotion)) {
       const delta = Math.atan2(Math.sin(Math.atan2(dx, dz) - spot.rotY), Math.cos(Math.atan2(dx, dz) - spot.rotY));
       target = THREE.MathUtils.clamp(delta, -(HEAD_RANGE + BODY_RANGE), HEAD_RANGE + BODY_RANGE);
     }
-    const k = s.reducedMotion ? 1 : Math.min(1, dt * 1.6);
+    const k = s.reducedMotion ? 1 : Math.min(1, dt * 1.1);
     const bodyTarget = THREE.MathUtils.clamp(target * 0.35, -BODY_RANGE, BODY_RANGE);
     yaw.current += (bodyTarget - yaw.current) * k;
     headYaw.current += (THREE.MathUtils.clamp(target - bodyTarget, -HEAD_RANGE, HEAD_RANGE) - headYaw.current) * k;

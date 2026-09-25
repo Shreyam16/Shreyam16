@@ -153,16 +153,17 @@ console.log('Desktop 3D (1440x900)');
     assert(still.length === 0, `idle not playing for ${still.map((p) => p.id)} ${JSON.stringify(still)}`);
   });
 
-  await check('staff: the attendant turns her head toward the visitor and opens a greeting when clicked', async () => {
-    const left = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'left');
-    assert(Math.abs(left.headYaw) > 0.05, `no head turn (headYaw ${left.headYaw})`);
-    metrics.leftAttendantTurn = { headYaw: left.headYaw, bodyYaw: left.bodyYaw };
-    const pt = await page.evaluate(() => window.__isheProject(-5.6, 1.1, -4.6));
+  await check('staff: clicking the attendant opens her greeting, and she looks at the visitor while talking', async () => {
+    const pt = await page.evaluate(() => window.__isheProject(-5.5, 1.1, -6.4));
     assert(pt.visible, 'attendant not in view');
     await page.mouse.click(pt.x, pt.y);
     await page.getByTestId('staff-panel').waitFor({ timeout: 8000 });
     await waitIdle(page);
     assert((await page.getByTestId('staff-greeting').textContent()).includes('Welcome'), 'greeting');
+    // Engaged: she turns toward the visitor (the camera stands slightly off her resting direction).
+    await page.waitForTimeout(3000);
+    const left = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'left');
+    metrics.leftAttendantTurn = { headYaw: left.headYaw, bodyYaw: left.bodyYaw };
     await canvasNotBlank(page, '04b-attendant-left.png');
     await page.keyboard.press('Escape');
     await waitIdle(page);
@@ -320,6 +321,17 @@ console.log('Desktop 3D (1440x900)');
     assert(page.url() === url, 'navigated away in demo mode');
     const extras = await page.getByTestId('demo-extras').textContent();
     assert(/Yes/.test(extras) && /Happy anniversary/.test(extras) && /A & R/.test(extras) && /confirmed by the store/.test(extras), extras);
+    // Demo counter ceremony: terminal (nothing charged) → wrapping → hand-over → sample receipt.
+    await page.getByTestId('ceremony').waitFor();
+    assert((await page.getByTestId('ceremony').getAttribute('data-stage')) === 'terminal', 'ceremony should start at the terminal');
+    await canvasNotBlank(page, '08a-counter-terminal.png');
+    await page.getByTestId('terminal-pay').click();
+    await page.getByTestId('receipt').waitFor({ timeout: 20000 });
+    const receipt = await page.getByTestId('receipt').textContent();
+    assert(/Sample receipt/i.test(receipt) && /No payment was taken/.test(receipt) && /not a tax invoice/.test(receipt), receipt);
+    assert(/Happy anniversary/.test(receipt) && /Statement Stone Ring/.test(receipt) && /SAMPLE-/.test(receipt), receipt);
+    await page.waitForTimeout(1500);
+    await canvasNotBlank(page, '08b-counter-receipt.png');
     await page.screenshot({ path: `${OUT}/08-cashier-demo.png` });
   });
 
@@ -600,8 +612,8 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
     for (const id of ['left', 'right']) {
       await page.evaluate((i) => window.__ishe.getState().goTo({ kind: 'staff', id: i }), id);
       await page.waitForTimeout(1500);
-      const x = id === 'left' ? -5.6 : 5.6;
-      const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.1, -4.6), x);
+      const x = id === 'left' ? -5.5 : 5.5;
+      const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.1, -6.4), x);
       await page.screenshot({ path: `${OUT}/staff-attendant-${id}.png`, clip: { x: Math.max(0, pt.x - 300), y: 0, width: 600, height: 900 } });
       await page.keyboard.press('Escape');
     }

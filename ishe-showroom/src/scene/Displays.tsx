@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { PRODUCT_BY_SKU, COMBOS, formatINR } from '@/data/catalogue';
@@ -236,13 +236,66 @@ function CashierStatic() {
   );
 }
 
-/** The item being bought is laid on the counter tray while the visitor is at the cashier. */
+const BOX_WRAP = new THREE.MeshStandardMaterial({ color: '#efe7da', roughness: 0.85 });
+const BOX_BLACK = new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.45, metalness: 0.1 });
+const RIBBON = new THREE.MeshStandardMaterial({ color: '#8f6c46', roughness: 0.4, metalness: 0.6 });
+const PAPER = new THREE.MeshStandardMaterial({ color: '#fbfaf6', roughness: 0.95 });
+const SCREEN = new THREE.MeshStandardMaterial({ color: '#0a0f14', emissive: '#7fd6ff', emissiveIntensity: 0 });
+
+/**
+ * The counter during checkout: the piece is laid on the tray; in the demo ceremony the card
+ * terminal lights up, the piece is boxed (gift-wrapped if asked), slid across to the visitor, and a
+ * receipt slip appears. Purely visual: nothing here takes payment.
+ */
 function CashierTray() {
   const checkout = useShowroom((s) => s.checkout);
+  const ceremony = useShowroom((s) => s.ceremony);
   const first = checkout?.lines[0] ? PRODUCT_BY_SKU[checkout.lines[0].sku] : null;
   const piece = useMemo(() => (first ? buildPiece(first) : null), [first]);
+  const box = useRef<THREE.Group>(null);
+  const slip = useRef<THREE.Mesh>(null);
+  const t = useRef({ box: 0, slide: 0, slip: 0 });
+  useFrame((state, dtRaw) => {
+    const s = useShowroom.getState();
+    const c = s.ceremony;
+    const k = s.reducedMotion ? 1 : Math.min(1, dtRaw * 2.2);
+    const boxed = !!c && (c.stage === 'wrapping' || c.stage === 'handover' || c.stage === 'receipt');
+    const slid = !!c && (c.stage === 'handover' || c.stage === 'receipt');
+    t.current.box += ((boxed ? 1 : 0) - t.current.box) * k;
+    t.current.slide += ((slid ? 1 : 0) - t.current.slide) * k;
+    t.current.slip += ((c?.stage === 'receipt' ? 1 : 0) - t.current.slip) * k;
+    if (box.current) {
+      box.current.visible = t.current.box > 0.02;
+      box.current.scale.setScalar(Math.max(0.001, t.current.box));
+      box.current.position.z = CASHIER.z + 0.02 + t.current.slide * 0.22;
+    }
+    if (slip.current) { slip.current.visible = t.current.slip > 0.02; slip.current.scale.set(1, Math.max(0.001, t.current.slip), 1); }
+    SCREEN.emissiveIntensity = c?.stage === 'terminal' ? 1.2 + (s.reducedMotion ? 0 : Math.sin(state.clock.elapsedTime * 3) * 0.4) : 0.15;
+  });
   if (!piece || !first) return null;
-  return <primitive object={piece} position={[CASHIER.x, CASHIER.h + 0.02, CASHIER.z + 0.02]} scale={first.category === 'necklace' || first.category === 'pendant' ? 0.55 : 1} />;
+  const wrap = ceremony?.giftWrap;
+  const y = CASHIER.h + 0.02;
+  return (
+    <group>
+      {/* Hidden once boxed. */}
+      {!(ceremony && ceremony.stage !== 'terminal') && (
+        <primitive object={piece} position={[CASHIER.x, y, CASHIER.z + 0.02]} scale={first.category === 'necklace' || first.category === 'pendant' ? 0.55 : 1} />
+      )}
+      <group ref={box} position={[CASHIER.x, y, CASHIER.z + 0.02]} visible={false}>
+        <mesh position={[0, 0.045, 0]} material={wrap ? BOX_WRAP : BOX_BLACK}><boxGeometry args={[0.2, 0.09, 0.16]} /></mesh>
+        <mesh position={[0, 0.045, 0]} material={RIBBON}><boxGeometry args={[0.022, 0.092, 0.162]} /></mesh>
+        <mesh position={[0, 0.045, 0]} material={RIBBON}><boxGeometry args={[0.202, 0.092, 0.022]} /></mesh>
+        {wrap && <mesh position={[0, 0.1, 0]} rotation={[Math.PI / 2, 0, 0]} material={RIBBON}><torusGeometry args={[0.022, 0.006, 8, 24]} /></mesh>}
+      </group>
+      {/* Card terminal screen (the terminal body is part of the merged counter). */}
+      <mesh position={[CASHIER.x + 0.95, CASHIER.h + 0.075, CASHIER.z - 0.093]} rotation={[-0.35, 0, 0]} material={SCREEN}>
+        <planeGeometry args={[0.058, 0.08]} />
+      </mesh>
+      <mesh ref={slip} position={[CASHIER.x + 0.42, CASHIER.h + 0.003, CASHIER.z + 0.12]} rotation={[-Math.PI / 2, 0, 0.12]} material={PAPER} visible={false}>
+        <planeGeometry args={[0.08, 0.18]} />
+      </mesh>
+    </group>
+  );
 }
 
 export default function Displays() {

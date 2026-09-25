@@ -161,13 +161,23 @@ and `/api/appointment`, which run as serverless functions because their tokens m
   (image, name, SKU, sample price, sample description, pairings, Add to Jewel Box, Buy Now, Save).
   Back / Esc returns to the exact prior camera position.
 - **Cashier.** Buy Now (or "Take to the cashier" in the Jewel Box) walks the camera to the cashier
-  counter, places the piece on the counter tray and shows the order summary before Shopify.
+  counter, places the piece on the counter tray and shows the order summary, with gift wrapping, a
+  gift note, an engraving request and the ring-size guide.
+  - **With Shopify connected:** "Pay securely with Shopify" hands off to Shopify's checkout, which
+    takes the payment and emails the real receipt and order confirmation.
+  - **Without Shopify (demo):** "Pay at the counter (demo)" plays the in-store ceremony: the card
+    terminal lights up (no card is read, no money moves), the piece is boxed and gift-wrapped if
+    asked, slid across the counter, and a receipt slip is printed. The on-screen receipt is marked
+    SAMPLE throughout ("No payment was taken… not a tax invoice") and can be printed as such.
 - **Loading.** A branded screen (the ISHÉ plaque and a thin line driven by real texture and model
   loading) fades into the street once the first frame is drawn. Staff stream in afterwards so they
   never hold the entrance back.
-- **Staff.** A cashier and a consultant behind the counter, and an attendant in each side room.
-  They play an idle loop and turn their head (and a little of the shoulders) toward a visitor who
-  comes within about 4.8 m. Selecting one, or "Ask the attendant" in the room bar, walks the camera
+- **Staff.** A cashier and a consultant behind the counter, and an attendant in each side room,
+  standing by the far end of the wall vitrines rather than in the middle of the arrival view. Each
+  holds a calm standing pose with a slowed, low-weight idle layered on top (breathing, a little
+  weight shift); the clip's root turn and drift are cancelled so they stay on their spot. They glance
+  at a nearby visitor now and then rather than staring, and keep polite eye contact only while the
+  visitor is talking to them (or is at the counter, for the cashier and consultant). Selecting one, or "Ask the attendant" in the room bar, walks the camera
   to a polite distance and opens a greeting with guided tours. The cashier greets the visitor in
   the order summary. Staff are not shown in the lite showroom; there the same tours sit behind
   "Guided tour".

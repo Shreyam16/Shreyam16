@@ -22,6 +22,13 @@ export interface CartLine { sku: string; qty: number }
 
 export interface CheckoutIntent { lines: CartLine[]; source: 'buyNow' | 'jewelBox' }
 
+/**
+ * The in-store demo ceremony at the counter (only when Shopify is not connected): card terminal,
+ * gift wrapping, hand-over, then a receipt clearly marked SAMPLE. Nothing is charged or ordered.
+ */
+export type CeremonyStage = 'terminal' | 'wrapping' | 'handover' | 'receipt';
+export interface Ceremony { stage: CeremonyStage; ref: string; at: string; giftWrap: boolean; giftNote: string; engraving: string }
+
 interface State {
   renderMode: RenderMode;
   liteReason: string | null;
@@ -49,6 +56,7 @@ interface State {
   /** Real asset-loading progress (0..1) and whether the first frame has rendered. */
   loadProgress: number;
   sceneReady: boolean;
+  ceremony: Ceremony | null;
   checkout: CheckoutIntent | null;
   sound: boolean;
   reducedMotion: boolean;
@@ -79,6 +87,7 @@ interface State {
   setEvening: (on: boolean) => void;
   setLoadProgress: (p: number) => void;
   setSceneReady: () => void;
+  setCeremony: (c: Ceremony | null) => void;
 }
 
 function stopView(stop: TourStop): View {
@@ -111,6 +120,7 @@ export const useShowroom = create<State>()(
       evening: false,
       loadProgress: 0,
       sceneReady: false,
+      ceremony: null,
 
       setRenderMode: (renderMode, reason = null) => set({ renderMode, liteReason: reason }),
       setEntrance: (entrance) => set({ entrance }),
@@ -125,7 +135,7 @@ export const useShowroom = create<State>()(
       back: () => {
         const s = get();
         const target = s.returnView ?? { kind: 'node', node: 'junction' };
-        set({ view: target, returnView: null, tour: null, viewNonce: s.viewNonce + 1, returning: true, moving: s.renderMode === '3d', checkout: s.view.kind === 'cashier' ? null : s.checkout });
+        set({ view: target, returnView: null, tour: null, ceremony: null, viewNonce: s.viewNonce + 1, returning: true, moving: s.renderMode === '3d', checkout: s.view.kind === 'cashier' ? null : s.checkout });
       },
       setRoom: (room) => set({ room }),
       setMoving: (moving) => set({ moving }),
@@ -147,7 +157,7 @@ export const useShowroom = create<State>()(
       startCheckout: (checkout) => {
         const s = get();
         const returnView = s.view.kind === 'node' ? s.view : s.returnView ?? s.view;
-        set({ checkout, view: { kind: 'cashier' }, returnView, viewNonce: s.viewNonce + 1, returning: false, drawer: null, moving: s.renderMode === '3d' });
+        set({ checkout, ceremony: null, view: { kind: 'cashier' }, returnView, viewNonce: s.viewNonce + 1, returning: false, drawer: null, moving: s.renderMode === '3d' });
       },
       endCheckout: () => get().back(),
       setSound: (sound) => set({ sound }),
@@ -186,6 +196,7 @@ export const useShowroom = create<State>()(
       setEvening: (evening) => set({ evening }),
       setLoadProgress: (loadProgress) => set({ loadProgress: Math.max(get().loadProgress, Math.min(1, loadProgress)) }),
       setSceneReady: () => set({ sceneReady: true }),
+      setCeremony: (ceremony) => set({ ceremony }),
     }),
     {
       name: 'ishe-showroom',

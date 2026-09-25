@@ -3,7 +3,8 @@ import { useEffect, useId, useState } from 'react';
 import { STAFF_BY_ID } from '@/scene/features';
 import { PRODUCT_BY_SKU, formatINR } from '@/data/catalogue';
 import { useShowroom } from '@/store/showroom';
-import { Button, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
+import { Button, Icon, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
+import Receipt from './Receipt';
 
 type Status = { configured: boolean; mappedVariants: number; totalProducts: number } | null;
 type Outcome = { kind: 'idle' } | { kind: 'working' } | { kind: 'demo'; reason: string } | { kind: 'error'; message: string } | { kind: 'redirecting' };
@@ -19,6 +20,17 @@ export default function CashierPanel() {
   const [engraving, setEngraving] = useState('');
   const uid = useId();
   const mode = useShowroom((s) => s.renderMode);
+  const ceremony = useShowroom((s) => s.ceremony);
+  const setCeremony = useShowroom((s) => s.setCeremony);
+  const reduced = useShowroom((s) => s.reducedMotion);
+
+  // Demo ceremony pacing: wrapping and hand-over take a moment (instant with reduced motion).
+  useEffect(() => {
+    if (!ceremony || (ceremony.stage !== 'wrapping' && ceremony.stage !== 'handover')) return;
+    const next = ceremony.stage === 'wrapping' ? 'handover' : 'receipt';
+    const t = setTimeout(() => setCeremony({ ...ceremony, stage: next }), reduced ? 0 : 1800);
+    return () => clearTimeout(t);
+  }, [ceremony, reduced, setCeremony]);
 
   useEffect(() => {
     let alive = true;
@@ -48,7 +60,12 @@ export default function CashierPanel() {
         window.location.assign(json.checkoutUrl);
         return;
       }
-      if (json.mode === 'demo') { setOutcome({ kind: 'demo', reason: json.reason }); return; }
+      if (json.mode === 'demo') {
+        setOutcome({ kind: 'demo', reason: json.reason });
+        const ref = `SAMPLE-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        setCeremony({ stage: 'terminal', ref, at: new Date().toLocaleString('en-IN'), giftWrap, giftNote: giftNote.trim(), engraving: engraving.trim() });
+        return;
+      }
       setOutcome({ kind: 'error', message: json.message ?? 'Checkout is unavailable right now.' });
     } catch {
       setOutcome({ kind: 'error', message: 'Checkout is unavailable right now. Please check your connection.' });
@@ -117,9 +134,10 @@ export default function CashierPanel() {
         </section>
 
         <div className="mt-5 grid gap-2">
-          <Button variant="primary" size="lg" onClick={proceed} disabled={moving || outcome.kind === 'working' || outcome.kind === 'redirecting' || !lines.length} data-testid="proceed-checkout">
-            {outcome.kind === 'working' ? 'Preparing checkout…' : outcome.kind === 'redirecting' ? 'Opening Shopify checkout…' : live ? 'Continue to secure checkout' : 'Continue (demo)'}
+          <Button variant="primary" size="lg" onClick={proceed} disabled={moving || !!ceremony || outcome.kind === 'working' || outcome.kind === 'redirecting' || !lines.length} data-testid="proceed-checkout">
+            {outcome.kind === 'working' ? 'Preparing checkout…' : outcome.kind === 'redirecting' ? 'Opening Shopify checkout…' : live ? 'Pay securely with Shopify' : 'Pay at the counter (demo)'}
           </Button>
+          {live && <p className="font-ui text-[11px] leading-snug text-ink/60">Payment is taken on Shopify’s secure checkout, and Shopify emails your receipt and order confirmation.</p>}
           <Button variant="secondary" onClick={back}>Return to the showroom</Button>
         </div>
 
@@ -135,6 +153,30 @@ export default function CashierPanel() {
               </dl>
               <p className="mt-1 font-ui text-[11px] text-ink/50">With Shopify connected, these go to the order as cart notes for the store.</p>
             </div>
+          )}
+          {ceremony && (
+            <section className="mt-4 border border-ink/80 p-3" aria-labelledby="ceremony-heading" data-testid="ceremony" data-stage={ceremony.stage}>
+              <p id="ceremony-heading" className="plaque-label">At the counter · demo</p>
+              {ceremony.stage === 'terminal' && (
+                <div className="mt-2">
+                  <p className="font-ui text-[13px] leading-snug text-ink/80">
+                    The cashier turns the card terminal toward you. This is a demo terminal: no card is read and no money moves.
+                  </p>
+                  <Button variant="primary" className="mt-3 w-full" onClick={() => setCeremony({ ...ceremony, stage: ceremony.giftWrap ? 'wrapping' : 'handover' })} data-testid="terminal-pay">
+                    <Icon name="box" className="h-4 w-4" /> Tap card (demo, nothing is charged)
+                  </Button>
+                </div>
+              )}
+              {ceremony.stage === 'wrapping' && <p className="mt-2 font-ui text-[13px] text-ink/80" role="status">Your piece is being gift-wrapped…</p>}
+              {ceremony.stage === 'handover' && <p className="mt-2 font-ui text-[13px] text-ink/80" role="status">“Here you are. Thank you for visiting ISHÉ.”</p>}
+              {ceremony.stage === 'receipt' && (
+                <>
+                  <p className="mt-2 font-ui text-[13px] text-ink/80">“Here is your receipt.” This is a sample receipt: no payment was taken.</p>
+                  <Receipt lines={lines} ceremony={ceremony} />
+                  <Button variant="secondary" className="mt-3 w-full" onClick={() => window.print()} data-testid="print-receipt">Print sample receipt</Button>
+                </>
+              )}
+            </section>
           )}
           {outcome.kind === 'error' && (
             <div className="border-l-2 border-[#8f1426] pl-3">

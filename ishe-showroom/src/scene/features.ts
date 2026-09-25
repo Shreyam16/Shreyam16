@@ -88,8 +88,8 @@ export const STAFF_ENABLED = true;
 export const STAFF: StaffSpot[] = [
   { id: 'cashier', role: 'Cashier', greeting: 'Welcome to the counter. I will look after your order.', file: '/staff/cashier.glb', x: -0.5, z: -13.38, rotY: 0, height: 1.66, half: 0 },
   { id: 'consultant', role: 'Salon consultant', greeting: 'Good to see you in the salon. Shall I show you around?', file: '/staff/consultant.glb', x: 0.8, z: -13.38, rotY: -0.2, height: 1.76, half: 0 },
-  { id: 'left', role: 'Attendant, Necklaces & Bracelets', greeting: 'Welcome. I can walk you through the pieces, or the whole showroom.', file: '/staff/attendant-left.glb', x: -5.6, z: -4.6, rotY: 0.9, height: 1.64, half: 0.25 },
-  { id: 'right', role: 'Attendant, Earrings & Pendants', greeting: 'Welcome. I can walk you through the pieces, or the whole showroom.', file: '/staff/attendant-right.glb', x: 5.6, z: -4.6, rotY: -0.9, height: 1.63, half: 0.25 },
+  { id: 'left', role: 'Attendant, Necklaces & Bracelets', greeting: 'Welcome. I can walk you through the pieces, or the whole showroom.', file: '/staff/attendant-left.glb', x: -5.5, z: -6.4, rotY: 0.5, height: 1.64, half: 0.25 },
+  { id: 'right', role: 'Attendant, Earrings & Pendants', greeting: 'Welcome. I can walk you through the pieces, or the whole showroom.', file: '/staff/attendant-right.glb', x: 5.5, z: -6.4, rotY: -0.5, height: 1.63, half: 0.25 },
 ];
 
 export const STAFF_BY_ID: Record<StaffId, StaffSpot> = Object.fromEntries(STAFF.map((s) => [s.id, s])) as Record<StaffId, StaffSpot>;
