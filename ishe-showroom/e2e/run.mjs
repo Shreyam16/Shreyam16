@@ -143,6 +143,7 @@ console.log('Desktop 3D (1440x900)');
     metrics.staff = b;
     // Within 40° of the spot's direction: the idle keeps some natural sway (it was ~90° before stabilising).
     for (const p of b) assert(Math.abs(p.facingErrDeg) < 40, `${p.id} faces ${p.facingErrDeg}° off its spot`);
+    for (const p of b) assert(p.hips[2] < -0.5 && Math.abs(p.hips[0]) < 7.3, `${p.id} hips outside the shop ${p.hips}`);
     for (const p of a) {
       assert(p.head[1] > 1.35 && p.head[1] < 1.8, `${p.id} head at ${p.head[1]}`);
       assert(p.toe[1] > -0.05 && p.toe[1] < 0.2, `${p.id} toe at ${p.toe[1]}`);

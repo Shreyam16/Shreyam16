@@ -88,7 +88,8 @@ function Person({ spot }: { spot: StaffSpot }) {
     // hips through a wide arc and drift a few centimetres. Measure the shoulder line and hips in
     // model space every frame and counter-rotate / re-centre (smoothed, so the sway stays natural).
     if (bones && fixGroup.current) {
-      model.updateMatrixWorld(true);
+      // Refresh parents too: on the first frame their world matrices are not computed yet.
+      model.updateWorldMatrix(true, true);
       tmp.inv.copy(model.matrixWorld).invert();
       bones.L.getWorldPosition(tmp.a).applyMatrix4(tmp.inv);
       bones.R.getWorldPosition(tmp.b).applyMatrix4(tmp.inv);
