@@ -3,8 +3,10 @@
  *
  * Coordinates in metres. x = right, y = up, z = toward the street.
  * The facade sits on z = 0; the showroom runs back to z = -14 and spans x = -7.5..7.5 (15 m x 14 m),
- * ceiling 3.8 m. The U is: left arm (x < -2.5) + back salon (z < -8) + right arm (x > 2.5), with the
- * entrance foyer / junction in the notch of the U.
+ * ceiling 3.8 m. It is one open gallery: a central aisle between two rows of white columns
+ * (x = ±2.9), a side gallery beyond each colonnade (left: Necklaces & Bracelets, right: Earrings &
+ * Pendants), and the far end (Rings & Combos) in front of a black feature wall, with the cashier
+ * counter in the back-right corner.
  */
 import { PRODUCTS, type Occasion, type RoomId } from '@/data/catalogue';
 
@@ -13,9 +15,13 @@ export const CEILING = 3.8;
 export const HALF_W = 7.5;
 export const DEPTH = 14;
 export const WALL_T = 0.2;
-export const PARTITION_X = 2.5;
-export const PARTITION_END_Z = -8;
-export const SIDE_DOOR = { z0: -4.0, z1: -1.6, lintel: 2.9 };
+/** Square white columns either side of the aisle. */
+export const COLUMN = { x: 2.9, size: 0.46, z: [-2.4, -5.0, -7.6, -10.2] };
+export const COLUMNS: Box2[] = [-1, 1].flatMap((s) => COLUMN.z.map((z) => ({
+  x0: s * COLUMN.x - COLUMN.size / 2, z0: z - COLUMN.size / 2, x1: s * COLUMN.x + COLUMN.size / 2, z1: z + COLUMN.size / 2,
+})));
+/** Where the aisle opens into the far end (Rings & Combos). */
+export const FAR_END_Z = -9.0;
 export const FRONT_DOOR = { halfWidth: 1.1, height: 2.75 };
 export const BODY_RADIUS = 0.3;
 
@@ -25,8 +31,9 @@ import { CONSOLE, FURNITURE_COLLIDERS, STAFF, STAFF_BY_ID, STAFF_ENABLED, type S
 
 export const DISPLAY_BY_SKU: Record<string, DisplaySpec> = Object.fromEntries(DISPLAYS.map((d) => [d.sku, d]));
 
-export const COMBO_TABLE = { x: 0, z: -9.9, r: 0.42, h: 0.95 };
-export const CASHIER = { x: 0, z: -12.85, w: 2.8, d: 0.6, h: 1.02, customerZ: -10.85 };
+export const COMBO_TABLE = { x: 0, z: -10.4, r: 0.42, h: 0.95 };
+/** Cashier counter in the back-right corner of the far end, facing the street. */
+export const CASHIER = { x: 5.2, z: -12.85, w: 2.8, d: 0.6, h: 1.02, customerZ: -11.0 };
 
 /** Axis-aligned footprint of a display, accounting for its rotation (multiples of 90°). */
 export function displayFootprint(d: DisplaySpec): Box2 {
@@ -42,22 +49,11 @@ export const WALLS: Box2[] = [
   { x0: -HALF_W - 0.1, z0: -DEPTH - 0.1, x1: -HALF_W + 0.1, z1: 0.1 },
   { x0: HALF_W - 0.1, z0: -DEPTH - 0.1, x1: HALF_W + 0.1, z1: 0.1 },
   { x0: -HALF_W - 0.1, z0: -DEPTH - 0.1, x1: HALF_W + 0.1, z1: -DEPTH + 0.1 },
-  // Partitions with side doorways into the arms.
-  { x0: -PARTITION_X - 0.1, z0: SIDE_DOOR.z1, x1: -PARTITION_X + 0.1, z1: 0 },
-  { x0: -PARTITION_X - 0.1, z0: PARTITION_END_Z, x1: -PARTITION_X + 0.1, z1: SIDE_DOOR.z0 },
-  { x0: PARTITION_X - 0.1, z0: SIDE_DOOR.z1, x1: PARTITION_X + 0.1, z1: 0 },
-  { x0: PARTITION_X - 0.1, z0: PARTITION_END_Z, x1: PARTITION_X + 0.1, z1: SIDE_DOOR.z0 },
-];
-
-/** Velvet benches against the partitions inside each arm. */
-export const BENCHES: Box2[] = [
-  { x0: -3.18, z0: -6.9, x1: -2.6, z1: -5.3 },
-  { x0: 2.6, z0: -6.9, x1: 3.18, z1: -5.3 },
 ];
 
 export const OBSTACLES: Box2[] = [
   ...WALLS,
-  ...BENCHES,
+  ...COLUMNS,
   CONSOLE,
   ...FURNITURE_COLLIDERS,
   ...STAFF.filter((p) => STAFF_ENABLED && p.half > 0).map((p) => ({ x0: p.x - p.half, z0: p.z - p.half, x1: p.x + p.half, z1: p.z + p.half })),
@@ -78,32 +74,33 @@ export type NodeId =
 export interface NavNode { id: NodeId; x: number; z: number; /** where to look when arriving */ lookX: number; lookZ: number; room: RoomId | 'foyer' }
 
 export const NODES: Record<NodeId, NavNode> = {
-  junction: { id: 'junction', x: 0, z: -2.8, lookX: 0, lookZ: -9, room: 'foyer' },
-  leftDoor: { id: 'leftDoor', x: -2.5, z: -2.8, lookX: -6, lookZ: -3.4, room: 'left' },
-  left: { id: 'left', x: -4.4, z: -3.2, lookX: -7, lookZ: -5.2, room: 'left' },
-  left2: { id: 'left2', x: -4.6, z: -6.6, lookX: -5.2, lookZ: -11, room: 'left' },
-  leftBack: { id: 'leftBack', x: -5.2, z: -8.4, lookX: -5.2, lookZ: -12, room: 'left' },
-  leftMid: { id: 'leftMid', x: -5.2, z: -10.1, lookX: -5.2, lookZ: -13.5, room: 'left' },
-  leftBack2: { id: 'leftBack2', x: -5.2, z: -11.9, lookX: -5.2, lookZ: -13.5, room: 'left' },
-  centre: { id: 'centre', x: 0, z: -8.5, lookX: 0, lookZ: -13.5, room: 'centre' },
-  centreL: { id: 'centreL', x: -1.1, z: -9.0, lookX: -2, lookZ: -10.7, room: 'centre' },
-  centreL2: { id: 'centreL2', x: -1.1, z: -11.4, lookX: -2, lookZ: -12.2, room: 'centre' },
-  centreR: { id: 'centreR', x: 1.1, z: -9.0, lookX: 2, lookZ: -10.7, room: 'centre' },
-  centreR2: { id: 'centreR2', x: 1.1, z: -11.4, lookX: 2, lookZ: -12.2, room: 'centre' },
-  cashier: { id: 'cashier', x: 0, z: CASHIER.customerZ, lookX: 0, lookZ: -14, room: 'centre' },
-  rightDoor: { id: 'rightDoor', x: 2.5, z: -2.8, lookX: 6, lookZ: -3.4, room: 'right' },
-  right: { id: 'right', x: 4.4, z: -3.2, lookX: 7, lookZ: -5.2, room: 'right' },
-  right2: { id: 'right2', x: 4.6, z: -6.6, lookX: 5.2, lookZ: -11, room: 'right' },
-  rightBack: { id: 'rightBack', x: 5.2, z: -8.4, lookX: 5.2, lookZ: -12, room: 'right' },
-  rightBack2: { id: 'rightBack2', x: 5.2, z: -10.8, lookX: 5.2, lookZ: -13.5, room: 'right' },
+  // The junction: just inside the door, looking straight down the gallery to the hero pedestal.
+  junction: { id: 'junction', x: 0, z: -2.8, lookX: 0, lookZ: -12, room: 'foyer' },
+  // Side galleries are entered from the front, past the first column, then walked along a lane.
+  leftDoor: { id: 'leftDoor', x: -2.9, z: -1.6, lookX: -6, lookZ: -2.2, room: 'left' },
+  left: { id: 'left', x: -5.4, z: -1.7, lookX: -6.2, lookZ: -6.5, room: 'left' },
+  left2: { id: 'left2', x: -5.4, z: -6.3, lookX: -7, lookZ: -7.4, room: 'left' },
+  leftBack: { id: 'leftBack', x: -5.4, z: -8.9, lookX: -3.9, lookZ: -10.6, room: 'left' },
+  leftMid: { id: 'leftMid', x: -2.9, z: -8.9, lookX: -6, lookZ: -9.2, room: 'left' },
+  leftBack2: { id: 'leftBack2', x: -5.5, z: -11.2, lookX: -6.8, lookZ: -12.6, room: 'left' },
+  centre: { id: 'centre', x: 0, z: -9.2, lookX: 0, lookZ: -13.5, room: 'centre' },
+  centreL: { id: 'centreL', x: -0.95, z: -9.5, lookX: -2, lookZ: -10.6, room: 'centre' },
+  centreL2: { id: 'centreL2', x: -0.95, z: -11.9, lookX: -2, lookZ: -12.4, room: 'centre' },
+  centreR: { id: 'centreR', x: 0.95, z: -9.5, lookX: 2, lookZ: -10.6, room: 'centre' },
+  centreR2: { id: 'centreR2', x: 0.95, z: -11.9, lookX: 2, lookZ: -12.4, room: 'centre' },
+  cashier: { id: 'cashier', x: CASHIER.x, z: CASHIER.customerZ, lookX: CASHIER.x, lookZ: -14, room: 'centre' },
+  rightDoor: { id: 'rightDoor', x: 2.9, z: -1.6, lookX: 6, lookZ: -2.2, room: 'right' },
+  right: { id: 'right', x: 5.4, z: -1.7, lookX: 6.2, lookZ: -6.5, room: 'right' },
+  right2: { id: 'right2', x: 5.4, z: -6.3, lookX: 3.6, lookZ: -7.4, room: 'right' },
+  rightBack: { id: 'rightBack', x: 5.4, z: -8.9, lookX: 5.4, lookZ: -13, room: 'right' },
+  rightBack2: { id: 'rightBack2', x: 2.9, z: -8.9, lookX: 6, lookZ: -9.2, room: 'right' },
 };
 
 export const EDGES: [NodeId, NodeId][] = [
-  ['junction', 'leftDoor'], ['leftDoor', 'left'], ['left', 'left2'], ['left2', 'leftBack'], ['leftBack', 'leftMid'], ['leftMid', 'leftBack2'],
+  ['junction', 'leftDoor'], ['leftDoor', 'left'], ['left', 'left2'], ['left2', 'leftBack'], ['leftBack', 'leftBack2'], ['leftBack', 'leftMid'],
   ['junction', 'rightDoor'], ['rightDoor', 'right'], ['right', 'right2'], ['right2', 'rightBack'], ['rightBack', 'rightBack2'],
   ['junction', 'centre'], ['centre', 'centreL'], ['centre', 'centreR'], ['centreL', 'centreL2'], ['centreR', 'centreR2'],
-  ['centreL2', 'cashier'], ['centreR2', 'cashier'],
-  ['leftBack', 'centre'], ['rightBack', 'centre'],
+  ['leftMid', 'centre'], ['rightBack2', 'centre'], ['rightBack', 'cashier'],
 ];
 
 /** The arrival stop for each room when chosen from the junction. */
@@ -111,9 +108,9 @@ export const ROOM_ENTRY: Record<RoomId | 'foyer', NodeId> = { foyer: 'junction',
 
 /** Sub-stops inside each room for in-room wayfinding. */
 export const ROOM_STOPS: Record<RoomId, { node: NodeId; label: string }[]> = {
-  left: [{ node: 'left', label: 'Necklaces' }, { node: 'leftBack', label: 'Bracelets' }],
+  left: [{ node: 'left', label: 'Necklaces' }, { node: 'left2', label: 'Bracelets' }],
   centre: [{ node: 'centre', label: 'Rings' }, { node: 'centre', label: 'Combos' }, { node: 'cashier', label: 'Cashier' }],
-  right: [{ node: 'right', label: 'Earrings' }, { node: 'rightBack', label: 'Pendants' }],
+  right: [{ node: 'right', label: 'Earrings' }, { node: 'right2', label: 'Pendants' }],
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -169,11 +166,11 @@ export function focusPose(sku: string): Pose {
 }
 
 export function comboPose(): Pose {
-  return { x: 0, y: 1.6, z: COMBO_TABLE.z + 1.15, tx: 0, ty: COMBO_TABLE.h, tz: COMBO_TABLE.z };
+  return { x: COMBO_TABLE.x, y: 1.6, z: COMBO_TABLE.z + 1.15, tx: COMBO_TABLE.x, ty: COMBO_TABLE.h, tz: COMBO_TABLE.z };
 }
 
 export function cashierPose(): Pose {
-  return { x: 0, y: EYE, z: CASHIER.customerZ, tx: 0, ty: 1.3, tz: CASHIER.z - 0.45 };
+  return { x: CASHIER.x, y: EYE, z: CASHIER.customerZ, tx: CASHIER.x, ty: 1.3, tz: CASHIER.z - 0.45 };
 }
 
 /** Standing in front of a member of staff, at a polite conversational distance. */
@@ -243,10 +240,12 @@ export function routeTo(fromX: number, fromZ: number, dest: Pose): { x: number; 
 }
 
 export function roomAt(x: number, z: number): RoomId | 'foyer' {
-  if (x < -PARTITION_X) return 'left';
-  if (x > PARTITION_X) return 'right';
-  if (z < PARTITION_END_Z) return x < -3 ? 'left' : x > 3 ? 'right' : 'centre';
-  return 'foyer';
+  // The far end (and the cashier corner) is Rings & Combos.
+  if (z < FAR_END_Z && Math.abs(x) < COLUMN.x) return 'centre';
+  if (x > COLUMN.x && z < -10.6) return 'centre';
+  // The aisle itself is the gallery; its cases belong to the side they stand on.
+  if (Math.abs(x) < 0.8 || z > -1.2) return 'foyer';
+  return x < 0 ? 'left' : 'right';
 }
 
 export const ROOM_OF_SKU: Record<string, RoomId> = Object.fromEntries(PRODUCTS.map((p) => [p.sku, p.room]));
@@ -266,19 +265,19 @@ export const TOURS: Record<TourId, { label: string; blurb: string; occasion?: Oc
   around: { label: 'Show me around', blurb: 'A short walk through every room.' },
 };
 
-/** Walking order through the U: left arm, back-left corner, salon, back-right corner, right arm. */
-const WALK_ORDER = ['ISH-N01', 'ISH-N02', 'ISH-N03', 'ISH-N04', 'ISH-B01', 'ISH-B02', 'ISH-B03', 'ISH-B04', 'ISH-B05', 'ISH-B06',
-  'ISH-R01', 'ISH-R02', 'ISH-R03', 'ISH-R04', 'ISH-R05', 'ISH-R06', 'ISH-P01', 'ISH-P02', 'ISH-E05', 'ISH-E06',
-  'ISH-E04', 'ISH-E03', 'ISH-E02', 'ISH-E01'];
+/** Walking order through the gallery: down the left side, the far end, back up the right side. */
+const WALK_ORDER = ['ISH-B03', 'ISH-N02', 'ISH-B04', 'ISH-N03', 'ISH-B05', 'ISH-N04', 'ISH-B06', 'ISH-B01', 'ISH-B02',
+  'ISH-R01', 'ISH-R02', 'ISH-R03', 'ISH-N01', 'ISH-R06', 'ISH-R05', 'ISH-R04',
+  'ISH-E06', 'ISH-E05', 'ISH-E04', 'ISH-P02', 'ISH-E03', 'ISH-P01', 'ISH-E02', 'ISH-E01'];
 
 export function tourStops(id: TourId): TourStop[] {
   const t = TOURS[id];
   if (!t.occasion) {
     return [
-      { kind: 'node', node: 'left', caption: 'Necklaces, displayed on busts along the walnut wall.' },
-      { kind: 'node', node: 'leftBack', caption: 'Bracelets and bangles on velvet bolsters.' },
+      { kind: 'node', node: 'left', caption: 'Necklaces on busts in the tall vitrines of the left gallery.' },
+      { kind: 'node', node: 'left2', caption: 'Bracelets and bangles in the cases along the colonnade.' },
       { kind: 'combos' },
-      { kind: 'node', node: 'rightBack', caption: 'Pendants and occasion earrings.' },
+      { kind: 'node', node: 'right2', caption: 'Pendants and occasion earrings.' },
       { kind: 'node', node: 'right', caption: 'Earrings, from studs to chandbalis.' },
     ];
   }

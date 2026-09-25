@@ -121,10 +121,9 @@ H = L['CEILING']
 # Wall thickness behind the faces, so light cannot leak between rooms.
 for w in L['walls'][1:]:  # walls[0] is the facade collider (door closed); rebuilt with openings below
     box(w['x0'], 0, w['z0'], w['x1'], H, w['z1'], WHITE)
-sd = L['SIDE_DOOR']
-for s in (-1, 1):
-    box(s * 2.5 - 0.1, sd['lintel'], sd['z0'], s * 2.5 + 0.1, H, sd['z1'], WHITE)
-    cylinder(s * 2.5, -8, 0.16, 0, H, BLACK)
+# The colonnade either side of the aisle.
+for c in L['columns']:
+    box(c['x0'], 0, c['z0'], c['x1'], H, c['z1'], WHITE)
 # Facade with the door and window openings.
 for x0, x1, y0, y1 in [(-7.6, -6.5, 0, H), (-6.5, -2.2, 0, 0.45), (-6.5, -2.2, 3.1, H), (-2.2, -1.1, 0, H), (-1.1, 1.1, 2.75, H),
                        (1.1, 2.2, 0, H), (2.2, 6.5, 0, 0.45), (2.2, 6.5, 3.1, H), (6.5, 7.6, 0, H)]:
@@ -133,7 +132,7 @@ for x0, x1, y0, y1 in [(-7.6, -6.5, 0, H), (-6.5, -2.2, 0, 0.45), (-6.5, -2.2, 3
 F = L['features']
 # White pilasters between the arm vitrines.
 for s in (-1, 1):
-    for z in F['pilasterZ']:
+    for z in F['pilasterZ']['left' if s < 0 else 'right']:
         x_in = s * (L['HALF_W'] - 0.1 - F['pilaster']['d'])
         box(min(s * 7.4, x_in), 0.0, z - F['pilaster']['w'] / 2, max(s * 7.4, x_in), H, z + F['pilaster']['w'] / 2, WHITE)
 # Salon: black lacquered feature wall, lowered white tray.
@@ -157,8 +156,6 @@ for d in L['displays']:
     box(b['x0'] + 0.01, top, b['z0'] + 0.01, b['x1'] - 0.01, top + 0.012, b['z1'] - 0.01, TAUPE)
     if d['style'] == 'tall':
         box(b['x0'], d['h'] - 0.08, b['z0'], b['x1'], d['h'], b['z1'], BLACK)
-for b in L['benches']:
-    box(b['x0'], 0, b['z0'], b['x1'], 0.42, b['z1'], BLACK)
 c = L['features']['console']
 box(c['x0'], 0, c['z0'], c['x1'], c['h'], c['z1'], BLACK)
 k = L['cashier']

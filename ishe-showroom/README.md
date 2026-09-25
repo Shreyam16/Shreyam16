@@ -1,21 +1,25 @@
 # ISHÉ Private Showroom
 
 An appointment-only jewellery showroom on the web. Visitors start on the street outside a
-black-framed glass double door under the white ISHÉ sign, scroll to open the doors and walk in,
-then explore a U-shaped showroom (15 m × 14 m, 3.8 m ceiling) in real-time 3D.
+black-framed glass double door under the ISHÉ sign, scroll to open the doors and walk in, then
+explore one long, open gallery (15 m × 14 m, 3.8 m ceiling) in real-time 3D: a central aisle lined
+with low glass-topped cases between two rows of white columns, a side gallery beyond each colonnade,
+and one hero necklace on a lit pedestal in front of a black feature wall at the far end.
 
-- **Left:** Necklaces & Bracelets
-- **Straight:** Rings & Combos: a salon with a black lacquered feature wall and the cashier counter
-- **Right:** Earrings & Pendants
+- **Left** (left side gallery and aisle cases): Necklaces & Bracelets
+- **Straight** (far end): Rings & Combos, the hero pedestal, and the cashier counter in the back-right corner
+- **Right** (right side gallery and aisle cases): Earrings & Pendants
 
 Look: a warm, gallery-like boutique. Outside, a cream limestone facade with rusticated joints, a
 black-framed shopfront, tall linear sconces, square black planters with boxwood, and the ISHÉ
 wordmark in white on a black lacquered fascia. Inside, warm white limewash walls with pilasters and
 brass linear sconces, a polished white terrazzo floor with brass inlays at each threshold, black
-lacquered vitrines with glass tops and champagne suede decks, and gold-leaf art. The salon's feature
-wall is black lacquer with thin warm light slits and the wordmark in white, under a lowered white
-tray, with a statement chandelier over the combos table, a small lounge (two armchairs, side table
-with a tea tray, rug) and four staff. Evening mode gives the dusk, lit-from-within street view.
+lacquered vitrines with glass tops and champagne suede decks, linear light slots along the aisle
+ceiling, and gold-leaf art. The far end's feature wall is black lacquer with thin warm light slits
+and the wordmark in white, under a lowered white tray, with a statement chandelier over the combos
+table. A small lounge (two armchairs, side table with a tea tray, rug) sits at the back of the left
+gallery; there are four staff. The showroom opens at dusk, lit from within; the sun icon switches
+to daylight.
 
 ## Run it
 
@@ -192,8 +196,8 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 - **Loading.** A branded screen (the ISHÉ plaque and a thin line driven by real texture and model
   loading) fades into the street once the first frame is drawn. Staff stream in afterwards so they
   never hold the entrance back.
-- **Staff.** A cashier and a consultant behind the counter, and an attendant in each side room,
-  standing by the far end of the wall vitrines rather than in the middle of the arrival view. Each
+- **Staff.** A cashier and a consultant behind the counter, an attendant by the lounge at the back
+  of the left gallery, and one greeting visitors at the front of the right gallery. Each
   holds a calm standing pose with a slowed, low-weight idle layered on top (breathing, a little
   weight shift); the clip's root turn and drift are cancelled so they stay on their spot. They glance
   at a nearby visitor now and then rather than staring, and keep polite eye contact only while the
@@ -216,8 +220,8 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 - **Share your Jewel Box.** The link carries SKUs and quantities only (`?box=ISH-N01*2,ISH-E02`),
   validated against the catalogue. Opening it still starts outside; the "Shared selection" panel
   appears once inside, and nothing is added until the visitor chooses.
-- **Evening mode** (moon icon, default day): dusk sky, lit facade sconces, a warm glow in the shop
-  windows and neighbouring flats, slightly lower light inside. Instant under reduced motion. The
+- **Dusk by default** (sun/moon icon switches to daylight and back): dusk sky, lit facade sconces, a
+  warm glow in the shop windows and neighbouring flats, slightly lower light inside. Instant under reduced motion. The
   lite showroom uses a dusk tint over its daylight stills.
 - **Sound.** Off by default. A synthesised ambience (Web Audio, no files) plays only after the
   visitor turns it on. With sound on, staff also speak: a greeting from each attendant, the

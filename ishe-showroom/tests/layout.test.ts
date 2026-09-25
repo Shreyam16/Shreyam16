@@ -53,14 +53,22 @@ describe('floor plan', () => {
     }
   });
   it('stops walking through walls and cases', () => {
-    // Walk straight at the left partition from the foyer.
-    let pos = { x: -1.5, z: -6 };
+    // Walk sideways out of the aisle into a gallery case.
+    let pos = { x: 0, z: -5 };
     for (let i = 0; i < 100; i++) pos = slideMove(pos.x, pos.z, -0.05, 0);
-    expect(pos.x).toBeGreaterThan(-2.4);
-    // Walk into the cashier counter.
+    expect(pos.x).toBeGreaterThan(-1.46);
+    // Walk down the aisle into the hero pedestal.
     pos = { x: 0, z: -12 };
     for (let i = 0; i < 100; i++) pos = slideMove(pos.x, pos.z, 0, -0.05);
-    expect(pos.z).toBeGreaterThan(-13);
+    expect(pos.z).toBeGreaterThan(-12.6);
+    // Walk into the cashier counter.
+    pos = { x: 5.2, z: -11.5 };
+    for (let i = 0; i < 100; i++) pos = slideMove(pos.x, pos.z, 0, -0.05);
+    expect(pos.z).toBeGreaterThan(-12.6);
+    // Columns stop the visitor too.
+    pos = { x: 0, z: -7.6 };
+    for (let i = 0; i < 200; i++) pos = slideMove(pos.x, pos.z, 0.05, 0);
+    expect(pos.x).toBeLessThan(2.66);
     // Cannot walk back out of the front door once inside.
     pos = { x: 0, z: -1 };
     for (let i = 0; i < 100; i++) pos = slideMove(pos.x, pos.z, 0, 0.05);

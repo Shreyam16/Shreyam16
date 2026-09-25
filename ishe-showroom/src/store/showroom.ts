@@ -117,7 +117,7 @@ export const useShowroom = create<State>()(
       tour: null,
       tryOn: null,
       shared: null,
-      evening: false,
+      evening: true,
       loadProgress: 0,
       sceneReady: false,
       ceremony: null,

@@ -23,7 +23,7 @@ describe('staff and new furniture on the floor plan', () => {
       expect(OBSTACLES).toContainEqual(f);
       for (const d of DISPLAYS) expect(overlap(f, displayFootprint(d)), d.sku).toBe(false);
     }
-    expect(FLOOR_MIRRORS).toHaveLength(8);
+    expect(FLOOR_MIRRORS).toHaveLength(7);
     expect(ARMCHAIRS).toHaveLength(2);
     expect(collides(SIDE_TABLE.x, SIDE_TABLE.z, 0.05)).toBe(true);
     for (const n of Object.values(NODES)) expect(collides(n.x, n.z), n.id).toBe(false);
@@ -45,8 +45,8 @@ describe('staff and new furniture on the floor plan', () => {
       for (let i = 1; i < route.length; i++) expect(segmentClear(route[i - 1].x, route[i - 1].z, route[i].x, route[i].z, 0.12), `${s.id} leg ${i}`).toBe(true);
     }
   });
-  it('lays brass thresholds across each doorway', () => {
-    expect(THRESHOLDS).toHaveLength(4);
+  it('lays brass thresholds at the door and where the aisle meets the far end', () => {
+    expect(THRESHOLDS).toHaveLength(2);
   });
 });
 

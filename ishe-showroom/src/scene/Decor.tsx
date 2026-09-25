@@ -71,14 +71,18 @@ function Orchids({ x, y, z }: { x: number; y: number; z: number }) {
 function Console() {
   const c = CONSOLE;
   const w = c.x1 - c.x0, d = c.z1 - c.z0, cx = (c.x0 + c.x1) / 2, cz = (c.z0 + c.z1) / 2;
+  // Orchids at one end and books at the other, along whichever side is longer.
+  const along = w > d ? ([1, 0] as const) : ([0, 1] as const);
+  const at = (k: number): [number, number] => [cx + along[0] * k, cz + along[1] * k];
+  const [ox, oz] = at(-0.18), [bx, bz] = at(0.2);
   return (
     <group>
       <Box size={[w, 0.05, d]} pos={[cx, c.h - 0.025, cz]} mat="travertine" />
       <Box size={[w - 0.06, c.h - 0.05, d - 0.06]} pos={[cx, (c.h - 0.05) / 2, cz]} mat="blackSatin" />
-      <Orchids x={cx + 0.02} y={c.h} z={cz - 0.18} />
+      <Orchids x={ox} y={c.h} z={oz} />
       {/* A short stack of books and a small brass-toned tray. */}
-      <Box size={[0.2, 0.03, 0.26]} pos={[cx, c.h + 0.015, cz + 0.28]} mat="linen" />
-      <Box size={[0.19, 0.025, 0.24]} pos={[cx, c.h + 0.043, cz + 0.28]} mat="blackSatin" />
+      <Box size={[0.2, 0.03, 0.26]} pos={[bx, c.h + 0.015, bz]} mat="linen" />
+      <Box size={[0.19, 0.025, 0.24]} pos={[bx, c.h + 0.043, bz]} mat="blackSatin" />
     </group>
   );
 }
@@ -86,7 +90,7 @@ function Console() {
 function Artwork() {
   const a = ARTWORK;
   return (
-    <group position={[a.x, a.y, a.z]} rotation={[0, -Math.PI / 2, 0]}>
+    <group position={[a.x, a.y, a.z]} rotation={[0, a.rotY, 0]}>
       {/* Gold-leaf panel floating off the wall on a slim bronze tray frame. */}
       <Box size={[a.w + 0.04, a.h + 0.04, 0.04]} pos={[0, 0, 0.02]} mat="bronze" />
       <mesh position={[0, 0, 0.042]} material={mats().goldLeaf}>

@@ -108,15 +108,17 @@ console.log('Desktop 3D (1440x900)');
     await page.evaluate(() => window.__ishe.getState().setEntrance(0));
   });
 
-  await check('evening toggle: dusk sky outside, default is day, toggles back', async () => {
+  await check('evening toggle: opens at dusk, switches to day and back', async () => {
     const pressed = await page.getByTestId('evening-toggle').getAttribute('aria-pressed');
-    assert(pressed === 'false', `evening default ${pressed}`);
-    await page.getByTestId('evening-toggle').click();
+    assert(pressed === 'true', `evening default ${pressed}`);
     await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 15000 });
     await canvasNotBlank(page, '01b-exterior-evening.png');
-    metrics.drawCallsOutsideEvening = await page.evaluate(() => window.__isheRenderInfo());
     await page.getByTestId('evening-toggle').click();
     await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'off', null, { timeout: 15000 });
+    await canvasNotBlank(page, '01c-exterior-day.png');
+    metrics.drawCallsOutsideEvening = await page.evaluate(() => window.__isheRenderInfo());
+    await page.getByTestId('evening-toggle').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 15000 });
   });
 
   await check('scrolling opens the doors and moves toward the entrance', async () => {
@@ -167,7 +169,7 @@ console.log('Desktop 3D (1440x900)');
   });
 
   await check('staff: clicking the attendant opens her greeting, and she looks at the visitor while talking', async () => {
-    const pt = await page.evaluate(() => window.__isheProject(-5.5, 1.1, -6.4));
+    const pt = await page.evaluate(() => window.__isheProject(-4.2, 1.1, -12.0));
     assert(pt.visible, 'attendant not in view');
     await page.mouse.click(pt.x, pt.y);
     await page.getByTestId('staff-panel').waitFor({ timeout: 8000 });
@@ -439,7 +441,7 @@ console.log('Desktop 3D (1440x900)');
     await page.waitForTimeout(500);
     await page.getByTestId('choose-centre').click();
     await waitIdle(page);
-    const pt = await page.evaluate(() => window.__isheProject(0, 0.97, -9.9));
+    const pt = await page.evaluate(() => window.__isheProject(0, 0.97, -10.4));
     await page.mouse.click(pt.x, pt.y);
     await page.getByTestId('combos-panel').waitFor({ timeout: 15000 });
     await page.screenshot({ path: `${OUT}/09-combos.png` });
@@ -518,7 +520,7 @@ console.log('Keyboard walking and collision (3D, small viewport)');
     await page.keyboard.down('KeyW'); await page.waitForTimeout(12000); await page.keyboard.up('KeyW');
     const c = await page.evaluate(() => window.__isheCamera());
     assert(c.x > -7.1, `walked into the outer wall (x=${c.x.toFixed(2)})`);
-    const inCase = [-1.9, -3.7, -5.5, -7.3].some((z) => c.x < -6.3 && Math.abs(c.z - z) < 0.4);
+    const inCase = [-3.7, -6.3, -8.9].some((z) => c.x < -6.3 && Math.abs(c.z - z) < 0.4);
     assert(!inCase, `walked into a vitrine ${JSON.stringify(c)}`);
     // Turn around and walk back toward the entrance: the closed doors stop the visitor.
     await page.keyboard.down('KeyE'); await page.waitForTimeout(2500); await page.keyboard.up('KeyE');
@@ -574,7 +576,7 @@ console.log('Reduced motion');
     const s = await state(page);
     assert(!s.moving && s.room === 'right', JSON.stringify(s));
     const cam = await page.evaluate(() => window.__isheCamera());
-    assert(Math.hypot(cam.x - 4.4, cam.z - -3.2) < 0.01, `camera ${JSON.stringify(cam)}`);
+    assert(Math.hypot(cam.x - 5.4, cam.z - -1.7) < 0.01, `camera ${JSON.stringify(cam)}`);
   });
   await check('reduced motion: evening switches instantly (no in-between frames)', async () => {
     await page.evaluate(() => {
@@ -583,7 +585,7 @@ console.log('Reduced motion');
       new MutationObserver(() => window.__eveSeen.push(el.dataset.evening)).observe(el, { attributes: true, attributeFilter: ['data-evening'] });
     });
     await page.getByTestId('evening-toggle').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 10000 });
+    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'off', null, { timeout: 10000 });
     const seen = await page.evaluate(() => window.__eveSeen);
     assert(!seen.includes('changing'), `saw ${seen}`);
   });
@@ -679,7 +681,7 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
   }, 900000);
   await check('staff close-ups (cashier and consultant behind the counter)', async () => {
     await page.evaluate(() => window.__ishe.getState().setEvening(false));
-    for (const [id, x] of [['cashier', -0.5], ['consultant', 0.8]]) {
+    for (const [id, x] of [['cashier', 4.6], ['consultant', 5.9]]) {
       await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'cashier' }));
       await page.waitForTimeout(800);
       const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.3, -13.38), x);
@@ -689,8 +691,8 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
     for (const id of ['left', 'right']) {
       await page.evaluate((i) => window.__ishe.getState().goTo({ kind: 'staff', id: i }), id);
       await page.waitForTimeout(1500);
-      const x = id === 'left' ? -5.5 : 5.5;
-      const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.1, -6.4), x);
+      const [x, z] = id === 'left' ? [-4.2, -12.0] : [4.1, -2.4];
+      const pt = await page.evaluate(([xx, zz]) => window.__isheProject(xx, 1.1, zz), [x, z]);
       await page.screenshot({ path: `${OUT}/staff-attendant-${id}.png`, clip: { x: Math.max(0, pt.x - 300), y: 0, width: 600, height: 900 } });
       await page.keyboard.press('Escape');
     }
@@ -753,9 +755,11 @@ console.log('No WebGL (lite fallback)');
     await page.getByTestId('tour-bar').waitFor();
     await page.getByTestId('tour-next').click();
     await page.getByTestId('tour-stop').click();
-    await page.getByTestId('evening-toggle').click();
+    // Opens at dusk (tint on); the toggle switches to daylight.
     await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="lite-evening"]')).opacity === '1', null, { timeout: 3000 });
     await page.screenshot({ path: `${OUT}/17b-lite-evening.png` });
+    await page.getByTestId('evening-toggle').click();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="lite-evening"]')).opacity === '0', null, { timeout: 3000 });
   });
   await check('lite: no page errors', async () => { assert(errors.length === 0, errors.join(' | ')); });
   await check('visit statistics: nothing is sent when the browser asks not to be tracked', async () => {

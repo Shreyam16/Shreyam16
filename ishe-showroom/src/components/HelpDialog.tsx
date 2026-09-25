@@ -27,7 +27,7 @@ export default function HelpDialog() {
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>{mode === '3d' ? 'Select an attendant, or use “Ask the attendant”,' : 'Use “Guided tour”'} for a Bridal, Everyday, Gifting or Festive tour, or a walk through every room. Use Next and Stop to move through it.</li>
             <li>Every piece has “Try on with your camera”: earrings, necklaces and pendants follow your face; rings and bracelets follow your hand. The camera starts only when you ask, and nothing leaves your device.</li>
-            <li>The calendar icon books a private appointment. The moon icon switches to evening.</li>
+            <li>The calendar icon books a private appointment. The sun and moon icon switches between dusk (the default) and daylight.</li>
             <li>Share your Jewel Box from the Jewel Box panel: the link carries piece codes and quantities only.</li>
             <li>With sound on, the attendants greet you and introduce each tour (recorded voices, generated for this demo).</li>
             <li>Anonymous visit statistics (rooms and pieces viewed, for how long) help the store; no names, contact details or cookies. Browsers set to Do Not Track or Global Privacy Control send nothing.</li>

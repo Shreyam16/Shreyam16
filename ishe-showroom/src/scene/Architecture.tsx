@@ -3,9 +3,7 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { mats, textPlaque, type MatKey } from './materials';
-import {
-  BENCHES, CEILING, DEPTH, FRONT_DOOR, HALF_W, PARTITION_END_Z, PARTITION_X, SIDE_DOOR, CASHIER,
-} from './layout';
+import { CEILING, COLUMN, DEPTH, FAR_END_Z, FRONT_DOOR, HALF_W } from './layout';
 import { useShowroom } from '@/store/showroom';
 import { CURTAINS, PILASTER, PILASTER_Z, SALON, THRESHOLDS } from './features';
 import { DISPLAYS } from './layout';
@@ -230,17 +228,25 @@ function Wayfinding() {
   );
   return (
     <group>
-      {/* Above each side doorway, readable from the junction. */}
-      {sign(tex.left, [-PARTITION_X + 0.12, 3.3, (SIDE_DOOR.z0 + SIDE_DOOR.z1) / 2], Math.PI / 2)}
-      {sign(tex.right, [PARTITION_X - 0.12, 3.3, (SIDE_DOOR.z0 + SIDE_DOOR.z1) / 2], -Math.PI / 2)}
-      {/* Hanging over the way into the salon. */}
+      {/* Hung between the first two columns on each side, facing the aisle; readable from the junction. */}
+      {([-1, 1] as const).map((s) => (
+        <group key={s}>
+          {[-0.5, 0.5].map((dz) => (
+            <mesh key={dz} position={[s * COLUMN.x, 3.55, -3.7 + dz]} material={mats().bronze}>
+              <cylinderGeometry args={[0.005, 0.005, 0.5, 6]} />
+            </mesh>
+          ))}
+          {sign(s < 0 ? tex.left : tex.right, [s * COLUMN.x, 3.15, -3.7], s < 0 ? Math.PI / 2 : -Math.PI / 2)}
+        </group>
+      ))}
+      {/* Hanging over the aisle where it opens into the far end. */}
       <group>
         {[-0.5, 0.5].map((x) => (
-          <mesh key={x} position={[x, 3.55, PARTITION_END_Z + 0.4]} material={mats().bronze}>
+          <mesh key={x} position={[x, 3.55, FAR_END_Z + 0.2]} material={mats().bronze}>
             <cylinderGeometry args={[0.005, 0.005, 0.5, 6]} />
           </mesh>
         ))}
-        {sign(tex.centre, [0, 3.15, PARTITION_END_Z + 0.4], 0)}
+        {sign(tex.centre, [0, 3.15, FAR_END_Z + 0.2], 0)}
       </group>
     </group>
   );
@@ -261,25 +267,10 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
       <Span a={[-hw + 0.1, 0, -DEPTH]} b={[-hw + 0.12, 0.1, 0]} mat="blackSatin" />
       <Span a={[hw - 0.12, 0, -DEPTH]} b={[hw - 0.1, 0.1, 0]} mat="blackSatin" />
       <Span a={[-hw, 0, -DEPTH + 0.1]} b={[hw, 0.1, -DEPTH + 0.12]} mat="blackSatin" />
-      {/* Partitions forming the U, with side doorways off the junction. */}
       {[-1, 1].map((s) => (
         <group key={s}>
-          <Span a={[s * PARTITION_X - 0.1, 0, SIDE_DOOR.z1]} b={[s * PARTITION_X + 0.1, wallH, -0.1]} mat="wall" />
-          <Span a={[s * PARTITION_X - 0.1, 0, PARTITION_END_Z]} b={[s * PARTITION_X + 0.1, wallH, SIDE_DOOR.z0]} mat="wall" />
-          <Span a={[s * PARTITION_X - 0.1, SIDE_DOOR.lintel, SIDE_DOOR.z0]} b={[s * PARTITION_X + 0.1, wallH, SIDE_DOOR.z1]} mat="wall" />
-          {/* Black reveal around the side doorway. */}
-          <Span a={[s * PARTITION_X - 0.14, 0, SIDE_DOOR.z0 - 0.04]} b={[s * PARTITION_X + 0.14, SIDE_DOOR.lintel, SIDE_DOOR.z0]} mat="blackMetal" />
-          <Span a={[s * PARTITION_X - 0.14, 0, SIDE_DOOR.z1]} b={[s * PARTITION_X + 0.14, SIDE_DOOR.lintel, SIDE_DOOR.z1 + 0.04]} mat="blackMetal" />
-          <Span a={[s * PARTITION_X - 0.14, SIDE_DOOR.lintel, SIDE_DOOR.z0 - 0.04]} b={[s * PARTITION_X + 0.14, SIDE_DOOR.lintel + 0.04, SIDE_DOOR.z1 + 0.04]} mat="blackMetal" />
-          {/* Rounded white column where each arm opens into the salon, on a black base. */}
-          <mesh position={[s * PARTITION_X, wallH / 2, PARTITION_END_Z]} material={M.wall}>
-            <cylinderGeometry args={[0.17, 0.17, wallH, 32]} />
-          </mesh>
-          <mesh position={[s * PARTITION_X, 0.05, PARTITION_END_Z]} material={M.blackSatin}>
-            <cylinderGeometry args={[0.175, 0.175, 0.1, 32]} />
-          </mesh>
-          {/* White pilasters between the arm vitrines, each with a tall brass linear sconce. */}
-          {PILASTER_Z.map((z) => (
+          {/* White pilasters on the outer walls, each with a tall brass linear sconce. */}
+          {PILASTER_Z[s < 0 ? 'left' : 'right'].map((z) => (
             <group key={z}>
               <Box size={[PILASTER.d, wallH, PILASTER.w]} pos={[s * (hw - 0.1 - PILASTER.d / 2), wallH / 2, z]} mat="wall" />
               <Box size={[PILASTER.d + 0.01, 0.1, PILASTER.w + 0.01]} pos={[s * (hw - 0.1 - PILASTER.d / 2), 0.05, z]} mat="blackSatin" />
@@ -287,15 +278,29 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
               <Box size={[0.01, 0.54, 0.035]} pos={[s * (hw - 0.1 - PILASTER.d - 0.032), 2.25, z]} mat="sconce" />
             </group>
           ))}
-          {/* Long bench along the foyer-side of each arm. */}
-          {BENCHES.filter((b) => Math.sign(b.x0) === s).map((b) => (
-            <Box key={b.z0} size={[b.x1 - b.x0, 0.42, b.z1 - b.z0]} pos={[(b.x0 + b.x1) / 2, 0.21, (b.z0 + b.z1) / 2]} mat="velvet" />
+          {/* The colonnade: square white columns on black bases, a brass linear sconce facing the aisle. */}
+          {COLUMN.z.map((z) => (
+            <group key={z} position={[s * COLUMN.x, 0, z]}>
+              <Box size={[COLUMN.size, wallH, COLUMN.size]} pos={[0, wallH / 2, 0]} mat="wall" />
+              <Box size={[COLUMN.size + 0.02, 0.12, COLUMN.size + 0.02]} pos={[0, 0.06, 0]} mat="blackSatin" />
+              <Box size={[COLUMN.size + 0.06, 0.08, COLUMN.size + 0.06]} pos={[0, wallH - 0.04, 0]} mat="wall" />
+              {[-1, 1].map((f) => (
+                <group key={f}>
+                  <Box size={[0.03, 0.62, 0.07]} pos={[f * (COLUMN.size / 2 + 0.015), 2.25, 0]} mat="brass" />
+                  <Box size={[0.01, 0.54, 0.035]} pos={[f * (COLUMN.size / 2 + 0.032), 2.25, 0]} mat="sconce" />
+                </group>
+              ))}
+            </group>
           ))}
+          {/* Linear light slots in the ceiling along the aisle, as in a gallery. */}
+          <mesh position={[s * 1.25, CEILING - 0.006, (FAR_END_Z - 0.6) / 2]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
+            <planeGeometry args={[0.04, -FAR_END_Z - 0.6]} />
+          </mesh>
         </group>
       ))}
       <Atmosphere />
-      {/* Brand wall behind the cashier: the wordmark in white on the black feature wall. */}
-      <mesh position={[0, 2.35, -DEPTH + 0.14]}>
+      {/* The wordmark in white on the black feature wall, above the hero pedestal. */}
+      <mesh position={[0, 2.75, -DEPTH + 0.14]}>
         <planeGeometry args={[1.5, 1.5 * WORDMARK_ASPECT]} />
         <meshBasicMaterial map={logoWall} transparent toneMapped={false} />
       </mesh>
@@ -310,7 +315,7 @@ function Atmosphere() {
   return (
     <group>
       {/* Warm washes on the linen panels above each arm vitrine. */}
-      {DISPLAYS.filter((d) => d.style === 'tall').map((d) => {
+      {DISPLAYS.filter((d) => d.style === 'tall' && Math.abs(d.x) > 5).map((d) => {
         const s = Math.sign(d.x);
         return (
           <mesh key={d.sku} position={[s * (HALF_W - 0.135), 2.25, d.z]} rotation={[0, -s * Math.PI / 2, 0]} material={M.wash}>
@@ -318,7 +323,7 @@ function Atmosphere() {
           </mesh>
         );
       })}
-      {/* Wash behind the cashier and brand wall. */}
+      {/* Wash on the feature wall behind the hero pedestal. */}
       <mesh position={[0, 2.4, -DEPTH + 0.12]} material={M.wash}>
         <planeGeometry args={[4.2, 2.6]} />
       </mesh>
@@ -343,10 +348,10 @@ function SalonWalls() {
       <Span a={[-2.6, 0.1, z]} b={[2.6, t, z + 0.03]} mat="ebony" />
       {slits.map((x) => <Span key={x} a={[x - 0.006, 0.25, z + 0.03]} b={[x + 0.006, t - 0.15, z + 0.034]} mat="lightStrip" />)}
       {/* Brass frame round the wordmark panel. */}
-      <Span a={[-1.02, 1.72, z + 0.03]} b={[1.02, 1.74, z + 0.036]} mat="brass" />
-      <Span a={[-1.02, 2.96, z + 0.03]} b={[1.02, 2.98, z + 0.036]} mat="brass" />
-      <Span a={[-1.02, 1.72, z + 0.03]} b={[-1.0, 2.98, z + 0.036]} mat="brass" />
-      <Span a={[1.0, 1.72, z + 0.03]} b={[1.02, 2.98, z + 0.036]} mat="brass" />
+      <Span a={[-1.02, 2.3, z + 0.03]} b={[1.02, 2.32, z + 0.036]} mat="brass" />
+      <Span a={[-1.02, 3.18, z + 0.03]} b={[1.02, 3.2, z + 0.036]} mat="brass" />
+      <Span a={[-1.02, 2.3, z + 0.03]} b={[-1.0, 3.2, z + 0.036]} mat="brass" />
+      <Span a={[1.0, 2.3, z + 0.03]} b={[1.02, 3.2, z + 0.036]} mat="brass" />
       <Span a={[-2.6, t - 0.03, z]} b={[2.6, t, z + 0.05]} mat="brass" />
       {/* Lowered tray: white soffit and fascia, warm cove light along its edge. */}
       <mesh position={[0, t, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats().bronzeCeiling}>
@@ -375,10 +380,6 @@ function Moulding() {
     { axis: 'z', at: -DEPTH + 0.1, from: -HALF_W + 0.1, to: SALON.x0, out: 1 },
     { axis: 'z', at: -DEPTH + 0.1, from: SALON.x1, to: HALF_W - 0.1, out: 1 },
     { axis: 'z', at: -0.1, from: -HALF_W + 0.1, to: HALF_W - 0.1, out: -1 },
-    ...[-1, 1].flatMap((s) => [
-      { axis: 'x' as const, at: s * PARTITION_X - 0.1, from: PARTITION_END_Z, to: -0.1, out: -1 as const },
-      { axis: 'x' as const, at: s * PARTITION_X + 0.1, from: PARTITION_END_Z, to: -0.1, out: 1 as const },
-    ]),
   ];
   return (
     <group>

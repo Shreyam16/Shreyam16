@@ -22,16 +22,6 @@ export interface BakeSurface {
 const H = 3.8;
 const FULL: [number, number, number, number] = [-7.5, 7.5, -14, 0];
 
-const partition = (s: 1 | -1, side: 'arm' | 'foyer'): BakeSurface => ({
-  name: `partition-${s < 0 ? 'left' : 'right'}-${side}`,
-  plane: 'x',
-  c: side === 'arm' ? s * 2.6 : s * 2.4,
-  normal: (side === 'arm' ? s : -s) as 1 | -1,
-  rects: [[-1.6, -0.1, 0, H], [-8, -4, 0, H], [-4, -1.6, 2.9, H]],
-  uv: [-8, -0.1, 0, H],
-  res: [512, 244],
-});
-
 export const BAKE_SURFACES: BakeSurface[] = [
   { name: 'floor', plane: 'y', c: 0, normal: 1, rects: [FULL], uv: FULL, res: [1024, 956] },
   { name: 'ceiling', plane: 'y', c: H, normal: -1, rects: [FULL], uv: FULL, res: [512, 478] },
@@ -46,5 +36,4 @@ export const BAKE_SURFACES: BakeSurface[] = [
     ],
     uv: [-7.4, 7.4, 0, H], res: [944, 244],
   },
-  partition(-1, 'arm'), partition(-1, 'foyer'), partition(1, 'arm'), partition(1, 'foyer'),
 ];

@@ -8,8 +8,10 @@ import { limewashTexture, mats } from './materials';
 /** How much the baked irradiance is scaled up (MeshBasicMaterial divides light maps by π). */
 const GAIN = Math.PI * 1.3;
 const baked: THREE.MeshBasicMaterial[] = [];
-/** Scales every baked surface (evening mode dims the room slightly). */
+let gainK = 1;
+/** Scales every baked surface (evening mode dims the room slightly); also applies to surfaces loaded later. */
 export function bakedGain(k: number) {
+  gainK = k;
   for (const m of baked) m.lightMapIntensity = GAIN * k;
 }
 /** Lift each surface off the old geometry toward the room so nothing z-fights. */
@@ -66,15 +68,15 @@ export default function BakedSurfaces() {
         // One terrazzo texture repeat covers 2 x 2 m of the plane's 0..1 UVs.
         floorUv.repeat.set(7.5, 7);
         floorUv.needsUpdate = true;
-        material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN });
+        material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else if (s.name === 'ceiling') {
-        material = new THREE.MeshBasicMaterial({ color: '#fbf8f2', lightMap: tex, lightMapIntensity: GAIN });
+        material = new THREE.MeshBasicMaterial({ color: '#fbf8f2', lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else {
         // Warm white limewash, tiled about every 2 m whatever the wall's size.
         const map = lime.clone();
         map.repeat.set((s.uv[1] - s.uv[0]) / 2, (s.uv[3] - s.uv[2]) / 2);
         map.needsUpdate = true;
-        material = new THREE.MeshBasicMaterial({ color: '#ffffff', map, lightMap: tex, lightMapIntensity: GAIN });
+        material = new THREE.MeshBasicMaterial({ color: '#ffffff', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
       }
       baked.push(material as THREE.MeshBasicMaterial);
       return { s, geometry: geometryFor(s), material };
