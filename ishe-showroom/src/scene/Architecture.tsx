@@ -7,6 +7,7 @@ import {
   BENCHES, CEILING, DEPTH, FRONT_DOOR, HALF_W, PARTITION_END_Z, PARTITION_X, SIDE_DOOR, CASHIER,
 } from './layout';
 import { useShowroom } from '@/store/showroom';
+import { CURTAINS, SALON, THRESHOLDS } from './features';
 import { DISPLAYS } from './layout';
 import Merged from './Merged';
 import Decor from './Decor';
@@ -112,7 +113,7 @@ function DoorLeaf({ side }: { side: -1 | 1 }) {
       <Box size={[w, 0.14, 0.05]} pos={[cx, 0.07, 0]} mat="blackMetal" />
       {/* Pull handles on both faces. */}
       {[0.07, -0.07].map((z) => (
-        <mesh key={z} position={[dir * (w - 0.16), 1.1, z]} material={mats().blackMetal}>
+        <mesh key={z} position={[dir * (w - 0.16), 1.1, z]} material={mats().bronze}>
           <cylinderGeometry args={[0.014, 0.014, 1.1, 16]} />
         </mesh>
       ))}
@@ -188,7 +189,7 @@ function Wayfinding() {
   }, []);
   const sign = (t: THREE.Texture, pos: V3, rotY: number) => (
     <group position={pos} rotation={[0, rotY, 0]}>
-      <Box size={[1.36, 0.36, 0.03]} pos={[0, 0, -0.018]} mat="blackMetal" />
+      <Box size={[1.36, 0.36, 0.03]} pos={[0, 0, -0.018]} mat="bronze" />
       <mesh>
         <planeGeometry args={[1.3, 0.325]} />
         <meshBasicMaterial map={t} toneMapped={false} />
@@ -203,7 +204,7 @@ function Wayfinding() {
       {/* Hanging over the way into the salon. */}
       <group>
         {[-0.5, 0.5].map((x) => (
-          <mesh key={x} position={[x, 3.55, PARTITION_END_Z + 0.4]} material={mats().blackMetal}>
+          <mesh key={x} position={[x, 3.55, PARTITION_END_Z + 0.4]} material={mats().bronze}>
             <cylinderGeometry args={[0.005, 0.005, 0.5, 6]} />
           </mesh>
         ))}
@@ -242,8 +243,9 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
           <mesh position={[s * PARTITION_X, wallH / 2, PARTITION_END_Z]} material={M.blackSatin}>
             <cylinderGeometry args={[0.16, 0.16, wallH, 32]} />
           </mesh>
-          {/* Linen wall panel behind the arm vitrines. */}
-          <Span a={[s * (hw - 0.1), 0.1, -8.2]} b={[s * (hw - 0.12), 3.1, -1.0]} mat="linen" />
+          {/* Fluted walnut panelling behind the arm vitrines, with a bronze shadow-gap trim. */}
+          <Span a={[s * (hw - 0.1), 0.1, -8.2]} b={[s * (hw - 0.13), 3.1, -1.0]} mat="walnutFluted" />
+          <Span a={[s * (hw - 0.1), 3.1, -8.22]} b={[s * (hw - 0.14), 3.12, -0.98]} mat="bronze" />
           {/* Long bench along the foyer-side of each arm. */}
           {BENCHES.filter((b) => Math.sign(b.x0) === s).map((b) => (
             <Box key={b.z0} size={[b.x1 - b.x0, 0.42, b.z1 - b.z0]} pos={[(b.x0 + b.x1) / 2, 0.21, (b.z0 + b.z1) / 2]} mat="velvet" />
@@ -256,7 +258,7 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
         <planeGeometry args={[1.5, 0.61]} />
         <meshBasicMaterial map={logoWall} transparent toneMapped={false} />
       </mesh>
-      <Span a={[CASHIER.x - 2.2, 0.1, -DEPTH + 0.1]} b={[CASHIER.x + 2.2, 3.5, -DEPTH + 0.11]} mat="linen" />
+      <SalonWalls />
     </group>
   );
 }
@@ -270,7 +272,7 @@ function Atmosphere() {
       {DISPLAYS.filter((d) => d.style === 'tall').map((d) => {
         const s = Math.sign(d.x);
         return (
-          <mesh key={d.sku} position={[s * (HALF_W - 0.125), 2.25, d.z]} rotation={[0, -s * Math.PI / 2, 0]} material={M.wash}>
+          <mesh key={d.sku} position={[s * (HALF_W - 0.135), 2.25, d.z]} rotation={[0, -s * Math.PI / 2, 0]} material={M.wash}>
             <planeGeometry args={[1.3, 2.2]} />
           </mesh>
         );
@@ -287,6 +289,97 @@ function Atmosphere() {
   );
 }
 
+/**
+ * Rings & Combos salon: walnut panelling with an ivory, bronze-framed panel for the wordmark, under
+ * a lowered bronze-toned ceiling tray edged with a warm cove.
+ */
+function SalonWalls() {
+  const z = -DEPTH + 0.1;
+  const panels: [number, number][] = [[-2.6, -1.9], [-1.86, -1.08], [1.08, 1.86], [1.9, 2.6]];
+  const t = SALON.trayY;
+  return (
+    <group>
+      {panels.map(([x0, x1]) => <Span key={x0} a={[x0, 0.1, z]} b={[x1, t, z + 0.03]} mat="walnut" />)}
+      {/* Ivory feature panel behind the cashier keeps the black wordmark legible. */}
+      <Span a={[-1.04, 0.1, z]} b={[1.04, t, z + 0.012]} mat="wall" />
+      <Span a={[-1.08, 0.1, z]} b={[-1.04, t, z + 0.035]} mat="bronze" />
+      <Span a={[1.04, 0.1, z]} b={[1.08, t, z + 0.035]} mat="bronze" />
+      <Span a={[-2.6, t - 0.05, z]} b={[2.6, t, z + 0.05]} mat="bronze" />
+      {/* Lowered tray: bronze-toned soffit, walnut fascia, warm cove light along its edge. */}
+      <mesh position={[0, t, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats().bronzeCeiling}>
+        <planeGeometry args={[SALON.x1 - SALON.x0, SALON.z1 - SALON.z0]} />
+      </mesh>
+      <Span a={[SALON.x0, t - 0.02, SALON.z1 - 0.02]} b={[SALON.x1, CEILING, SALON.z1]} mat="walnut" />
+      <Span a={[SALON.x0 - 0.02, t - 0.02, SALON.z0]} b={[SALON.x0, CEILING, SALON.z1]} mat="walnut" />
+      <Span a={[SALON.x1, t - 0.02, SALON.z0]} b={[SALON.x1 + 0.02, CEILING, SALON.z1]} mat="walnut" />
+      <mesh position={[0, t - 0.021, SALON.z1 - 0.06]} rotation={[Math.PI / 2, 0, 0]} material={mats().cove}>
+        <planeGeometry args={[SALON.x1 - SALON.x0 - 0.1, 0.03]} />
+      </mesh>
+      {[SALON.x0 + 0.06, SALON.x1 - 0.06].map((x) => (
+        <mesh key={x} position={[x, t - 0.021, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats().cove}>
+          <planeGeometry args={[0.03, SALON.z1 - SALON.z0 - 0.1]} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Crown moulding along every wall head: two stepped ivory profiles. */
+function Moulding() {
+  const runs: { axis: 'x' | 'z'; at: number; from: number; to: number; out: 1 | -1 }[] = [
+    { axis: 'x', at: -HALF_W + 0.1, from: -DEPTH + 0.1, to: -0.1, out: 1 },
+    { axis: 'x', at: HALF_W - 0.1, from: -DEPTH + 0.1, to: -0.1, out: -1 },
+    { axis: 'z', at: -DEPTH + 0.1, from: -HALF_W + 0.1, to: SALON.x0, out: 1 },
+    { axis: 'z', at: -DEPTH + 0.1, from: SALON.x1, to: HALF_W - 0.1, out: 1 },
+    { axis: 'z', at: -0.1, from: -HALF_W + 0.1, to: HALF_W - 0.1, out: -1 },
+    ...[-1, 1].flatMap((s) => [
+      { axis: 'x' as const, at: s * PARTITION_X - 0.1, from: PARTITION_END_Z, to: -0.1, out: -1 as const },
+      { axis: 'x' as const, at: s * PARTITION_X + 0.1, from: PARTITION_END_Z, to: -0.1, out: 1 as const },
+    ]),
+  ];
+  return (
+    <group>
+      {runs.flatMap((r, i) => [[0.07, 0.05, 0], [0.035, 0.035, 0.05]].map(([depth, h, drop], k) => {
+        const y = CEILING - drop - h / 2;
+        const c = r.at + (r.out * depth) / 2;
+        const len = r.to - r.from, mid = (r.from + r.to) / 2;
+        return r.axis === 'x'
+          ? <Box key={`${i}-${k}`} size={[depth, h, len]} pos={[c, y, mid]} mat="wall" />
+          : <Box key={`${i}-${k}`} size={[len, h, depth]} pos={[mid, y, c]} mat="wall" />;
+      }))}
+    </group>
+  );
+}
+
+/** Brass inlay strips at each doorway threshold (flush with the stone). */
+function Thresholds() {
+  return (
+    <group>
+      {THRESHOLDS.map((b, i) => (
+        <Box key={i} size={[b.x1 - b.x0, 0.004, b.z1 - b.z0]} pos={[(b.x0 + b.x1) / 2, 0.004, (b.z0 + b.z1) / 2]} mat="brass" />
+      ))}
+    </group>
+  );
+}
+
+/** Sheer curtains drawn to either side of each shop window, on a slim bronze rod. */
+function Curtains() {
+  return (
+    <group>
+      {CURTAINS.map((c) => (
+        <group key={c.x0}>
+          <Box size={[c.x1 - c.x0 - 0.02, 0.02, 0.02]} pos={[(c.x0 + c.x1) / 2, 3.28, -0.24]} mat="bronze" />
+          {[c.x0 + 0.65, c.x1 - 0.65].map((x) => (
+            <mesh key={x} position={[x, 1.75, -0.24]} material={mats().sheer}>
+              <planeGeometry args={[1.3, 3.05]} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
 export default function Architecture() {
   // Load textures here so nothing below suspends while it is being merged.
   const [plaque, logoWall] = useLoader(THREE.TextureLoader, ['/brand/ishe-logo-plaque.png', '/brand/ishe-wordmark-black.png']);
@@ -299,6 +392,9 @@ export default function Architecture() {
         <Facade plaque={plaque} />
         <Interior logoWall={logoWall} />
         <Wayfinding />
+        <Moulding />
+        <Thresholds />
+        <Curtains />
         <Decor />
       </Merged>}
       <BakedSurfaces />

@@ -5,7 +5,11 @@ Bakes lighting for the ISHÉ showroom with Blender Cycles (bpy).
 
 Reads bake/layout.json (exported from the TypeScript floor plan), rebuilds the room with its
 occluders and light sources, bakes diffuse lighting (direct + indirect, no albedo) onto every
-surface in `surfaces`, and writes public/bake/<name>.png. The scene applies these as light maps.
+surface in `surfaces`, and writes public/bake/<name>.npy (bake/to-png.mjs converts them). The scene
+applies these as light maps.
+
+Occluders carry their real (linear) albedo, so walnut panelling and the travertine floor tint the
+bounce light, while the lightmaps themselves hold lighting only (no albedo).
 
 Coordinates: three.js (x, y-up, z toward street) -> Blender (x, -z, y).
 """
@@ -48,10 +52,14 @@ def material(name, albedo, emit=None, strength=0.0):
         bsdf.inputs['Emission Strength'].default_value = strength
     return m
 
-WHITE = material('white', (0.82, 0.81, 0.79))
-FLOOR = material('floor', (0.72, 0.7, 0.66))
-BLACK = material('black', (0.04, 0.04, 0.04))
-LINEN = material('linen', (0.7, 0.66, 0.6))
+# Linear albedo of the scene's finishes.
+WHITE = material('ivory', (0.8, 0.75, 0.67))          # warm ivory limewash
+FLOOR = material('travertine', (0.6, 0.52, 0.41))     # honed travertine
+BLACK = material('black', (0.04, 0.04, 0.04))         # black lacquer
+WALNUT = material('walnut', (0.13, 0.07, 0.035))
+BRONZE = material('bronze', (0.22, 0.15, 0.09))
+TAUPE = material('taupe', (0.13, 0.1, 0.085))
+BOUCLE = material('boucle', (0.7, 0.65, 0.57))
 
 def box(x0, y0, z0, x1, y1, z1, mat):
     """Axis-aligned box in three.js coordinates."""
@@ -122,10 +130,31 @@ for x0, x1, y0, y1 in [(-7.6, -6.5, 0, H), (-6.5, -2.2, 0, 0.45), (-6.5, -2.2, 3
                        (1.1, 2.2, 0, H), (2.2, 6.5, 0, 0.45), (2.2, 6.5, 3.1, H), (6.5, 7.6, 0, H)]:
     box(x0, y0, -0.1, x1, y1, 0.1, WHITE)
 
+F = L['features']
+# Fluted walnut panelling behind the arm vitrines.
+for s in (-1, 1):
+    x_in = s * (L['HALF_W'] - 0.13)
+    box(min(s * 7.4, x_in), 0.1, -8.2, max(s * 7.4, x_in), 3.1, -1.0, WALNUT)
+# Salon: walnut back wall (ivory centre panel), lowered bronze tray with walnut fascia.
+sal = F['salon']
+for x0, x1 in [(-2.6, -1.08), (1.08, 2.6)]:
+    box(x0, 0.1, -13.9, x1, sal['trayY'], -13.87, WALNUT)
+tray = box(sal['x0'], sal['trayY'], sal['z0'], sal['x1'], H, sal['z1'], BRONZE)
+# Lounge and try-on mirrors.
+for a in F['armchairs']:
+    box(a['x'] - a['w'] / 2, 0, a['z'] - a['d'] / 2, a['x'] + a['w'] / 2, 0.6, a['z'] + a['d'] / 2, BOUCLE)
+st = F['sideTable']
+cylinder(st['x'], st['z'], st['r'], st['h'] - 0.03, st['h'], WALNUT)
+cylinder(st['x'], st['z'], 0.03, 0, st['h'], BRONZE)
+ms = F['floorMirrorSize']
+for m in F['floorMirrors']:
+    box(m['x'] - 0.03, 0, m['z'] - ms['w'] / 2, m['x'] + 0.03, ms['h'], m['z'] + ms['w'] / 2, WALNUT)
+
 for d in L['displays']:
     b = d['box']
     top = 0.9 if d['style'] == 'tall' else 0.85
     box(b['x0'], 0.0, b['z0'], b['x1'], top, b['z1'], BLACK)
+    box(b['x0'] + 0.01, top, b['z0'] + 0.01, b['x1'] - 0.01, top + 0.012, b['z1'] - 0.01, TAUPE)
     if d['style'] == 'tall':
         box(b['x0'], d['h'] - 0.08, b['z0'], b['x1'], d['h'], b['z1'], BLACK)
 for b in L['benches']:
@@ -161,22 +190,41 @@ def area(x, y, z, sx, sz, power, temp, rot=(0, 0, 0)):
     bpy.context.collection.objects.link(o)
     return o
 
-def spot(x, z, power, temp, angle):
+def in_salon(x, z):
+    return sal['x0'] < x < sal['x1'] and sal['z0'] < z < sal['z1']
+
+def spot(x, z, power, temp, angle, blend=0.6):
     d = bpy.data.lights.new('spot', 'SPOT')
     d.energy = power
     d.spot_size = math.radians(angle)
-    d.spot_blend = 0.6
+    d.spot_blend = blend
     d.shadow_soft_size = 0.05
     d.color = kelvin(temp)
     o = bpy.data.objects.new('spot', d)
-    o.location = B(x, H - 0.02, z)  # default spot points down -Z in Blender = down
+    o.location = B(x, (sal['trayY'] if in_salon(x, z) else H) - 0.02, z)  # default spot points down -Z in Blender = down
     bpy.context.collection.objects.link(o)
 
 for dl in L['features']['downlights']:
     if dl['kind'] == 'display':
-        spot(dl['x'], dl['z'], 110, 3000, 34)
+        # Tight, bright accent on each piece.
+        spot(dl['x'], dl['z'], 150, 3000, 22, blend=0.35)
+    elif in_salon(dl['x'], dl['z']):
+        spot(dl['x'], dl['z'], 95, 2800, 55)
     else:
-        spot(dl['x'], dl['z'], 150, 3200, 70)
+        spot(dl['x'], dl['z'], 140, 3200, 70)
+
+# Salon: warm cove along the tray edge and the chandelier's glow (intimate, 2700 K).
+area(0, sal['trayY'] - 0.03, sal['z1'] - 0.06, sal['x1'] - sal['x0'] - 0.1, 0.03, 40, 2700)
+for x in (sal['x0'] + 0.06, sal['x1'] - 0.06):
+    area(x, sal['trayY'] - 0.03, (sal['z0'] + sal['z1']) / 2, 0.03, sal['z1'] - sal['z0'] - 0.1, 50, 2700)
+ch = F['chandelier']
+lamp = bpy.data.lights.new('chandelier', 'POINT')
+lamp.energy = 70
+lamp.shadow_soft_size = 0.35
+lamp.color = kelvin(2600)
+lo = bpy.data.objects.new('chandelier', lamp)
+lo.location = B(ch['x'], ch['bottom'] + 0.3, ch['z'])
+bpy.context.collection.objects.link(lo)
 
 # Perimeter cove: long thin area lights just below the ceiling along the outer walls.
 hw = L['HALF_W']

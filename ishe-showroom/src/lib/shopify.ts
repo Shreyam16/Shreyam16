@@ -4,6 +4,27 @@ import { SHOPIFY_VARIANTS } from '@/data/shopify-variants';
 
 export interface CheckoutLine { sku: string; quantity: number }
 
+/** Cashier extras. Engraving is a request only: the store confirms it before anything is made. */
+export interface CheckoutExtras { giftWrap: boolean; giftNote: string; engraving: string }
+
+const oneLine = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max) : '');
+
+export function validateExtras(input: unknown): CheckoutExtras {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  return {
+    giftWrap: raw.giftWrap === true,
+    giftNote: typeof raw.giftNote === 'string' ? raw.giftNote.replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').trim().slice(0, 240) : '',
+    engraving: oneLine(raw.engraving, 30),
+  };
+}
+
+/** Cart attributes and note sent to Shopify (only when Shopify is configured). */
+export function extrasToCart(x: CheckoutExtras): { attributes: { key: string; value: string }[]; note?: string } {
+  const attributes = [{ key: 'Gift wrap', value: x.giftWrap ? 'Yes' : 'No' }];
+  if (x.engraving) attributes.push({ key: 'Engraving request (to be confirmed by the store)', value: x.engraving });
+  return { attributes, ...(x.giftNote ? { note: `Gift note: ${x.giftNote}` } : {}) };
+}
+
 export type CheckoutResult =
   | { mode: 'live'; checkoutUrl: string }
   | { mode: 'demo'; reason: string }
@@ -58,7 +79,7 @@ const CART_CREATE = `mutation cartCreate($input: CartInput!) {
 
 export async function createCheckout(
   lines: CheckoutLine[],
-  opts: { env?: NodeJS.ProcessEnv; buyerIp?: string; fetchImpl?: typeof fetch } = {},
+  opts: { env?: NodeJS.ProcessEnv; buyerIp?: string; fetchImpl?: typeof fetch; extras?: CheckoutExtras } = {},
 ): Promise<CheckoutResult> {
   const cfg = readShopifyEnv(opts.env);
   if (!cfg) {
@@ -82,7 +103,12 @@ export async function createCheckout(
       headers,
       body: JSON.stringify({
         query: CART_CREATE,
-        variables: { input: { lines: merch.map(({ merchandiseId, quantity }) => ({ merchandiseId, quantity })) } },
+        variables: {
+          input: {
+            lines: merch.map(({ merchandiseId, quantity }) => ({ merchandiseId, quantity })),
+            ...(opts.extras ? extrasToCart(opts.extras) : {}),
+          },
+        },
       }),
       cache: 'no-store',
     });

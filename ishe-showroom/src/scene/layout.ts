@@ -6,7 +6,7 @@
  * ceiling 3.8 m. The U is: left arm (x < -2.5) + back salon (z < -8) + right arm (x > 2.5), with the
  * entrance foyer / junction in the notch of the U.
  */
-import { PRODUCTS, type RoomId } from '@/data/catalogue';
+import { PRODUCTS, type Occasion, type RoomId } from '@/data/catalogue';
 
 export const EYE = 1.65;
 export const CEILING = 3.8;
@@ -21,7 +21,7 @@ export const BODY_RADIUS = 0.3;
 
 export * from './displays-data';
 import { DISPLAYS, type Box2, type DisplaySpec } from './displays-data';
-import { CONSOLE, STAFF, STAFF_ENABLED } from './features';
+import { CONSOLE, FURNITURE_COLLIDERS, STAFF, STAFF_BY_ID, STAFF_ENABLED, type StaffId } from './features';
 
 export const DISPLAY_BY_SKU: Record<string, DisplaySpec> = Object.fromEntries(DISPLAYS.map((d) => [d.sku, d]));
 
@@ -59,6 +59,7 @@ export const OBSTACLES: Box2[] = [
   ...WALLS,
   ...BENCHES,
   CONSOLE,
+  ...FURNITURE_COLLIDERS,
   ...STAFF.filter((p) => STAFF_ENABLED && p.half > 0).map((p) => ({ x0: p.x - p.half, z0: p.z - p.half, x1: p.x + p.half, z1: p.z + p.half })),
   ...DISPLAYS.map(displayFootprint),
   { x0: COMBO_TABLE.x - COMBO_TABLE.r, z0: COMBO_TABLE.z - COMBO_TABLE.r, x1: COMBO_TABLE.x + COMBO_TABLE.r, z1: COMBO_TABLE.z + COMBO_TABLE.r },
@@ -175,6 +176,14 @@ export function cashierPose(): Pose {
   return { x: 0, y: EYE, z: CASHIER.customerZ, tx: 0, ty: 1.3, tz: CASHIER.z - 0.45 };
 }
 
+/** Standing in front of a member of staff, at a polite conversational distance. */
+export function staffPose(id: StaffId): Pose {
+  if (id === 'cashier' || id === 'consultant') return cashierPose();
+  const s = STAFF_BY_ID[id];
+  const dist = 1.7;
+  return { x: s.x + Math.sin(s.rotY) * dist, y: EYE, z: s.z + Math.cos(s.rotY) * dist, tx: s.x, ty: 1.42, tz: s.z };
+}
+
 function neighbours(id: NodeId): NodeId[] {
   return EDGES.flatMap(([a, b]) => (a === id ? [b] : b === id ? [a] : []));
 }
@@ -241,3 +250,38 @@ export function roomAt(x: number, z: number): RoomId | 'foyer' {
 }
 
 export const ROOM_OF_SKU: Record<string, RoomId> = Object.fromEntries(PRODUCTS.map((p) => [p.sku, p.room]));
+
+// ---------------------------------------------------------------------------------------------
+// Guided tours
+// ---------------------------------------------------------------------------------------------
+
+export type TourId = 'bridal' | 'everyday' | 'gifting' | 'festive' | 'around';
+export type TourStop = { kind: 'product'; sku: string } | { kind: 'node'; node: NodeId; caption: string } | { kind: 'combos' };
+
+export const TOURS: Record<TourId, { label: string; blurb: string; occasion?: Occasion }> = {
+  bridal: { label: 'Bridal', blurb: 'Pieces for ceremonies and wedding dressing.', occasion: 'wedding' },
+  everyday: { label: 'Everyday', blurb: 'Easy pieces to wear every day.', occasion: 'everyday' },
+  gifting: { label: 'Gifting', blurb: 'Pieces chosen with giving in mind.', occasion: 'gifting' },
+  festive: { label: 'Festive', blurb: 'Colour and detail for celebrations.', occasion: 'festive' },
+  around: { label: 'Show me around', blurb: 'A short walk through every room.' },
+};
+
+/** Walking order through the U: left arm, back-left corner, salon, back-right corner, right arm. */
+const WALK_ORDER = ['ISH-N01', 'ISH-N02', 'ISH-N03', 'ISH-N04', 'ISH-B01', 'ISH-B02', 'ISH-B03', 'ISH-B04', 'ISH-B05', 'ISH-B06',
+  'ISH-R01', 'ISH-R02', 'ISH-R03', 'ISH-R04', 'ISH-R05', 'ISH-R06', 'ISH-P01', 'ISH-P02', 'ISH-E05', 'ISH-E06',
+  'ISH-E04', 'ISH-E03', 'ISH-E02', 'ISH-E01'];
+
+export function tourStops(id: TourId): TourStop[] {
+  const t = TOURS[id];
+  if (!t.occasion) {
+    return [
+      { kind: 'node', node: 'left', caption: 'Necklaces, displayed on busts along the walnut wall.' },
+      { kind: 'node', node: 'leftBack', caption: 'Bracelets and bangles on velvet bolsters.' },
+      { kind: 'combos' },
+      { kind: 'node', node: 'rightBack', caption: 'Pendants and occasion earrings.' },
+      { kind: 'node', node: 'right', caption: 'Earrings, from studs to chandbalis.' },
+    ];
+  }
+  const occasion = t.occasion;
+  return WALK_ORDER.filter((sku) => PRODUCTS.find((p) => p.sku === sku)?.occasions.includes(occasion)).map((sku) => ({ kind: 'product' as const, sku }));
+}

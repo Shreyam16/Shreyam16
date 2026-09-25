@@ -2,7 +2,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { RoomId } from '@/data/catalogue';
-import type { NodeId } from '@/scene/layout';
+import { tourStops, type NodeId, type TourId, type TourStop } from '@/scene/layout';
+import type { StaffId } from '@/scene/features';
 
 export type Phase = 'outside' | 'inside';
 export type RenderMode = 'detecting' | '3d' | 'lite';
@@ -12,7 +13,10 @@ export type View =
   | { kind: 'node'; node: NodeId }
   | { kind: 'product'; sku: string }
   | { kind: 'combos' }
-  | { kind: 'cashier' };
+  | { kind: 'cashier' }
+  | { kind: 'staff'; id: StaffId };
+
+export interface Tour { id: TourId; stops: TourStop[]; index: number; /** Where the visitor stood when the tour began. */ ret: View }
 
 export interface CartLine { sku: string; qty: number }
 
@@ -35,7 +39,16 @@ interface State {
   freeLook: boolean;
   cart: CartLine[];
   saved: string[];
-  drawer: null | 'finder' | 'jewelBox' | 'help';
+  drawer: null | 'finder' | 'jewelBox' | 'help' | 'appointment';
+  tour: Tour | null;
+  /** SKU being previewed in the camera try-on, if open. */
+  tryOn: string | null;
+  /** Selection decoded from a shared Jewel Box link, shown once the visitor is inside. */
+  shared: CartLine[] | null;
+  evening: boolean;
+  /** Real asset-loading progress (0..1) and whether the first frame has rendered. */
+  loadProgress: number;
+  sceneReady: boolean;
   checkout: CheckoutIntent | null;
   sound: boolean;
   reducedMotion: boolean;
@@ -57,6 +70,19 @@ interface State {
   endCheckout: () => void;
   setSound: (on: boolean) => void;
   setReducedMotion: (r: boolean) => void;
+  startTour: (id: TourId) => void;
+  tourStep: (delta: 1 | -1) => void;
+  stopTour: () => void;
+  openTryOn: (sku: string | null) => void;
+  setShared: (lines: CartLine[] | null) => void;
+  addShared: () => void;
+  setEvening: (on: boolean) => void;
+  setLoadProgress: (p: number) => void;
+  setSceneReady: () => void;
+}
+
+function stopView(stop: TourStop): View {
+  return stop.kind === 'product' ? { kind: 'product', sku: stop.sku } : stop.kind === 'combos' ? { kind: 'combos' } : { kind: 'node', node: stop.node };
 }
 
 export const useShowroom = create<State>()(
@@ -79,6 +105,12 @@ export const useShowroom = create<State>()(
       checkout: null,
       sound: false,
       reducedMotion: false,
+      tour: null,
+      tryOn: null,
+      shared: null,
+      evening: false,
+      loadProgress: 0,
+      sceneReady: false,
 
       setRenderMode: (renderMode, reason = null) => set({ renderMode, liteReason: reason }),
       setEntrance: (entrance) => set({ entrance }),
@@ -93,7 +125,7 @@ export const useShowroom = create<State>()(
       back: () => {
         const s = get();
         const target = s.returnView ?? { kind: 'node', node: 'junction' };
-        set({ view: target, returnView: null, viewNonce: s.viewNonce + 1, returning: true, moving: s.renderMode === '3d', checkout: s.view.kind === 'cashier' ? null : s.checkout });
+        set({ view: target, returnView: null, tour: null, viewNonce: s.viewNonce + 1, returning: true, moving: s.renderMode === '3d', checkout: s.view.kind === 'cashier' ? null : s.checkout });
       },
       setRoom: (room) => set({ room }),
       setMoving: (moving) => set({ moving }),
@@ -120,6 +152,40 @@ export const useShowroom = create<State>()(
       endCheckout: () => get().back(),
       setSound: (sound) => set({ sound }),
       setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+      startTour: (id) => {
+        const stops = tourStops(id);
+        const s = get();
+        if (!stops.length) return;
+        const ret: View = s.tour?.ret ?? (s.view.kind === 'node' ? s.view : s.returnView ?? { kind: 'node', node: 'junction' });
+        set({ tour: { id, stops, index: 0, ret } });
+        get().goTo(stopView(stops[0]), { remember: false });
+        set({ returnView: ret });
+      },
+      tourStep: (delta) => {
+        const t = get().tour;
+        if (!t) return;
+        const index = t.index + delta;
+        if (index < 0 || index >= t.stops.length) return;
+        set({ tour: { ...t, index } });
+        get().goTo(stopView(t.stops[index]), { remember: false });
+        set({ returnView: t.ret });
+      },
+      stopTour: () => {
+        const t = get().tour;
+        if (!t) return;
+        const s = get();
+        set({ tour: null, view: t.ret, returnView: null, viewNonce: s.viewNonce + 1, returning: true, drawer: null, moving: s.renderMode === '3d' });
+      },
+      openTryOn: (tryOn) => set({ tryOn }),
+      setShared: (shared) => set({ shared }),
+      addShared: () => {
+        const lines = get().shared ?? [];
+        for (const l of lines) get().addToCart(l.sku, l.qty);
+        set({ shared: null });
+      },
+      setEvening: (evening) => set({ evening }),
+      setLoadProgress: (loadProgress) => set({ loadProgress: Math.max(get().loadProgress, Math.min(1, loadProgress)) }),
+      setSceneReady: () => set({ sceneReady: true }),
     }),
     {
       name: 'ishe-showroom',

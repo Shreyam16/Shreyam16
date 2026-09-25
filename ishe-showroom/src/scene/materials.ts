@@ -22,7 +22,7 @@ function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2
   return t;
 }
 
-// Deterministic PRNG so the terrazzo looks the same on every load.
+// Deterministic PRNG so procedural textures look the same on every load.
 function rng(seed: number) {
   return () => {
     seed = (seed * 1664525 + 1013904223) % 4294967296;
@@ -30,43 +30,119 @@ function rng(seed: number) {
   };
 }
 
-function terrazzo() {
+/** Honed travertine in 1.0 x 0.5 m running-bond tiles; one texture repeat covers 2 x 2 m. */
+function travertine() {
   const r = rng(7);
   const t = canvasTexture(1024, 1024, (ctx) => {
-    ctx.fillStyle = '#ece8e1';
+    ctx.fillStyle = '#d9ccb5';
     ctx.fillRect(0, 0, 1024, 1024);
-    // Soft cloudiness in the binder.
-    for (let i = 0; i < 60; i++) {
-      const g = ctx.createRadialGradient(r() * 1024, r() * 1024, 0, r() * 1024, r() * 1024, 80 + r() * 160);
-      g.addColorStop(0, 'rgba(255,255,255,0.18)');
-      g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 1024, 1024);
-    }
-    const chips = ['#cfc8bd', '#bdb5a8', '#8f8a82', '#e2d7c7', '#d4c7b5', '#a39a8c', '#f8f5ef', '#6e6a64', '#c9b8a2'];
-    const draw = (count: number, min: number, max: number) => {
-      for (let i = 0; i < count; i++) {
-        const x = r() * 1024, y = r() * 1024, s = min + r() * (max - min);
-        ctx.fillStyle = chips[Math.floor(r() * chips.length)];
-        ctx.beginPath();
-        const sides = 4 + Math.floor(r() * 4);
-        for (let k = 0; k < sides; k++) {
-          const a = (k / sides) * Math.PI * 2 + r() * 0.6;
-          const rr = s * (0.55 + r() * 0.5);
-          const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
-          if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    for (let row = 0; row < 4; row++) {
+      const off = row % 2 ? 256 : 0;
+      for (let col = -1; col < 2; col++) {
+        const x0 = col * 512 + off, y0 = row * 256;
+        // Each tile has its own tone and horizontal vein banding.
+        const v = Math.floor(r() * 16) - 8;
+        ctx.fillStyle = `rgb(${217 + v},${204 + v},${181 + v})`;
+        ctx.fillRect(x0, y0, 512, 256);
+        for (let i = 0; i < 26; i++) {
+          const y = y0 + r() * 256, h = 1 + r() * 5;
+          const light = r() > 0.5;
+          ctx.fillStyle = light ? `rgba(246,238,222,${0.12 + r() * 0.2})` : `rgba(160,140,112,${0.06 + r() * 0.12})`;
+          ctx.beginPath();
+          ctx.moveTo(x0, y);
+          for (let x = 0; x <= 512; x += 32) ctx.lineTo(x0 + x, y + Math.sin((x + i * 40) * 0.013) * 3 + (r() - 0.5) * 1.5);
+          ctx.lineTo(x0 + 512, y + h);
+          ctx.lineTo(x0, y + h);
+          ctx.closePath();
+          ctx.fill();
         }
-        ctx.closePath();
-        ctx.fill();
+        // Small filled pits typical of honed travertine.
+        for (let i = 0; i < 40; i++) {
+          ctx.fillStyle = `rgba(150,128,98,${0.18 + r() * 0.2})`;
+          ctx.beginPath();
+          ctx.ellipse(x0 + r() * 512, y0 + r() * 256, 1 + r() * 4, 0.6 + r() * 1.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-    };
-    draw(5200, 1, 3.5);
-    draw(700, 3, 7);
-    draw(90, 7, 13);
+      // Fine joints.
+      ctx.fillStyle = 'rgba(176,158,130,0.8)';
+      ctx.fillRect(0, row * 256, 1024, 2);
+      for (let col = 0; col < 3; col++) ctx.fillRect(col * 512 + off, row * 256, 2, 256);
+    }
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(7.5, 7);
   return t;
+}
+
+/** Warm ivory limewash: soft, cloudy variation with faint brush direction. */
+export function limewashTexture() {
+  const r = rng(17);
+  const t = canvasTexture(512, 512, (ctx) => {
+    ctx.fillStyle = '#f1e9dc';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 90; i++) {
+      const x = r() * 512, y = r() * 512, rad = 30 + r() * 120;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      const tone = r() > 0.5 ? '255,251,244' : '214,200,178';
+      g.addColorStop(0, `rgba(${tone},${0.05 + r() * 0.07})`);
+      g.addColorStop(1, `rgba(${tone},0)`);
+      ctx.fillStyle = g;
+      // Draw with wrap-around so the texture tiles seamlessly.
+      for (const [dx, dy] of [[0, 0], [512, 0], [-512, 0], [0, 512], [0, -512]]) { ctx.save(); ctx.translate(dx, dy); ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); ctx.restore(); }
+    }
+    for (let i = 0; i < 260; i++) {
+      ctx.strokeStyle = `rgba(${r() > 0.5 ? '255,250,240' : '200,186,164'},${0.03 + r() * 0.04})`;
+      ctx.lineWidth = 1 + r() * 3;
+      const x = r() * 512, y = r() * 512, a = -0.6 + r() * 1.2, l = 20 + r() * 50;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** Walnut veneer with vertical grain; `dark` for the salon panelling. */
+function walnutTexture(seed: number) {
+  const r = rng(seed);
+  const t = canvasTexture(512, 512, (ctx) => {
+    ctx.fillStyle = '#5a3a25';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 180; i++) {
+      const x = r() * 512, w = 0.6 + r() * 2.6, amp = 2 + r() * 6, f = 0.004 + r() * 0.01, ph = r() * 6;
+      const dark = r() > 0.45;
+      ctx.strokeStyle = dark ? `rgba(38,22,12,${0.15 + r() * 0.3})` : `rgba(140,98,62,${0.1 + r() * 0.2})`;
+      ctx.lineWidth = w;
+      ctx.beginPath();
+      for (let y = -8; y <= 520; y += 8) {
+        const xx = x + Math.sin(y * f * 6.28 + ph) * amp;
+        if (y < 0) ctx.moveTo(xx, y); else ctx.lineTo(xx, y);
+      }
+      ctx.stroke();
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** Wool rug: ivory field, taupe border, quiet lattice. */
+function rugTexture() {
+  return canvasTexture(512, 512, (ctx) => {
+    ctx.fillStyle = '#e6dccb';
+    ctx.fillRect(0, 0, 512, 512);
+    ctx.strokeStyle = 'rgba(120,100,80,0.18)';
+    ctx.lineWidth = 2;
+    for (let i = -512; i < 1024; i += 48) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 512, 512); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i + 512, 0); ctx.lineTo(i, 512); ctx.stroke();
+    }
+    ctx.strokeStyle = '#7a6a5b';
+    ctx.lineWidth = 22;
+    ctx.strokeRect(26, 26, 460, 460);
+    ctx.strokeStyle = '#b39a74';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(48, 48, 416, 416);
+  });
 }
 
 function paving() {
@@ -103,6 +179,20 @@ function skyTexture() {
     g.addColorStop(0.55, '#46505f');
     g.addColorStop(0.8, '#8a8c8f');
     g.addColorStop(1, '#a79b8a');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 16, 512);
+  });
+}
+
+/** Dusk: deep blue overhead fading to a warm band at the horizon (evening mode). */
+export function duskSkyTexture() {
+  return canvasTexture(16, 512, (ctx) => {
+    const g = ctx.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0, '#0b1022');
+    g.addColorStop(0.5, '#27294a');
+    g.addColorStop(0.72, '#5b4560');
+    g.addColorStop(0.86, '#b86e55');
+    g.addColorStop(1, '#e0a06a');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 16, 512);
   });
@@ -207,12 +297,25 @@ function build() {
 
   const metal = (color: string) => std({ color, metalness: 1, roughness: 0.2, envMapIntensity: 1.4 });
 
+  const limewash = limewashTexture();
+  limewash.repeat.set(2, 2);
+  const walnut = walnutTexture(31);
+  walnut.repeat.set(3, 1);
+  const walnutFlutedMap = walnutTexture(37);
+  walnutFlutedMap.repeat.set(6, 1);
+  // Vertical flutes about 5 cm apart across the 7.2 m arm panels.
+  const flutes = normalMap(64, (x) => -Math.cos((x / 64) * Math.PI * 2) * 6, 1, 1);
+  flutes.repeat.set(144, 1);
+  const folds = normalMap(128, (x) => Math.sin((x / 128) * Math.PI * 2 * 3) * 5 + Math.sin((x / 128) * Math.PI * 2 * 7) * 2, 0.6, 1);
+  folds.repeat.set(6, 1);
+  const rug = rugTexture();
+
   const m = {
     // Architecture
-    wall: std({ color: '#f4f2ee', roughness: 0.92 }),
+    wall: std({ color: '#f3ece1', map: limewash, roughness: 0.94 }),
     wallExterior: std({ color: '#f3f1ec', roughness: 0.85 }),
     ceiling: std({ color: '#fbfbf9', roughness: 1 }),
-    floor: std({ map: terrazzo(), roughness: 0.32, metalness: 0, envMapIntensity: 0.55 }),
+    floor: std({ map: travertine(), roughness: 0.4, metalness: 0, envMapIntensity: 0.5 }),
     paving: std({ map: paving(), roughness: 0.9 }),
     asphalt: std({ color: '#3b3d40', roughness: 0.95 }),
     kerb: std({ color: '#9f9b94', roughness: 0.9 }),
@@ -231,9 +334,28 @@ function build() {
     }),
     linen: std({ color: '#ffffff', map: linenTexture(), roughness: 1, normalMap: weave, normalScale: new THREE.Vector2(0.3, 0.3) }),
     floorGloss: std({
-      color: '#000000', roughness: 0.26, metalness: 0, envMapIntensity: 0.55,
+      color: '#000000', roughness: 0.34, metalness: 0, envMapIntensity: 0.55,
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
     }),
+    // Warm ivory / walnut palette
+    walnut: std({ color: '#ffffff', map: walnut, roughness: 0.55, envMapIntensity: 0.6 }),
+    walnutFluted: std({ color: '#ffffff', map: walnutFlutedMap, roughness: 0.5, normalMap: flutes, normalScale: new THREE.Vector2(1.4, 1.4), envMapIntensity: 0.6 }),
+    bronze: std({ color: '#8f6c46', metalness: 1, roughness: 0.34, envMapIntensity: 1.2 }),
+    brass: std({ color: '#c09a58', metalness: 1, roughness: 0.22, envMapIntensity: 1.3 }),
+    bronzeCeiling: std({ color: '#5e4631', metalness: 0.55, roughness: 0.5, envMapIntensity: 0.7 }),
+    taupeVelvet: phys({
+      color: '#5f5249', roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#b9a797'), sheenRoughness: 0.5,
+      normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
+    }),
+    boucle: std({ color: '#e7dfd1', roughness: 1, normalMap: velvetNormal, normalScale: new THREE.Vector2(0.8, 0.8) }),
+    rug: std({ map: rug, roughness: 1 }),
+    // Try-on mirrors: a sharp reflection of the environment map, no render targets.
+    mirror: std({ color: '#eef1f2', metalness: 1, roughness: 0.03, envMapIntensity: 1.5 }),
+    sheer: std({
+      color: '#f7f2e8', roughness: 1, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false,
+      normalMap: folds, normalScale: new THREE.Vector2(1, 1),
+    }),
+    candle: std({ color: '#fff5e3', emissive: '#ffcf8f', emissiveIntensity: 2.6 }),
     // Decor
     ceramic: phys({ color: '#f3f0ea', roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 }),
     stem: std({ color: '#3f5a36', roughness: 0.7 }),
@@ -250,6 +372,8 @@ function build() {
     doorGlass: phys({
       color: '#dfe7ea', transparent: true, opacity: 0.18, roughness: 0.02, metalness: 0,
       envMapIntensity: 1.8, depthWrite: false, side: THREE.DoubleSide,
+      // Warm glow seen from the street in evening mode (intensity driven by Evening.tsx).
+      emissive: '#ffc98a', emissiveIntensity: 0,
     }),
     lightStrip: std({ color: '#fff4e0', emissive: '#ffe2b8', emissiveIntensity: 1.6 }),
     ceilingPanel: std({ color: '#ffffff', emissive: '#fff6ea', emissiveIntensity: 0.9 }),

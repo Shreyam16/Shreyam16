@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import gsap from 'gsap';
 import { useShowroom, type View } from '@/store/showroom';
 import {
-  EYE, cashierPose, comboPose, focusPose, nodePose, roomAt, routeTo, slideMove, type Pose,
+  EYE, cashierPose, comboPose, focusPose, nodePose, roomAt, routeTo, slideMove, staffPose, type Pose,
 } from './layout';
 import { doorOpen, footstep, soundOn } from '@/lib/sound';
 import { clearHeld, held, notePointerDown, notePointerMove, pointerWasDrag, type HeldKey } from './input';
@@ -41,6 +41,7 @@ function destination(view: View): Pose {
     case 'product': return focusPose(view.sku);
     case 'combos': return comboPose();
     case 'cashier': return cashierPose();
+    case 'staff': return staffPose(view.id);
   }
 }
 
@@ -208,7 +209,7 @@ export default function CameraRig() {
     const want = baseFov * zoom;
     const nextFov = cam.fov + (want - cam.fov) * k;
     // Shift the projection so the focused piece sits in the space left of the side panel (desktop).
-    const panel = s.phase === 'inside' && s.view.kind !== 'node' && size.width >= 768 ? (s.view.kind === 'product' ? 416 : 476) : 0;
+    const panel = s.phase === 'inside' && s.view.kind !== 'node' && size.width >= 768 ? (s.view.kind === 'product' || s.view.kind === 'staff' ? 416 : 476) : 0;
     const nextOff = offset.current + (panel / 2 - offset.current) * k;
     if (Math.abs(nextFov - cam.fov) > 0.01 || Math.abs(nextOff - offset.current) > 0.1) {
       cam.fov = nextFov;

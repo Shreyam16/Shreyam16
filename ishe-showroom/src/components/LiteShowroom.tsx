@@ -24,6 +24,7 @@ const BACKDROP: Partial<Record<NodeId, string>> = {
 function backdropFor(view: View): string {
   if (view.kind === 'cashier') return 'cashier';
   if (view.kind === 'combos') return 'centre';
+  if (view.kind === 'staff') return view.id === 'left' ? 'left' : view.id === 'right' ? 'right' : 'cashier';
   if (view.kind === 'product') {
     const f = focusPose(view.sku);
     return BACKDROP[nearestClearNode(f.x, f.z)] ?? 'junction';
@@ -94,6 +95,7 @@ export default function LiteShowroom() {
   useEffect(() => {
     if (view.kind === 'node') setRoom(NODES[view.node].room);
     else if (view.kind === 'product') setRoom(PRODUCT_BY_SKU[view.sku].room);
+    else if (view.kind === 'staff') setRoom(view.id === 'left' || view.id === 'right' ? view.id : 'centre');
     else setRoom('centre');
   }, [view, setRoom]);
 

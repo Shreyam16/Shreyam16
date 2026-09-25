@@ -3,10 +3,15 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { useLoader } from '@react-three/fiber';
 import { BAKE_SURFACES, type BakeSurface } from './bakeSurfaces';
-import { mats } from './materials';
+import { limewashTexture, mats } from './materials';
 
 /** How much the baked irradiance is scaled up (MeshBasicMaterial divides light maps by π). */
 const GAIN = Math.PI * 1.3;
+const baked: THREE.MeshBasicMaterial[] = [];
+/** Scales every baked surface (evening mode dims the room slightly). */
+export function bakedGain(k: number) {
+  for (const m of baked) m.lightMapIntensity = GAIN * k;
+}
 /** Lift each surface off the old geometry toward the room so nothing z-fights. */
 const OFFSET = 0.003;
 
@@ -48,22 +53,30 @@ export default function BakedSurfaces() {
   const textures = useLoader(THREE.TextureLoader, BAKE_SURFACES.map((s) => `/bake/${s.name}.webp`));
   const items = useMemo(() => {
     const M = mats();
+    const lime = limewashTexture();
+    baked.length = 0;
     return BAKE_SURFACES.map((s, i) => {
       const tex = textures[i];
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 8;
       let material: THREE.Material;
       if (s.name === 'floor') {
-        const terrazzo = (M.floor as THREE.MeshStandardMaterial).map!;
-        const floorUv = terrazzo.clone();
-        // Terrazzo tiles every ~2 m across the plane's 0..1 UVs.
+        const stone = (M.floor as THREE.MeshStandardMaterial).map!;
+        const floorUv = stone.clone();
+        // One travertine texture repeat covers 2 x 2 m of the plane's 0..1 UVs.
         floorUv.repeat.set(7.5, 7);
         floorUv.needsUpdate = true;
         material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN });
+      } else if (s.name === 'ceiling') {
+        material = new THREE.MeshBasicMaterial({ color: '#fbf8f2', lightMap: tex, lightMapIntensity: GAIN });
       } else {
-        const color = s.name === 'ceiling' ? '#ffffff' : '#fbfaf8';
-        material = new THREE.MeshBasicMaterial({ color, lightMap: tex, lightMapIntensity: GAIN });
+        // Warm ivory limewash, tiled about every 2 m whatever the wall's size.
+        const map = lime.clone();
+        map.repeat.set((s.uv[1] - s.uv[0]) / 2, (s.uv[3] - s.uv[2]) / 2);
+        map.needsUpdate = true;
+        material = new THREE.MeshBasicMaterial({ color: '#fbf7ef', map, lightMap: tex, lightMapIntensity: GAIN });
       }
+      baked.push(material as THREE.MeshBasicMaterial);
       return { s, geometry: geometryFor(s), material };
     });
   }, [textures]);

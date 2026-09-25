@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { mats } from './materials';
 import { artworkTexture } from './materials';
-import { ARTWORK, CONSOLE, DOWNLIGHTS } from './features';
+import { ARTWORK, CONSOLE, DOWNLIGHTS, ceilingAt } from './features';
+import Furniture from './Furniture';
 import { CEILING } from './layout';
 import { Box } from './Architecture';
 
@@ -108,7 +109,7 @@ function Downlights() {
   return (
     <group>
       {DOWNLIGHTS.map((d, i) => (
-        <group key={i} position={[d.x, CEILING - 0.004, d.z]}>
+        <group key={i} position={[d.x, ceilingAt(d.x, d.z, CEILING) - 0.004, d.z]}>
           <mesh material={M.downlightTrim}><cylinderGeometry args={[0.075, 0.075, 0.008, 24]} /></mesh>
           <mesh position={[0, -0.0045, 0]} rotation={[Math.PI / 2, 0, 0]} material={M.downlightLens}><circleGeometry args={[0.05, 24]} /></mesh>
         </group>
@@ -124,6 +125,7 @@ export default function Decor() {
       <Console />
       <Artwork />
       <Downlights />
+      <Furniture />
     </group>
   );
 }

@@ -6,6 +6,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import Architecture from './Architecture';
 import Displays from './Displays';
 import CameraRig from './CameraRig';
+import Staff from './Staff';
+import Evening from './Evening';
 import { useShowroom } from '@/store/showroom';
 import Polish from './Polish';
 import { detectQuality } from './quality';
@@ -39,14 +41,45 @@ function PerformanceWatch({ onSlow }: { onSlow: () => void }) {
   return null;
 }
 
+/** Feeds real loader progress (textures, models) to the branded loading screen. */
+function LoadTracker() {
+  useEffect(() => {
+    const m = THREE.DefaultLoadingManager;
+    const set = useShowroom.getState().setLoadProgress;
+    m.onProgress = (_url, loaded, total) => set(total ? loaded / total : 0);
+    m.onLoad = () => set(1);
+    return () => { m.onProgress = () => undefined; m.onLoad = () => undefined; };
+  }, []);
+  return null;
+}
+
+/** Marks the scene ready after the core (Suspense) content has rendered a couple of frames. */
+function ReadySignal() {
+  const frames = useRef(0);
+  useFrame(() => {
+    if (frames.current > 2) return;
+    frames.current += 1;
+    if (frames.current === 2) {
+      const s = useShowroom.getState();
+      s.setLoadProgress(1);
+      s.setSceneReady();
+    }
+  });
+  return null;
+}
+
 export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
   const phase = useShowroom((s) => s.phase);
+  const tryOn = useShowroom((s) => s.tryOn);
+  const ready = useShowroom((s) => s.sceneReady);
   const [quality] = useState(detectQuality);
   return (
     <Canvas
       className="!fixed inset-0"
       style={{ position: 'fixed', inset: 0, pointerEvents: phase === 'inside' ? 'auto' : 'none', touchAction: 'none' }}
       dpr={[1, 1.75]}
+      // The camera try-on runs its own small renderer; pause the showroom meanwhile.
+      frameloop={tryOn ? 'never' : 'always'}
       gl={{ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false }}
       camera={{ fov: 52, near: 0.03, far: 200, position: [0, 1.65, 9.5] }}
       onCreated={({ gl }) => {
@@ -62,14 +95,17 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
         });
       }}
     >
+      <LoadTracker />
       <Environment />
-      <hemisphereLight args={['#fff3e3', '#cfc6b8', 0.45]} />
-      <directionalLight position={[-6, 12, 10]} intensity={0.9} color="#fff4e6" />
+      <Evening />
       <fog attach="fog" args={['#2a3140', 30, 75]} />
       <Suspense fallback={null}>
         <Architecture />
         <Displays />
+        <ReadySignal />
       </Suspense>
+      {/* People stream in after the room is up, so they never hold the entrance back. */}
+      {ready && <Staff />}
       <CameraRig />
       {quality === 'high' && <Polish />}
       <PerformanceWatch onSlow={onSlow} />

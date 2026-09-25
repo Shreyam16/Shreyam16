@@ -65,11 +65,11 @@ function Case({ spec }: { spec: DisplaySpec }) {
       <Box size={[w, top - 0.07, d]} pos={[0, (top - 0.07) / 2 + 0.06, 0]} mat="blackSatin" />
       <Box size={[w - 0.06, 0.06, d - 0.06]} pos={[0, 0.03, 0]} mat="blackMetal" />
       {/* Deck the jewellery sits on. */}
-      <Box size={[w, 0.012, d]} pos={[0, top - 0.006, 0]} mat={tall ? 'linen' : 'blackSatin'} />
-      {tall && <Box size={[gw - 0.02, glassH, 0.01]} pos={[0, top + glassH / 2, -gd / 2 + 0.012]} mat="linen" />}
+      <Box size={[w, 0.012, d]} pos={[0, top - 0.006, 0]} mat="taupeVelvet" />
+      {tall && <Box size={[gw - 0.02, glassH, 0.01]} pos={[0, top + glassH / 2, -gd / 2 + 0.012]} mat="taupeVelvet" />}
       <GlassPanes w={gw} d={gd} y0={top + 0.001} y1={glassTop} top={!tall} />
       {posts.map(([x, z], i) => (
-        <Box key={i} size={[tall ? 0.012 : 0.007, glassH, tall ? 0.012 : 0.007]} pos={[x, top + glassH / 2, z]} mat="blackMetal" />
+        <Box key={i} size={[tall ? 0.012 : 0.007, glassH, tall ? 0.012 : 0.007]} pos={[x, top + glassH / 2, z]} mat="bronze" />
       ))}
       {tall ? (
         <>
@@ -82,15 +82,31 @@ function Case({ spec }: { spec: DisplaySpec }) {
         // Slim black frame on the back and sides of the lid; the front edge is frameless so the
         // visitor's line of sight onto the piece stays clear.
         <>
-          <Box size={[gw + 0.007, 0.007, 0.007]} pos={[0, glassTop, -gd / 2]} mat="blackMetal" />
-          <Box size={[0.007, 0.007, gd]} pos={[gw / 2, glassTop, 0]} mat="blackMetal" />
-          <Box size={[0.007, 0.007, gd]} pos={[-gw / 2, glassTop, 0]} mat="blackMetal" />
+          <Box size={[gw + 0.007, 0.007, 0.007]} pos={[0, glassTop, -gd / 2]} mat="bronze" />
+          <Box size={[0.007, 0.007, gd]} pos={[gw / 2, glassTop, 0]} mat="bronze" />
+          <Box size={[0.007, 0.007, gd]} pos={[-gw / 2, glassTop, 0]} mat="bronze" />
+          <TableMirror x={gw / 2 - 0.07} y={glassTop} z={-gd / 2 + 0.07} />
         </>
       )}
       {/* Warm pool of light on the deck. */}
       <mesh position={[0, top + 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}>
         <planeGeometry args={[w * 0.9, d * 0.9]} />
       </mesh>
+    </group>
+  );
+}
+
+/** Small stand try-on mirror on the glass lid of a table vitrine (tilted toward the visitor). */
+function TableMirror({ x, y, z }: { x: number; y: number; z: number }) {
+  const M = mats();
+  return (
+    <group position={[x, y, z]} rotation={[0, -0.5, 0]}>
+      <mesh position={[0, 0.006, 0]} material={M.bronze}><cylinderGeometry args={[0.035, 0.04, 0.012, 24]} /></mesh>
+      <mesh position={[0, 0.05, 0]} material={M.bronze}><cylinderGeometry args={[0.004, 0.004, 0.08, 8]} /></mesh>
+      <group position={[0, 0.14, 0]} rotation={[-0.12, 0, 0]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} scale={[0.075, 1, 0.1]} material={M.bronze}><cylinderGeometry args={[1, 1, 0.01, 32]} /></mesh>
+        <mesh position={[0, 0, 0.006]} scale={[0.066, 0.09, 1]} material={M.mirror}><circleGeometry args={[1, 32]} /></mesh>
+      </group>
     </group>
   );
 }
@@ -205,14 +221,14 @@ function CashierStatic() {
     <group position={[CASHIER.x, 0, CASHIER.z]}>
       {/* Counter: black body, white stone top, lit kick strip. */}
       <Box size={[CASHIER.w, CASHIER.h - 0.04, CASHIER.d]} pos={[0, (CASHIER.h - 0.04) / 2, 0]} mat="blackSatin" />
-      <Box size={[CASHIER.w + 0.06, 0.04, CASHIER.d + 0.06]} pos={[0, CASHIER.h - 0.02, 0]} mat="wall" />
+      <Box size={[CASHIER.w + 0.06, 0.04, CASHIER.d + 0.06]} pos={[0, CASHIER.h - 0.02, 0]} mat="travertine" />
       <Box size={[CASHIER.w - 0.1, 0.05, 0.02]} pos={[0, 0.9, CASHIER.d / 2 + 0.005]} mat="lightStrip" />
       {/* Card terminal and a closed ledger. */}
       <Box size={[0.08, 0.02, 0.16]} pos={[0.95, CASHIER.h + 0.01, -0.05]} mat="blackMetal" />
       <Box size={[0.07, 0.12, 0.012]} pos={[0.95, CASHIER.h + 0.07, -0.1]} rot={[-0.35, 0, 0]} mat="blackMetal" />
       <Box size={[0.3, 0.025, 0.22]} pos={[-0.85, CASHIER.h + 0.012, -0.05]} mat="linen" />
       {/* Presentation tray: the selected piece is placed here during checkout. */}
-      <Box size={[0.42, 0.02, 0.3]} pos={[0, CASHIER.h + 0.01, 0.02]} mat="velvet" />
+      <Box size={[0.42, 0.02, 0.3]} pos={[0, CASHIER.h + 0.01, 0.02]} mat="taupeVelvet" />
       <mesh position={[0, CASHIER.h + 0.021, 0.02]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}><planeGeometry args={[0.5, 0.4]} /></mesh>
       {/* Staff-side back shelf against the brand wall. */}
       <Box size={[CASHIER.w + 0.8, 0.9, 0.26]} pos={[0, 0.45, -0.92]} mat="blackSatin" />
