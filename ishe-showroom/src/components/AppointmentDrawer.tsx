@@ -4,6 +4,7 @@ import { PRODUCT_BY_SKU } from '@/data/catalogue';
 import { TIME_SLOTS, appointmentSummary, validateAppointment, whatsappLink } from '@/lib/appointment';
 import { useShowroom } from '@/store/showroom';
 import { Button, Icon, Sheet, SheetHeader } from './ui/primitives';
+import { track } from '@/lib/analytics';
 
 type Outcome =
   | { kind: 'idle' } | { kind: 'sending' }
@@ -46,6 +47,7 @@ export default function AppointmentDrawer() {
     try {
       const res = await fetch('/api/appointment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       const j = await res.json().catch(() => ({}));
+      track('appointment_submit', { mode: String(j.mode ?? 'error'), pieces: form.skus.length });
       if (j.mode === 'invalid') setOutcome({ kind: 'invalid', errors: j.errors ?? {} });
       else if (j.mode === 'demo') setOutcome({ kind: 'demo', message: j.message });
       else if (j.mode === 'received') setOutcome({ kind: 'received', message: j.message });
@@ -153,7 +155,7 @@ export default function AppointmentDrawer() {
         <div className="mt-6 border-t border-ink/10 pt-4">
           <p className="plaque-label text-ink/60">Prefer to message?</p>
           {wa ? (
-            <a href={wa} target="_blank" rel="noopener noreferrer" data-testid="whatsapp-link"
+            <a href={wa} target="_blank" rel="noopener noreferrer" data-testid="whatsapp-link" onClick={() => track('whatsapp_click', { kind: 'appointment' })}
               className="mt-2 inline-flex min-h-[44px] w-full items-center justify-center gap-2 border border-ink/80 font-ui text-[11px] uppercase tracking-[0.22em] hover:bg-ink hover:text-bone">
               <Icon name="chat" className="h-4 w-4" /> WhatsApp concierge
             </a>

@@ -94,11 +94,16 @@ export const STAFF: StaffSpot[] = [
 
 export const STAFF_BY_ID: Record<StaffId, StaffSpot> = Object.fromEntries(STAFF.map((s) => [s.id, s])) as Record<StaffId, StaffSpot>;
 
+/** Window displays just inside each shop window, facing the street (between the curtain panels). */
+export const WINDOW_DISPLAYS: { x: number; z: number }[] = [{ x: -4.55, z: -0.55 }, { x: 4.55, z: -0.55 }];
+export const WINDOW_PLINTH = { w: 0.62, d: 0.42, h: 0.92 };
+
 /** Colliders for the furniture added in this file (all axis-aligned boxes). */
 export const FURNITURE_COLLIDERS: Box2[] = [
   ...ARMCHAIRS.map((a) => ({ x0: a.x - a.w / 2, z0: a.z - a.d / 2, x1: a.x + a.w / 2, z1: a.z + a.d / 2 })),
   { x0: SIDE_TABLE.x - SIDE_TABLE.r, z0: SIDE_TABLE.z - SIDE_TABLE.r, x1: SIDE_TABLE.x + SIDE_TABLE.r, z1: SIDE_TABLE.z + SIDE_TABLE.r },
   ...FLOOR_MIRRORS.map((m) => ({ x0: m.x - FLOOR_MIRROR_SIZE.d / 2, z0: m.z - FLOOR_MIRROR_SIZE.w / 2, x1: m.x + FLOOR_MIRROR_SIZE.d / 2, z1: m.z + FLOOR_MIRROR_SIZE.w / 2 })),
+  ...WINDOW_DISPLAYS.map((w) => ({ x0: w.x - WINDOW_PLINTH.w / 2, z0: w.z - WINDOW_PLINTH.d / 2, x1: w.x + WINDOW_PLINTH.w / 2, z1: w.z + WINDOW_PLINTH.d / 2 })),
 ];
 
 export const FEATURES = {

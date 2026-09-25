@@ -97,6 +97,17 @@ console.log('Desktop 3D (1440x900)');
     metrics.drawCallsOutside = await page.evaluate(() => window.__isheRenderInfo());
   });
 
+  await check('seasonal shop windows are dressed for the current season', async () => {
+    const season = await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.season, null, { timeout: 30000 }).then((h) => h.jsonValue());
+    const expected = await page.evaluate(() => { const d = new Date(), md = (d.getMonth() + 1) * 100 + d.getDate(); return md >= 920 && md <= 1120 ? 'festive' : md >= 1121 || md <= 228 ? 'wedding' : 'classic'; });
+    assert(season === expected, `season ${season}, expected ${expected}`);
+    metrics.season = season;
+    await page.evaluate(() => window.__ishe.getState().setEntrance(0.35));
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${OUT}/01b-windows-${season}.png` });
+    await page.evaluate(() => window.__ishe.getState().setEntrance(0));
+  });
+
   await check('evening toggle: dusk sky outside, default is day, toggles back', async () => {
     const pressed = await page.getByTestId('evening-toggle').getAttribute('aria-pressed');
     assert(pressed === 'false', `evening default ${pressed}`);
@@ -298,6 +309,25 @@ console.log('Desktop 3D (1440x900)');
     await waitIdle(page);
   });
 
+  await check('try-on: rings use hand tracking, and a refused camera still falls back cleanly', async () => {
+    const cdn = [];
+    page.on('request', (r) => { if (/jsdelivr|mediapipe|storage\.googleapis/.test(r.url())) cdn.push(r.url()); });
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'product', sku: 'ISH-R01' }));
+    await waitIdle(page);
+    await page.getByTestId('try-on-open').click();
+    await page.getByTestId('try-on').waitFor();
+    const target = await page.getByTestId('try-on-canvas').getAttribute('data-target');
+    assert(target === 'hand', `target ${target}`);
+    await page.getByTestId('try-on-start').click();
+    await page.getByTestId('try-on-fallback').waitFor({ timeout: 10000 });
+    assert(cdn.length === 0, `fetched ${cdn[0]}`);
+    await page.screenshot({ path: `${OUT}/06e-try-on-ring-denied.png` });
+    await page.getByRole('button', { name: 'Back to the piece' }).click();
+    await page.getByTestId('product-panel').waitFor();
+    await page.keyboard.press('Escape');
+    await waitIdle(page);
+  });
+
   await check('Buy Now walks to the cashier, shows the order, and stays honest in demo mode', async () => {
     await page.getByTestId('open-finder').click();
     await page.getByTestId('finder-input').fill('ISH-R04');
@@ -365,6 +395,14 @@ console.log('Desktop 3D (1440x900)');
     const link = await page.getByTestId('share-link').inputValue();
     const box = new URL(link).searchParams.get('box');
     assert(/ISH-N02/.test(box) && /ISH-E02\*2/.test(box), `box=${box}`);
+    // WhatsApp: a contact-picker link with the list and the share link; the store button is honest when unset.
+    const wa = await page.getByTestId('box-whatsapp-share').getAttribute('href');
+    const text = decodeURIComponent(new URL(wa).searchParams.get('text') ?? '');
+    assert(wa.startsWith('https://wa.me/?text='), `wa ${wa}`);
+    assert(text.includes('(ISH-E02) × 2') && text.includes(link), `text ${text}`);
+    const storeSet = await page.getByTestId('box-whatsapp-store').count();
+    assert(storeSet || await page.getByTestId('box-whatsapp-store-unconfigured').isVisible(), 'store WhatsApp state missing');
+    await page.screenshot({ path: `${OUT}/08a-box-share.png` });
     await page.keyboard.press('Escape');
     // Software WebGL: park this page so it does not starve the new context's first load.
     await page.goto('about:blank');
@@ -410,6 +448,43 @@ console.log('Desktop 3D (1440x900)');
   await check('sound is off by default and toggles', async () => {
     const pressed = await page.getByTestId('sound-toggle').getAttribute('aria-pressed');
     assert(pressed === 'false', `sound default ${pressed}`);
+  });
+
+  await check('staff voice: silent with sound off, greets and introduces a tour with sound on', async () => {
+    const voiceReq = [];
+    page.on('request', (r) => { if (r.url().includes('/voice/')) voiceReq.push(r.url()); });
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'staff', id: 'right' }));
+    await page.getByTestId('staff-panel').waitFor({ timeout: 30000 });
+    await page.waitForTimeout(800);
+    assert((await page.evaluate(() => window.__isheVoiceLog.length)) === 0 && voiceReq.length === 0, 'spoke with sound off');
+    await page.keyboard.press('Escape');
+    await waitIdle(page);
+    await page.getByTestId('sound-toggle').click();
+    assert((await page.getByTestId('sound-toggle').getAttribute('aria-pressed')) === 'true', 'sound did not turn on');
+    const greet = page.waitForResponse((r) => r.url().endsWith('/voice/greet-attendant.wav'), { timeout: 30000 });
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'staff', id: 'right' }));
+    await page.getByTestId('staff-panel').waitFor({ timeout: 30000 });
+    const res = await greet;
+    assert(res.status() < 400, `voice file ${res.status()}`);
+    await waitIdle(page);
+    await page.getByTestId('tour-bridal').click();
+    await page.waitForFunction(() => window.__isheVoiceLog.includes('tour-bridal-attendant'), null, { timeout: 10000 });
+    await page.getByTestId('tour-stop').click();
+    await waitIdle(page);
+    metrics.voiceLog = await page.evaluate(() => window.__isheVoiceLog);
+    await page.getByTestId('sound-toggle').click();
+  });
+
+  await check('visit statistics: anonymous batches, re-validated by the server, discarded when unset', async () => {
+    await page.waitForFunction(() => window.__isheAnalytics.length > 0, null, { timeout: 30000 });
+    const batches = (await page.evaluate(() => window.__isheAnalytics)).map((b) => JSON.parse(b));
+    const names = new Set(batches.flatMap((b) => b.events.map((e) => e.name)));
+    for (const n of ['session_start', 'staff_greeting', 'tour_start']) assert(names.has(n), `missing ${n} in ${[...names]}`);
+    const raw = JSON.stringify(batches);
+    assert(!/@|Test Visitor|98765/.test(raw), 'personal data in analytics');
+    const r = await page.evaluate((b) => fetch('/api/analytics', { method: 'POST', body: JSON.stringify(b) }).then((x) => x.json()), batches[0]);
+    assert(r.ok === true && typeof r.stored === 'boolean', JSON.stringify(r));
+    metrics.analytics = { batches: batches.length, events: [...names], stored: r.stored };
   });
 
   await check('no page errors or console errors', async () => {
@@ -683,6 +758,22 @@ console.log('No WebGL (lite fallback)');
     await page.screenshot({ path: `${OUT}/17b-lite-evening.png` });
   });
   await check('lite: no page errors', async () => { assert(errors.length === 0, errors.join(' | ')); });
+  await check('visit statistics: nothing is sent when the browser asks not to be tracked', async () => {
+    const p4 = await b2.newPage({ viewport: { width: 1280, height: 800 } });
+    try {
+      await p4.addInitScript(() => Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true }));
+      const sent = [];
+      p4.on('request', (r) => { if (r.url().includes('/api/analytics')) sent.push(r.url()); });
+      await p4.goto(`${BASE}/`);
+      await p4.waitForFunction(() => window.__ishe?.getState().renderMode === 'lite', null, { timeout: 15000 });
+      await p4.getByTestId('enter-button').click();
+      await p4.getByTestId('choose-left').click();
+      await p4.getByTestId('lite-display-ISH-B02').click();
+      await p4.getByTestId('add-to-box').click();
+      await p4.waitForTimeout(17000);
+      assert(sent.length === 0 && (await p4.evaluate(() => window.__isheAnalytics.length)) === 0, `sent ${sent.length}`);
+    } finally { await p4.close(); }
+  });
   await b2.close();
 }
 

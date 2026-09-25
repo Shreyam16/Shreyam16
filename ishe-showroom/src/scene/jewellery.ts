@@ -415,13 +415,31 @@ export function buildPiece(product: Product, opts: { riser?: number } = {}): THR
  * The piece alone (no bust, stand or cushion) for the camera try-on, in metres.
  * Earrings: one earring with the hook at the origin, hanging down -y.
  * Necklaces and pendants: centred on x/z, with the top of the chain at y = 0.
+ * Rings and bracelets: centred on the origin, worn along +y.
  */
-export function buildTryOnPiece(product: Product): { group: THREE.Group; kind: 'earring' | 'necklace' } | null {
+export type TryOnKind = 'earring' | 'necklace' | 'ring' | 'bracelet';
+
+export function buildTryOnPiece(product: Product): { group: THREE.Group; kind: TryOnKind } | null {
   const metal = toneMat(product.tone);
   const p = new Parts();
   if (product.category === 'earring') {
     earringOne[product.sku]?.(p, metal);
     return { group: p.build(), kind: 'earring' };
+  }
+  if (product.category === 'ring' || product.category === 'bracelet') {
+    // Ring: band centred on the origin, finger axis along +y, stone facing the camera (+z).
+    // Bracelet: centred on the origin, wrist axis along +y.
+    const ring = product.category === 'ring';
+    (ring ? rings : bracelets)[product.sku]?.(p, metal);
+    const inner = p.build();
+    inner.position.y = -(ring ? RING_SEAT : BOLSTER_Y);
+    const wrap = new THREE.Group();
+    if (ring) wrap.rotation.x = Math.PI / 2;
+    else wrap.rotation.z = Math.PI / 2;
+    wrap.add(inner);
+    const outer = new THREE.Group();
+    outer.add(wrap);
+    return { group: outer, kind: product.category };
   }
   if (product.category === 'necklace') necklaces[product.sku]?.(p, metal);
   else if (product.category === 'pendant') pendants[product.sku]?.(p, metal);

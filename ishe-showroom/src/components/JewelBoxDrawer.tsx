@@ -2,16 +2,21 @@
 import { useState } from 'react';
 import { PRODUCT_BY_SKU, formatINR } from '@/data/catalogue';
 import { cartCount, useShowroom } from '@/store/showroom';
-import { shareUrl } from '@/lib/share';
+import { shareMessage, shareUrl, whatsappShareLink } from '@/lib/share';
+import { whatsappLink } from '@/lib/appointment';
+import { track } from '@/lib/analytics';
 import { Button, Icon, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
 
 export default function JewelBoxDrawer({ announce }: { announce: (m: string) => void }) {
   const s = useShowroom();
   const [tab, setTab] = useState<'box' | 'saved'>('box');
   const [link, setLink] = useState<string | null>(null);
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://ishe-showroom.vercel.app';
+  const storeWa = whatsappLink(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER, shareMessage(s.cart, shareUrl(origin, s.cart), true));
   async function share() {
     const url = shareUrl(window.location.origin, s.cart);
     setLink(url);
+    track('share_box', { lines: s.cart.length });
     try {
       if (navigator.share && window.matchMedia('(pointer: coarse)').matches) { await navigator.share({ title: 'My ISHÉ Jewel Box', url }); return; }
       await navigator.clipboard.writeText(url);
@@ -67,6 +72,21 @@ export default function JewelBoxDrawer({ announce }: { announce: (m: string) => 
               <Button variant="secondary" className="mt-2 w-full" onClick={share} data-testid="box-share">
                 <Icon name="share" className="h-4 w-4" /> Share this Jewel Box
               </Button>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <a href={whatsappShareLink(shareMessage(s.cart, shareUrl(origin, s.cart)))} target="_blank" rel="noopener noreferrer" data-testid="box-whatsapp-share"
+                  onClick={() => track('whatsapp_click', { kind: 'share_box' })}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 border border-ink/30 px-3 font-ui text-[11px] uppercase tracking-[0.18em] hover:border-ink">
+                  <Icon name="chat" className="h-4 w-4" /> Send on WhatsApp
+                </a>
+                {storeWa ? (
+                  <a href={storeWa} target="_blank" rel="noopener noreferrer" data-testid="box-whatsapp-store" onClick={() => track('whatsapp_click', { kind: 'ask_store' })}
+                    className="inline-flex min-h-[44px] items-center justify-center gap-2 border border-ink/30 px-3 font-ui text-[11px] uppercase tracking-[0.18em] hover:border-ink">
+                    Ask ISHÉ about these
+                  </a>
+                ) : (
+                  <p className="grid min-h-[44px] place-items-center px-2 text-center font-ui text-[11px] text-ink/55" data-testid="box-whatsapp-store-unconfigured">Store WhatsApp: not configured</p>
+                )}
+              </div>
               {link && (
                 <div className="mt-2">
                   <label htmlFor="share-link" className="font-ui text-[11px] text-ink/60">Link to this selection (pieces and quantities only)</label>

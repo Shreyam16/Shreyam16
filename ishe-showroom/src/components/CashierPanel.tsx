@@ -5,6 +5,8 @@ import { PRODUCT_BY_SKU, formatINR } from '@/data/catalogue';
 import { useShowroom } from '@/store/showroom';
 import { Button, Icon, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
 import Receipt from './Receipt';
+import { speak, stopVoice } from '@/lib/voice';
+import { track } from '@/lib/analytics';
 
 type Status = { configured: boolean; mappedVariants: number; totalProducts: number } | null;
 type Outcome = { kind: 'idle' } | { kind: 'working' } | { kind: 'demo'; reason: string } | { kind: 'error'; message: string } | { kind: 'redirecting' };
@@ -23,6 +25,10 @@ export default function CashierPanel() {
   const ceremony = useShowroom((s) => s.ceremony);
   const setCeremony = useShowroom((s) => s.setCeremony);
   const reduced = useShowroom((s) => s.reducedMotion);
+
+  useEffect(() => () => stopVoice(), []);
+  useEffect(() => { if (!moving) speak('greet-cashier'); }, [moving]);
+  useEffect(() => { if (ceremony) speak(`counter-${ceremony.stage}`); }, [ceremony?.stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Demo ceremony pacing: wrapping and hand-over take a moment (instant with reduced motion).
   useEffect(() => {
@@ -48,6 +54,7 @@ export default function CashierPanel() {
 
   async function proceed() {
     setOutcome({ kind: 'working' });
+    track('checkout_start', { source: checkout?.source ?? 'unknown', lines: lines.length, giftWrap, engraving: engraving.trim().length > 0, live });
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',

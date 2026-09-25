@@ -30,3 +30,14 @@ export function shareUrl(origin: string, lines: ShareLine[]): string {
   u.searchParams.set('box', encodeBox(lines));
   return u.toString();
 }
+
+/** Message used when sharing a selection on WhatsApp (to anyone, or to the store). */
+export function shareMessage(lines: ShareLine[], url: string, toStore = false): string {
+  const list = lines.filter((l) => PRODUCT_BY_SKU[l.sku]).map((l) => `• ${PRODUCT_BY_SKU[l.sku].name} (${l.sku})${l.qty > 1 ? ` × ${l.qty}` : ''}`).join('\n');
+  return [toStore ? 'Hello ISHÉ, I would like to know more about these pieces:' : 'My ISHÉ Jewel Box:', list, url].join('\n');
+}
+
+/** wa.me link that lets the visitor pick any contact (no number needed). */
+export function whatsappShareLink(text: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}

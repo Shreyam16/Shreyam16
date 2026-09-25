@@ -8,6 +8,7 @@ import Displays from './Displays';
 import CameraRig from './CameraRig';
 import Staff from './Staff';
 import Evening from './Evening';
+import WindowDisplays from './WindowDisplays';
 import { useShowroom } from '@/store/showroom';
 import Polish from './Polish';
 import { detectQuality } from './quality';
@@ -102,6 +103,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
       <Suspense fallback={null}>
         <Architecture />
         <Displays />
+        <WindowDisplays />
         <ReadySignal />
       </Suspense>
       {/* People stream in after the room is up, so they never hold the entrance back. */}

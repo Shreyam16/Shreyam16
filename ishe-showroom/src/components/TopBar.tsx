@@ -1,6 +1,7 @@
 'use client';
 import { cartCount, useShowroom } from '@/store/showroom';
 import { setAmbience } from '@/lib/sound';
+import { track } from '@/lib/analytics';
 import { Icon, IconButton } from './ui/primitives';
 
 export default function TopBar() {
@@ -28,10 +29,10 @@ export default function TopBar() {
         <IconButton label={`Saved pieces (${saved})`} badge={saved} onClick={() => openDrawer('jewelBox')} className="!hidden sm:!inline-grid"><Icon name="heart" /></IconButton>
         <IconButton label={`Jewel Box (${count} items)`} badge={count} onClick={() => openDrawer('jewelBox')} data-testid="open-box"><Icon name="box" /></IconButton>
         <IconButton label="Book a private appointment" onClick={() => openDrawer('appointment')} data-testid="open-appointment"><Icon name="calendar" /></IconButton>
-        <IconButton label="Evening mode" aria-pressed={evening} onClick={() => setEvening(!evening)} data-testid="evening-toggle">
+        <IconButton label="Evening mode" aria-pressed={evening} onClick={() => { setEvening(!evening); track('evening_toggle', { on: !evening }); }} data-testid="evening-toggle">
           <Icon name={evening ? 'sun' : 'moon'} />
         </IconButton>
-        <IconButton label={sound ? 'Turn sound off' : 'Turn sound on'} aria-pressed={sound} onClick={() => { setSound(!sound); setAmbience(!sound); }} data-testid="sound-toggle">
+        <IconButton label={sound ? 'Turn sound off' : 'Turn sound on'} aria-pressed={sound} onClick={() => { setSound(!sound); setAmbience(!sound); track('sound_toggle', { on: !sound }); }} data-testid="sound-toggle">
           <Icon name={sound ? 'soundOn' : 'soundOff'} />
         </IconButton>
         <IconButton label="Help and controls" onClick={() => openDrawer('help')}><Icon name="help" /></IconButton>

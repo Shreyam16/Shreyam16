@@ -1,4 +1,7 @@
 'use client';
+import { useEffect } from 'react';
+import { speak, stopVoice } from '@/lib/voice';
+import { track } from '@/lib/analytics';
 import { STAFF_BY_ID, type StaffId } from '@/scene/features';
 import { TOURS, type TourId } from '@/scene/layout';
 import { cartCount, useShowroom } from '@/store/showroom';
@@ -17,6 +20,12 @@ export default function StaffPanel({ id }: { id: StaffId }) {
   const mode = useShowroom((s) => s.renderMode);
   const moving = useShowroom((s) => s.moving);
   const lite = mode === 'lite';
+  const voice = id === 'consultant' ? 'consultant' : 'attendant';
+  useEffect(() => {
+    const line = speak(id === 'cashier' ? 'greet-cashier' : id === 'consultant' ? 'greet-consultant' : 'greet-attendant');
+    track('staff_greeting', { staff: id });
+    return () => stopVoice(line);
+  }, [id]);
   return (
     <Sheet label={`${lite ? 'Concierge' : spot.role}: greeting`} onClose={back} testId="staff-panel">
       <SheetHeader eyebrow={lite ? 'Concierge' : spot.role} title="Welcome to ISHÉ" onClose={back} closeLabel="Back" />
@@ -35,7 +44,7 @@ export default function StaffPanel({ id }: { id: StaffId }) {
             <ul className="mt-3 grid gap-2">
               {TOUR_ORDER.map((t) => (
                 <li key={t}>
-                  <button type="button" disabled={moving} onClick={() => startTour(t)} data-testid={`tour-${t}`}
+                  <button type="button" disabled={moving} onClick={() => { startTour(t); speak(`tour-${t}-${voice}`); track('tour_start', { tour: t, staff: id }); }} data-testid={`tour-${t}`}
                     className="flex min-h-[52px] w-full items-center justify-between gap-3 border border-ink/20 px-4 text-left hover:border-ink disabled:opacity-40">
                     <span>
                       <span className="editorial block text-[20px] leading-tight">{TOURS[t].label}</span>

@@ -132,6 +132,21 @@ The WhatsApp concierge button opens `https://wa.me/<number>?text=…` with the v
 prefilled; nothing is sent until they press send in WhatsApp. Without
 `NEXT_PUBLIC_WHATSAPP_NUMBER` it shows "not configured".
 
+The Jewel Box has two more WhatsApp buttons: **Send to a friend** (`https://wa.me/?text=…`, WhatsApp
+asks which contact) and **Ask the store about these** (to the store's number, so staff can follow up
+with a curated reply). Both carry piece names, SKUs and the share link only. Each product panel also
+has "Ask about this piece on WhatsApp" when the number is set.
+
+## Visit statistics
+
+`src/lib/analytics.ts` records which rooms and pieces were viewed and for how long (`room_dwell`,
+`piece_dwell`), plus try-on, tour, Jewel Box, appointment and checkout events. It is first-party and
+cookie-free: a random per-tab id, SKUs, room names and counts, never names, contact details, notes
+or IP addresses. Browsers with Do Not Track or Global Privacy Control send nothing. Batches go to
+`POST /api/analytics` every 15 s (and on leaving the page), where the server re-validates them
+(`cleanBatch`) and forwards them to `ANALYTICS_WEBHOOK_URL` if set; otherwise they are discarded
+(`{ stored: false }`). Point the webhook at a sheet, a warehouse or an automation.
+
 | Variable | Scope | Notes |
 | --- | --- | --- |
 | `RESEND_API_KEY` | server | Resend API key |
@@ -139,6 +154,7 @@ prefilled; nothing is sent until they press send in WhatsApp. Without
 | `APPOINTMENT_EMAIL_FROM` | server | Optional verified sender; defaults to Resend's test sender |
 | `APPOINTMENT_WEBHOOK_URL` | server | Optional alternative to email (https only) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | public | International format, e.g. `+91 98765 43210` |
+| `ANALYTICS_WEBHOOK_URL` | server | Optional; receives anonymous visit statistics as JSON |
 
 ## Deploying to Vercel
 
@@ -185,11 +201,14 @@ and `/api/appointment`, which run as serverless functions because their tokens m
   (sample) occasion in walking order; "Show me around" walks every room. Previous / Next / Stop;
   Stop returns the visitor to where the tour began. Fully keyboard operable; instant under reduced
   motion.
-- **Camera try-on** for earrings, necklaces and pendants. The camera is requested only when the
-  visitor taps "Start camera". MediaPipe Face Landmarker (tasks-vision 1.0.1 from jsDelivr, model
-  from Google's MediaPipe storage) loads only after permission is granted and runs on the device;
-  no image is uploaded or stored. The procedural 3D piece is drawn over the mirrored video, labelled
-  "Preview, not exact scale". Refused permission, no camera or no WebGL each get a plain fallback.
+- **Camera try-on** for every piece. Earrings, necklaces and pendants use MediaPipe Face
+  Landmarker; rings and bracelets use Hand Landmarker (the ring sits on the ring finger between the
+  knuckle and the middle joint, the bracelet just below the wrist, both turned with the hand; phones
+  prefer the rear camera for hands). The camera is requested only when the visitor taps "Start
+  camera". The model (tasks-vision 1.0.1 from jsDelivr, model files from Google's MediaPipe storage)
+  loads only after permission is granted and runs on the device; no image is uploaded or stored. The
+  procedural 3D piece is drawn over the video (mirrored for a front camera), labelled "Preview, not
+  exact scale". Refused permission, no camera or no WebGL each get a plain fallback.
 - **Share your Jewel Box.** The link carries SKUs and quantities only (`?box=ISH-N01*2,ISH-E02`),
   validated against the catalogue. Opening it still starts outside; the "Shared selection" panel
   appears once inside, and nothing is added until the visitor chooses.
@@ -197,7 +216,14 @@ and `/api/appointment`, which run as serverless functions because their tokens m
   windows and neighbouring flats, slightly lower light inside. Instant under reduced motion. The
   lite showroom uses a dusk tint over its daylight stills.
 - **Sound.** Off by default. A synthesised ambience (Web Audio, no files) plays only after the
-  visitor turns it on.
+  visitor turns it on. With sound on, staff also speak: a greeting from each attendant, the
+  consultant and the cashier, a line introducing each tour, and a line at each step of the counter
+  ceremony (17 short clips in `public/voice/`, about 190 KB each, fetched only when played). Nothing
+  is spoken while sound is off.
+- **Seasonal windows.** The two shop windows beside the door dress themselves for the season:
+  festive (Navratri to Diwali, marigold garlands and diyas), wedding season (late November to
+  February, jasmine strings) or classic. Each window shows an existing catalogue piece on a
+  plinth. `?season=festive|wedding|classic` previews another season.
 - **Reduced motion.** Honoured throughout: no smooth scrolling, instant camera moves, no zoom easing.
 
 ### Performance and fallback
@@ -228,6 +254,8 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 
 ### Asset credits
 
+- **Staff voices** (`public/voice/*.wav`): generated for this project with Higgsfield text-to-speech
+  (Seed Audio; stock voices Maya, Julian and Gia), down-mixed to mono. Not recordings of ISHÉ staff.
 - **Staff figures** (`public/staff/*.glb`): generated for this project with Higgsfield. A
   photoreal full-body reference image of each person (GPT Image 2.5) was converted with Meshy 7
   image-to-3D (ultra detail), auto-rigged with the Idle_02 clip. Re-packed for the web with
@@ -274,9 +302,12 @@ the `qa-screenshots` branch for review.
   very close range (the camera never frames a face closely), and they have no facial animation
   (no blinking or speech). Photoreal staff would need licensed scanned or Character Creator
   figures with motion-capture idles.
-- Try-on placement is approximate (face landmarks plus an assumed face width), not a fit tool.
+- Try-on placement is approximate (landmarks plus an assumed face width or knuckle span), not a
+  fit tool. Fingers do not hide the back of a ring or bracelet.
   It needs camera permission, WebGL and a connection for the first model download. It has been
   tested for the refused-permission path in automated tests; live camera tracking has to be
   checked by hand on real devices.
 - Appointment email / webhook delivery is tested against mocked responses only.
+- Spoken lines are fixed recordings: the staff do not answer questions, and their lips do not move.
+- Visit statistics are only collected; there is no dashboard in the app. Use the webhook target's.
 - Evening mode in the lite showroom is a tint over daylight stills.

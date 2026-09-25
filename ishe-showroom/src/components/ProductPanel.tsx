@@ -4,6 +4,8 @@ import { CATEGORY_LABEL, OCCASION_LABEL, PRODUCTS, PRODUCT_BY_SKU, ROOMS, format
 import { useShowroom } from '@/store/showroom';
 import { Button, Icon, ProductImage, SampleTag, Sheet, SheetHeader } from './ui/primitives';
 import { isTryOnCategory } from '@/lib/tryon';
+import { track } from '@/lib/analytics';
+import { whatsappLink } from '@/lib/appointment';
 
 export default function ProductPanel({ sku, announce }: { sku: string; announce: (msg: string) => void }) {
   const product = PRODUCT_BY_SKU[sku];
@@ -49,24 +51,34 @@ export default function ProductPanel({ sku, announce }: { sku: string; announce:
         </ul>
 
         <div className="mt-5 grid grid-cols-[1fr_1fr_auto] gap-2">
-          <Button variant="secondary" onClick={() => { addToCart(sku); announce(`${product.name} added to your Jewel Box`); }} data-testid="add-to-box">
+          <Button variant="secondary" onClick={() => { addToCart(sku); track('add_to_box', { sku }); announce(`${product.name} added to your Jewel Box`); }} data-testid="add-to-box">
             Add to Jewel Box
           </Button>
           <Button variant="primary" disabled={moving} onClick={() => startCheckout({ lines: [{ sku, qty: 1 }], source: 'buyNow' })} data-testid="buy-now">
             Buy Now
           </Button>
           <button type="button" aria-pressed={saved} aria-label={saved ? 'Remove from saved' : 'Save for later'} title={saved ? 'Saved' : 'Save'}
-            onClick={() => { toggleSaved(sku); announce(saved ? 'Removed from saved' : `${product.name} saved`); }}
+            onClick={() => { toggleSaved(sku); if (!saved) track('save_piece', { sku }); announce(saved ? 'Removed from saved' : `${product.name} saved`); }}
             className="grid h-11 w-11 place-items-center border border-ink/25 hover:border-ink" data-testid="save-toggle">
             <Icon name="heart" filled={saved} />
           </button>
         </div>
 
         {isTryOnCategory(product.category) && (
-          <Button variant="ghost" className="mt-2 w-full border border-ink/15" onClick={() => openTryOn(sku)} data-testid="try-on-open">
+          <Button variant="ghost" className="mt-2 w-full border border-ink/15" onClick={() => { openTryOn(sku); track('try_on_open', { sku }); }} data-testid="try-on-open">
             <Icon name="camera" className="h-4 w-4" /> Try on with your camera
           </Button>
         )}
+
+        {(() => {
+          const wa = whatsappLink(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER, `Hello ISHÉ, I would like to know more about the ${product.name} (${product.sku}).`);
+          return wa ? (
+            <a href={wa} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_click', { kind: 'ask_piece', sku })} data-testid="piece-whatsapp"
+              className="mt-2 inline-flex min-h-[44px] w-full items-center justify-center gap-2 font-ui text-[11px] uppercase tracking-[0.18em] text-ink/80 hover:text-ink">
+              <Icon name="chat" className="h-4 w-4" /> Ask about this piece on WhatsApp
+            </a>
+          ) : null;
+        })()}
 
         <section className="mt-7" aria-labelledby="pair-heading">
           <h3 id="pair-heading" className="plaque-label text-ink/60">Pair it with</h3>

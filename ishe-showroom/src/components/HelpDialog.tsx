@@ -26,9 +26,11 @@ export default function HelpDialog() {
           <h3 className="plaque-label text-ink/60">Ways to explore</h3>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>{mode === '3d' ? 'Select an attendant, or use “Ask the attendant”,' : 'Use “Guided tour”'} for a Bridal, Everyday, Gifting or Festive tour, or a walk through every room. Use Next and Stop to move through it.</li>
-            <li>Earrings, necklaces and pendants have “Try on with your camera”. The camera starts only when you ask, and nothing leaves your device.</li>
+            <li>Every piece has “Try on with your camera”: earrings, necklaces and pendants follow your face; rings and bracelets follow your hand. The camera starts only when you ask, and nothing leaves your device.</li>
             <li>The calendar icon books a private appointment. The moon icon switches to evening.</li>
             <li>Share your Jewel Box from the Jewel Box panel: the link carries piece codes and quantities only.</li>
+            <li>With sound on, the attendants greet you and introduce each tour (recorded voices, generated for this demo).</li>
+            <li>Anonymous visit statistics (rooms and pieces viewed, for how long) help the store; no names, contact details or cookies. Browsers set to Do Not Track or Global Privacy Control send nothing.</li>
           </ul>
         </section>
         <section>
