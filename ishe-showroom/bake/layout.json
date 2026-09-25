@@ -581,11 +581,6 @@
         "kind": "general"
       },
       {
-        "x": 0,
-        "z": -9.9,
-        "kind": "general"
-      },
-      {
         "x": -1,
         "z": -12.6,
         "kind": "general"
@@ -655,7 +650,136 @@
         "z": -10.4,
         "kind": "general"
       }
-    ]
+    ],
+    "staff": [
+      {
+        "id": "cashier",
+        "role": "Cashier",
+        "greeting": "Welcome to the counter. I will look after your order.",
+        "file": "/staff/cashier.glb",
+        "x": -0.5,
+        "z": -13.38,
+        "rotY": 0,
+        "height": 1.66,
+        "half": 0
+      },
+      {
+        "id": "consultant",
+        "role": "Salon consultant",
+        "greeting": "Good to see you in the salon. Shall I show you around?",
+        "file": "/staff/consultant.glb",
+        "x": 0.8,
+        "z": -13.38,
+        "rotY": -0.2,
+        "height": 1.76,
+        "half": 0
+      },
+      {
+        "id": "left",
+        "role": "Attendant, Necklaces & Bracelets",
+        "greeting": "Welcome. I can walk you through the pieces, or the whole showroom.",
+        "file": "/staff/attendant-left.glb",
+        "x": -5.6,
+        "z": -4.6,
+        "rotY": 0.9,
+        "height": 1.64,
+        "half": 0.25
+      },
+      {
+        "id": "right",
+        "role": "Attendant, Earrings & Pendants",
+        "greeting": "Welcome. I can walk you through the pieces, or the whole showroom.",
+        "file": "/staff/attendant-right.glb",
+        "x": 5.6,
+        "z": -4.6,
+        "rotY": -0.9,
+        "height": 1.63,
+        "half": 0.25
+      }
+    ],
+    "salon": {
+      "x0": -2.6,
+      "x1": 2.6,
+      "z0": -13.9,
+      "z1": -8.1,
+      "trayY": 3.55
+    },
+    "chandelier": {
+      "x": 0,
+      "z": -9.9,
+      "top": 3.55,
+      "bottom": 2.55,
+      "r": 0.42
+    },
+    "armchairs": [
+      {
+        "x": -3.1,
+        "z": -10.4,
+        "rotY": 1.5707963267948966,
+        "w": 0.74,
+        "d": 0.74
+      },
+      {
+        "x": 3.1,
+        "z": -10.4,
+        "rotY": -1.5707963267948966,
+        "w": 0.74,
+        "d": 0.74
+      }
+    ],
+    "sideTable": {
+      "x": -3.1,
+      "z": -11.35,
+      "r": 0.23,
+      "h": 0.52
+    },
+    "floorMirrors": [
+      {
+        "x": -7.12,
+        "z": -2.8,
+        "rotY": 1.5707963267948966
+      },
+      {
+        "x": -7.12,
+        "z": -4.6000000000000005,
+        "rotY": 1.5707963267948966
+      },
+      {
+        "x": -7.12,
+        "z": -6.4,
+        "rotY": 1.5707963267948966
+      },
+      {
+        "x": -7.12,
+        "z": -8.2,
+        "rotY": 1.5707963267948966
+      },
+      {
+        "x": 7.12,
+        "z": -2.8,
+        "rotY": -1.5707963267948966
+      },
+      {
+        "x": 7.12,
+        "z": -4.6000000000000005,
+        "rotY": -1.5707963267948966
+      },
+      {
+        "x": 7.12,
+        "z": -6.4,
+        "rotY": -1.5707963267948966
+      },
+      {
+        "x": 7.12,
+        "z": -8.2,
+        "rotY": -1.5707963267948966
+      }
+    ],
+    "floorMirrorSize": {
+      "w": 0.36,
+      "d": 0.28,
+      "h": 1.55
+    }
   },
   "displays": [
     {

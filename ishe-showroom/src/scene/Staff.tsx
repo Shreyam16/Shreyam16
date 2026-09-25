@@ -24,8 +24,9 @@ function Person({ spot }: { spot: StaffSpot }) {
   const root = useRef<THREE.Group>(null);
   const yaw = useRef(0);
   const headYaw = useRef(0);
+  const fixGroup = useRef<THREE.Group>(null);
 
-  const { model, mixer, head, scale, fix } = useMemo(() => {
+  const { model, mixer, head, scale, fix, bones } = useMemo(() => {
     const model = cloneSkinned(gltf.scene) as THREE.Group;
     let height = spot.height;
     model.traverse((o) => {
@@ -70,18 +71,39 @@ function Person({ spot }: { spot: StaffSpot }) {
     const offset = Math.abs(spot.x * 7.31 + spot.z * 3.17);
     mixer.setTime(0);
     for (const act of actions) act.time = dur > 0 ? offset % dur : 0;
-    return { model, mixer, head: model.getObjectByName('Head') ?? null, scale: spot.height / height, fix };
+    return { model, mixer, head: model.getObjectByName('Head') ?? null, scale: spot.height / height, fix, bones: L && R && hips ? { L, R, hips } : null };
   }, [gltf, spot]);
 
   useEffect(() => () => { mixer.stopAllAction(); }, [mixer]);
 
   const pq = useMemo(() => new THREE.Quaternion(), []);
+  const tmp = useMemo(() => ({ a: new THREE.Vector3(), b: new THREE.Vector3(), h: new THREE.Vector3(), inv: new THREE.Matrix4() }), []);
   const turn = useMemo(() => new THREE.Quaternion(), []);
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.1);
     const s = useShowroom.getState();
     mixer.update(s.reducedMotion ? 0 : dt);
     if (!root.current) return;
+    // Keep the person standing on their spot, facing their direction: the idle captures turn the
+    // hips through a wide arc and drift a few centimetres. Measure the shoulder line and hips in
+    // model space every frame and counter-rotate / re-centre (smoothed, so the sway stays natural).
+    if (bones && fixGroup.current) {
+      model.updateMatrixWorld(true);
+      tmp.inv.copy(model.matrixWorld).invert();
+      bones.L.getWorldPosition(tmp.a).applyMatrix4(tmp.inv);
+      bones.R.getWorldPosition(tmp.b).applyMatrix4(tmp.inv);
+      bones.hips.getWorldPosition(tmp.h).applyMatrix4(tmp.inv);
+      const fx = tmp.b.z - tmp.a.z, fz = tmp.a.x - tmp.b.x; // up × (R − L), flattened
+      let want = -Math.atan2(fx, fz);
+      want = fix.yaw + Math.atan2(Math.sin(want - fix.yaw), Math.cos(want - fix.yaw));
+      const kf = s.reducedMotion ? 1 : Math.min(1, dt * 3);
+      fix.yaw += (want - fix.yaw) * kf;
+      const c = Math.cos(fix.yaw), sn = Math.sin(fix.yaw);
+      fix.x += (-(tmp.h.x * c + tmp.h.z * sn) - fix.x) * kf;
+      fix.z += (-(-tmp.h.x * sn + tmp.h.z * c) - fix.z) * kf;
+      fixGroup.current.rotation.y = fix.yaw;
+      fixGroup.current.position.set(fix.x, 0, fix.z);
+    }
     // Look toward a nearby visitor, within a natural range of the resting direction: most of the
     // turn in the head, a little in the shoulders.
     const dx = camera.position.x - spot.x, dz = camera.position.z - spot.z;
@@ -119,7 +141,7 @@ function Person({ spot }: { spot: StaffSpot }) {
   return (
     <group ref={root} position={[spot.x, 0, spot.z]} rotation={[0, spot.rotY, 0]} name={`staff-${spot.id}`}>
       <group scale={scale}>
-        <group rotation={[0, fix.yaw, 0]} position={[fix.x, 0, fix.z]}>
+        <group ref={fixGroup} rotation={[0, fix.yaw, 0]} position={[fix.x, 0, fix.z]}>
           <primitive object={model} />
         </group>
       </group>
@@ -159,6 +181,14 @@ function QaHook() {
         headYaw: +(g?.userData.headYaw ?? 0).toFixed(3),
         animTime: +(g?.userData.animTime ?? 0).toFixed(3),
         facingFix: +(g?.userData.facingFix ?? 0).toFixed(3),
+        facingErrDeg: (() => {
+          const L = g?.getObjectByName('LeftArm'), R = g?.getObjectByName('RightArm');
+          if (!L || !R) return null;
+          const a = L.getWorldPosition(new THREE.Vector3()), b = R.getWorldPosition(new THREE.Vector3());
+          const yaw = Math.atan2(b.z - a.z, a.x - b.x);
+          const want = spot.rotY + (g?.userData.bodyYaw ?? 0);
+          return +THREE.MathUtils.radToDeg(Math.atan2(Math.sin(yaw - want), Math.cos(yaw - want))).toFixed(1);
+        })(),
         hips: g?.getObjectByName('Hips')?.getWorldPosition(new THREE.Vector3()).toArray().map((n) => +n.toFixed(3)) ?? null,
         spine: g?.getObjectByName('Spine')?.quaternion.toArray().map((n) => +n.toFixed(5)) ?? null,
         bodyYaw: +(g?.userData.bodyYaw ?? 0).toFixed(3),

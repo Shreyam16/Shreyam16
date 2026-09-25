@@ -115,7 +115,19 @@ export default function CameraRig() {
       return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height, visible: v.z < 1 };
     };
     w.__isheCamera = () => ({ ...pose.current });
-    w.__isheRenderInfo = () => ({ ...gl.info.render, programs: gl.info.programs?.length, geometries: gl.info.memory.geometries, textures: gl.info.memory.textures });
+    // Counts every draw call in one whole frame (post-processing would otherwise report only its
+    // last pass): stop auto-reset, reset after one frame, read after the next.
+    w.__isheRenderInfo = () => new Promise((resolve) => {
+      gl.info.autoReset = false;
+      requestAnimationFrame(() => {
+        gl.info.reset();
+        requestAnimationFrame(() => {
+          const out = { ...gl.info.render, programs: gl.info.programs?.length, geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
+          gl.info.autoReset = true;
+          resolve(out);
+        });
+      });
+    });
     return () => { delete w.__isheProject; delete w.__isheCamera; delete w.__isheRenderInfo; };
   }, [camera, gl]);
 

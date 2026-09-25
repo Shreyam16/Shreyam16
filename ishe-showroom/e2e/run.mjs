@@ -37,7 +37,7 @@ const waitIdle = (page, ms = 20000) => page.waitForFunction(() => !window.__ishe
 // Cold loads compile every shader in software (SwiftShader), which can take minutes on CI.
 const waitReady = async (page, ms = 240000) => {
   await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: ms });
-  await page.getByTestId('loading-screen').waitFor({ state: 'detached', timeout: 10000 });
+  await page.getByTestId('loading-screen').waitFor({ state: 'detached', timeout: 60000 });
 };
 const enterNow = (page) => page.evaluate(() => { const s = window.__ishe.getState(); s.setEntrance(1); s.enter(); });
 const metrics = {};
@@ -139,6 +139,7 @@ console.log('Desktop 3D (1440x900)');
     await page.waitForTimeout(3000);
     const b = await page.evaluate(() => window.__isheStaff());
     metrics.staff = b;
+    for (const p of b) assert(Math.abs(p.facingErrDeg) < 25, `${p.id} faces ${p.facingErrDeg}° off its spot`);
     for (const p of a) {
       assert(p.head[1] > 1.35 && p.head[1] < 1.8, `${p.id} head at ${p.head[1]}`);
       assert(p.toe[1] > -0.05 && p.toe[1] < 0.2, `${p.id} toe at ${p.toe[1]}`);
@@ -470,13 +471,23 @@ console.log('Reduced motion');
     await page.getByTestId('enter-button').click();
     await page.getByTestId('junction-chooser').waitFor({ timeout: 5000 });
     await page.getByTestId('choose-right').click();
-    await page.waitForTimeout(300);
+    // Instant: no tween is started, so the move completes on the next rendered frame.
+    await waitIdle(page, 10000);
     const s = await state(page);
     assert(!s.moving && s.room === 'right', JSON.stringify(s));
+    const cam = await page.evaluate(() => window.__isheCamera());
+    assert(Math.hypot(cam.x - 4.4, cam.z - -3.2) < 0.01, `camera ${JSON.stringify(cam)}`);
   });
-  await check('reduced motion: evening switches instantly', async () => {
+  await check('reduced motion: evening switches instantly (no in-between frames)', async () => {
+    await page.evaluate(() => {
+      window.__eveSeen = [];
+      const el = document.querySelector('[data-testid="showroom-canvas"]');
+      new MutationObserver(() => window.__eveSeen.push(el.dataset.evening)).observe(el, { attributes: true, attributeFilter: ['data-evening'] });
+    });
     await page.getByTestId('evening-toggle').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 1500 });
+    await page.waitForFunction(() => document.querySelector('[data-testid="showroom-canvas"]')?.dataset.evening === 'on', null, { timeout: 10000 });
+    const seen = await page.evaluate(() => window.__eveSeen);
+    assert(!seen.includes('changing'), `saw ${seen}`);
   });
   await ctx.close();
 }
@@ -634,7 +645,8 @@ console.log('No WebGL (lite fallback)');
     await page.screenshot({ path: `${OUT}/17-lite-cashier.png` });
   });
   await check('lite: no staff models, guided tour still available, evening tint', async () => {
-    await page.getByRole('button', { name: 'Return to the showroom' }).click();
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.__ishe.getState().view.kind === 'node');
     assert(await page.evaluate(() => typeof window.__isheStaff === 'undefined'), 'staff hook present in lite');
     assert(await page.evaluate(() => !document.querySelector('canvas')), 'canvas in lite');
     await page.getByTestId('talk-staff').click();
