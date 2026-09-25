@@ -6,7 +6,7 @@ import { PRODUCT_BY_SKU } from '@/data/catalogue';
 import { SEASON_WINDOWS, seasonFor, type Season } from '@/lib/season';
 import { useShowroom } from '@/store/showroom';
 import { buildPiece } from './jewellery';
-import { CURTAINS, WINDOW_DISPLAYS, WINDOW_PLINTH } from './features';
+import { WINDOW_DISPLAYS, WINDOW_PLINTH } from './features';
 import Merged from './Merged';
 import { Box } from './Architecture';
 
@@ -91,7 +91,7 @@ export default function WindowDisplays() {
     <group name="window-displays">
       <Merged>
         {WINDOW_DISPLAYS.map((w) => <Plinth key={w.x} x={w.x} z={w.z} season={season} />)}
-        {season !== 'classic' && CURTAINS.map((c) => <Garlands key={c.x0} x0={c.x0 + 1.35} x1={c.x1 - 1.35} kind={season === 'festive' ? 'marigold' : 'jasmine'} />)}
+        {season !== 'classic' && WINDOW_DISPLAYS.map((w) => <Garlands key={w.x} x0={w.x - 0.55} x1={w.x + 0.55} kind={season === 'festive' ? 'marigold' : 'jasmine'} />)}
       </Merged>
       {WINDOW_DISPLAYS.map((w, i) => (
         // Facing the street (+z); necklaces sit on their bust, earrings on their stand.

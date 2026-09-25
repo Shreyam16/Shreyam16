@@ -94,8 +94,9 @@ export const STAFF: StaffSpot[] = [
 
 export const STAFF_BY_ID: Record<StaffId, StaffSpot> = Object.fromEntries(STAFF.map((s) => [s.id, s])) as Record<StaffId, StaffSpot>;
 
-/** Window displays just inside each shop window, facing the street (between the curtain panels). */
-export const WINDOW_DISPLAYS: { x: number; z: number }[] = [{ x: -4.55, z: -0.55 }, { x: 4.55, z: -0.55 }];
+/** Window displays just inside each shop window, facing the street: in the inner pane, clear of the
+ * centre mullion (x = ±4.35) and between the curtain panels. */
+export const WINDOW_DISPLAYS: { x: number; z: number }[] = [{ x: -4.9, z: -0.5 }, { x: 4.9, z: -0.5 }];
 export const WINDOW_PLINTH = { w: 0.62, d: 0.42, h: 0.92 };
 
 /** Colliders for the furniture added in this file (all axis-aligned boxes). */
