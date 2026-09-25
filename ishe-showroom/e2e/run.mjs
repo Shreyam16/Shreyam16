@@ -138,7 +138,9 @@ console.log('Desktop 3D (1440x900)');
   await check('staff: all four load at human scale with feet on the floor, idle animation playing', async () => {
     await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 });
     const a = await page.evaluate(() => window.__isheStaff());
-    await page.waitForTimeout(3000);
+    // Software GL can stall for seconds while the skinned shaders compile: wait for the clock to
+    // move (i.e. frames to render), then give the idle a moment before comparing poses.
+    await page.waitForFunction((t) => window.__isheStaff().every((p) => p.animTime > t + 0.5), a[0].animTime, { timeout: 120000 });
     const b = await page.evaluate(() => window.__isheStaff());
     metrics.staff = b;
     // Within 40° of the spot's direction: the idle keeps some natural sway (it was ~90° before stabilising).
