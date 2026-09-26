@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   # Photo-stop renders take long: they queue among themselves, not in front of QA runs.
-  group: ishe-assets-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[ishe-assets:stops]') && 'stops' || 'qa' }}
+  group: ishe-assets-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[ishe-assets:stops]') && 'cycles-stills' || 'qa' }}
   cancel-in-progress: false
 
 jobs:
