@@ -7,7 +7,7 @@ import { useShowroom, type View } from '@/store/showroom';
 import {
   EYE, cashierPose, comboPose, focusPose, nodePose, roomAt, routeTo, slideMove, staffPose, type Pose,
 } from './layout';
-import { doorOpen, footstep, soundOn } from '@/lib/sound';
+import { doorOpen, footstep, soundOn, doorBell } from '@/lib/sound';
 import { clearHeld, held, notePointerDown, notePointerMove, pointerWasDrag, type HeldKey } from './input';
 
 const KEYS: Record<string, HeldKey> = {
@@ -205,6 +205,7 @@ export default function CameraRig() {
         // Any view requested meanwhile (e.g. a room chosen before this frame) still runs below.
         wasInside.current = true;
         Object.assign(pose.current, entrancePose(1));
+        if (soundOn()) doorBell();
         lastNonce.current = -1;
       }
       if (s.viewNonce !== lastNonce.current) startNav();

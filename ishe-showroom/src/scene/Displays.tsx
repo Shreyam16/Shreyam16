@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { PRODUCT_BY_SKU, COMBOS, formatINR } from '@/data/catalogue';
 import { DISPLAYS, COMBO_TABLE, CASHIER, type DisplaySpec } from './layout';
 import { buildPiece } from './jewellery';
@@ -13,6 +13,9 @@ import { useFontsReady } from './fonts';
 import Merged from './Merged';
 
 const HIT = new THREE.MeshBasicMaterial({ visible: false });
+/** Current approach-light level per case, exposed for QA as window.__isheCaseGlow(). */
+const CASE_GLOW: Record<string, number> = {};
+if (typeof window !== 'undefined') (window as unknown as { __isheCaseGlow?: () => Record<string, number> }).__isheCaseGlow = () => ({ ...CASE_GLOW });
 
 const TALL_TOP = 0.9;
 const TABLE_TOP = 0.85;
@@ -109,12 +112,22 @@ function Display({ spec, fontsReady }: { spec: DisplaySpec; fontsReady: boolean 
   const [hover, setHover] = useState(false);
   const selected = useShowroom((s) => s.view.kind === 'product' && s.view.sku === spec.sku);
   const highlight = useMemo(() => mats().highlight.clone(), []);
+  // The case's own light rises as the visitor walks up (like motion-sensing display lighting).
+  const deckLight = useMemo(() => { const m = mats().highlight.clone(); m.opacity = 0; return m; }, []);
+  const { camera } = useThree();
 
   const [glow, setGlow] = useState<THREE.Mesh | null>(null);
+  const [deck, setDeck] = useState<THREE.Mesh | null>(null);
   useFrame((_, dt) => {
     const target = selected ? 0.55 : hover ? 0.4 : 0;
     highlight.opacity += (target - highlight.opacity) * Math.min(1, dt * 6);
     if (glow) glow.visible = highlight.opacity > 0.01;
+    const s = useShowroom.getState();
+    const dist = Math.hypot(camera.position.x - spec.x, camera.position.z - spec.z);
+    const want = s.phase === 'inside' ? 0.6 * (1 - THREE.MathUtils.smoothstep(dist, 1.3, 3.2)) : 0;
+    deckLight.opacity += (want - deckLight.opacity) * (s.reducedMotion ? 1 : Math.min(1, dt * 2.5));
+    if (deck) deck.visible = deckLight.opacity > 0.01;
+    CASE_GLOW[spec.sku] = +deckLight.opacity.toFixed(3);
   });
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
@@ -139,6 +152,10 @@ function Display({ spec, fontsReady }: { spec: DisplaySpec; fontsReady: boolean 
         <boxGeometry args={[spec.w, spec.h, spec.d]} />
       </mesh>
       <primitive object={piece} position={[0, top, 0]} />
+      {/* Brighter light on the deck as the visitor comes close. */}
+      <mesh ref={setDeck} visible={false} position={[0, top + 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]} material={deckLight}>
+        <planeGeometry args={[spec.w * 0.85, spec.d * 0.85]} />
+      </mesh>
       {/* Floor glow that rises on hover / selection. */}
       <mesh ref={setGlow} visible={false} position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} material={highlight}>
         <planeGeometry args={[spec.w * 2.2, spec.d * 2.2]} />

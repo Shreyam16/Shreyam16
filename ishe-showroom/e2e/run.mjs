@@ -176,6 +176,19 @@ console.log('Desktop 3D (1440x900)');
     assert(still.length === 0, `idle not playing for ${still.map((p) => p.id)} ${JSON.stringify(still)}`);
   });
 
+  await check('the store reacts: case lights rise on approach, and the attendant greets you entering her gallery', async () => {
+    // "LEFT" just took the visitor into the left gallery.
+    const left = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'left');
+    assert(left.greetings >= 1, `left attendant greetings ${left.greetings}`);
+    const right = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'right');
+    assert(right.greetings === 0, `right attendant greeted without the visitor in her gallery (${right.greetings})`);
+    // The necklace case beside the visitor is lit up; a case across the shop is not.
+    await page.waitForFunction(() => (window.__isheCaseGlow()['ISH-N02'] ?? 0) > 0.2, null, { timeout: 20000 });
+    const glow = await page.evaluate(() => window.__isheCaseGlow());
+    assert((glow['ISH-E04'] ?? 0) < 0.05, `far case lit ${glow['ISH-E04']}`);
+    metrics.caseGlowNearFar = { n02: glow['ISH-N02'], e04: glow['ISH-E04'] };
+  });
+
   await check('staff: clicking the attendant opens her greeting, and she looks at the visitor while talking', async () => {
     const pt = await page.evaluate(() => window.__isheProject(-4.2, 1.1, -12.0));
     assert(pt.visible, 'attendant not in view');
@@ -487,6 +500,11 @@ console.log('Desktop 3D (1440x900)');
     await page.getByTestId('tour-stop').click();
     await waitIdle(page);
     metrics.voiceLog = await page.evaluate(() => window.__isheVoiceLog);
+    // Walking up to a case lifts its glass lid (sound on only).
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'product', sku: 'ISH-E03' }));
+    await page.waitForFunction(() => window.__isheSfx.includes('caseLid'), null, { timeout: 30000 });
+    await page.keyboard.press('Escape');
+    await waitIdle(page);
     await page.getByTestId('sound-toggle').click();
   });
 

@@ -23,7 +23,7 @@ export default function Experience() {
     // Exposed for automated QA (e2e/run.mjs); read-only use.
     (window as unknown as { __ishe?: typeof useShowroom }).__ishe = useShowroom;
     // QA-only logs of what voice lines and analytics batches were sent (read by e2e/run.mjs).
-    Object.assign(window, { __isheVoiceLog: [], __isheAnalytics: [] });
+    Object.assign(window, { __isheVoiceLog: [], __isheAnalytics: [], __isheSfx: [] });
     const stopDwell = startDwellTracking();
     // `?capture=1` hides the interface so scripts/render-lite-backdrops.mjs can grab clean frames.
     const params = new URLSearchParams(window.location.search);

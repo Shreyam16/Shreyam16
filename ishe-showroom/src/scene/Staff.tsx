@@ -15,6 +15,7 @@ const BODY_RANGE = 0.15;
 const IDLE_WEIGHT = 0.3;
 const IDLE_SPEED = 0.6;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const nodAxis = new THREE.Vector3();
 
 /**
  * Showroom staff: AI-generated, auto-rigged 3D people (Higgsfield / Meshy) playing an idle loop.
@@ -29,6 +30,8 @@ function Person({ spot }: { spot: StaffSpot }) {
   const headYaw = useRef(0);
   const fixGroup = useRef<THREE.Group>(null);
   const glance = useRef({ looking: false, left: 1 + Math.random() * 2, rest: 0 });
+  // Greeting when the visitor walks into this attendant's gallery: look up, a small nod, a moment of attention.
+  const greet = useRef({ room: '' as string, t: 0, nods: 0 });
 
   const { model, mixer, head, scale, fix, bones } = useMemo(() => {
     const model = cloneSkinned(gltf.scene) as THREE.Group;
@@ -143,6 +146,12 @@ function Person({ spot }: { spot: StaffSpot }) {
     const engaged = s.phase === 'inside' && ((s.view.kind === 'staff' && (s.view.id === spot.id || (spot.id !== 'left' && spot.id !== 'right' && s.view.id !== 'left' && s.view.id !== 'right')))
       || (s.view.kind === 'cashier' && (spot.id === 'cashier' || spot.id === 'consultant')));
     const g = glance.current;
+    const gr = greet.current;
+    if (s.phase === 'inside' && s.room !== gr.room) {
+      if ((spot.id === 'left' || spot.id === 'right') && s.room === spot.id && !s.reducedMotion) { gr.t = 3.2; gr.nods += 1; }
+      gr.room = s.room;
+    }
+    gr.t = Math.max(0, gr.t - dt);
     g.left -= dt;
     if (g.left <= 0) {
       g.looking = near && !g.looking;
@@ -150,7 +159,7 @@ function Person({ spot }: { spot: StaffSpot }) {
       g.rest = (Math.random() - 0.5) * 0.35;
     }
     let target = s.reducedMotion ? 0 : g.rest;
-    if (engaged || (near && g.looking && !s.reducedMotion)) {
+    if (engaged || gr.t > 0 || (near && g.looking && !s.reducedMotion)) {
       const delta = Math.atan2(Math.sin(Math.atan2(dx, dz) - spot.rotY), Math.cos(Math.atan2(dx, dz) - spot.rotY));
       target = THREE.MathUtils.clamp(delta, -(HEAD_RANGE + BODY_RANGE), HEAD_RANGE + BODY_RANGE);
     }
@@ -163,11 +172,22 @@ function Person({ spot }: { spot: StaffSpot }) {
     root.current.userData.animTime = mixer.time;
     root.current.userData.facingFix = fix.yaw;
     root.current.userData.bodyYaw = yaw.current;
+    root.current.userData.greetings = gr.nods;
     if (head?.parent && Math.abs(headYaw.current) > 1e-3) {
       // Rotate the (already animated) head about world up: local' = parentWorld⁻¹ · R · parentWorld · local.
       root.current.updateMatrixWorld();
       head.parent.getWorldQuaternion(pq);
       turn.setFromAxisAngle(Y_AXIS, headYaw.current);
+      head.quaternion.premultiply(pq).premultiply(turn).premultiply(pq.invert());
+    }
+    // The nod: a gentle dip of the head (about 10°) between 0.5 s and 1.4 s into the greeting.
+    const since = 3.2 - gr.t;
+    if (head?.parent && gr.t > 0 && since > 0.5 && since < 1.4) {
+      const pitch = Math.sin(((since - 0.5) / 0.9) * Math.PI) * 0.18;
+      const a = spot.rotY + yaw.current;
+      root.current.updateMatrixWorld();
+      head.parent.getWorldQuaternion(pq);
+      turn.setFromAxisAngle(nodAxis.set(Math.cos(a), 0, -Math.sin(a)), pitch);
       head.quaternion.premultiply(pq).premultiply(turn).premultiply(pq.invert());
     }
   });
@@ -234,6 +254,7 @@ function QaHook() {
         hips: g?.getObjectByName('Hips')?.getWorldPosition(new THREE.Vector3()).toArray().map((n) => +n.toFixed(3)) ?? null,
         spine: g?.getObjectByName('Spine')?.quaternion.toArray().map((n) => +n.toFixed(5)) ?? null,
         bodyYaw: +(g?.userData.bodyYaw ?? 0).toFixed(3),
+        greetings: g?.userData.greetings ?? 0,
       };
     });
     return () => { delete w.__isheStaff; };

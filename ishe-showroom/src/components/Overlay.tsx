@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useShowroom } from '@/store/showroom';
-import { chime } from '@/lib/sound';
+import { caseLid, chime } from '@/lib/sound';
 import TopBar from './TopBar';
 import EntranceHUD from './EntranceHUD';
 import { JunctionChooser, MovePad, RoomNav } from './Wayfinder';
@@ -50,7 +50,13 @@ export default function Overlay({ slow, onDismissSlow }: { slow: boolean; onDism
     const t = setTimeout(() => setShowReason(false), 7000);
     return () => clearTimeout(t);
   }, [liteReason]);
-  useEffect(() => { if (view.kind === 'product' && !moving && sound) chime(); }, [view, moving, sound]);
+  // Arriving at a case: the glass lid lifts, then a quiet ting as the piece comes into view.
+  useEffect(() => {
+    if (view.kind !== 'product' || moving || !sound) return;
+    caseLid();
+    const t = setTimeout(chime, 220);
+    return () => clearTimeout(t);
+  }, [view, moving, sound]);
 
   const inside = phase === 'inside';
   const atJunction = inside && view.kind === 'node' && view.node === 'junction' && !moving;

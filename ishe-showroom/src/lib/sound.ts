@@ -108,6 +108,38 @@ export function doorOpen() {
   noiseBurst(1.4, 260, 0.7, 0.12, 0.05);
 }
 
+/** QA log of sound effects played (read by e2e/run.mjs). */
+function log(name: string) {
+  (globalThis as unknown as { __isheSfx?: string[] }).__isheSfx?.push(name);
+}
+
+/** Shop-door chime as the visitor steps inside: two soft bell tones. */
+export function doorBell() {
+  if (!ctx || !master) return;
+  log('doorBell');
+  const t = ctx.currentTime;
+  for (const [f, at, d] of [[1318.5, 0, 1.4], [1046.5, 0.28, 1.8]] as [number, number, number][]) {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t + at);
+    g.gain.exponentialRampToValueAtTime(0.06, t + at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + d);
+    o.connect(g).connect(ctx.destination);
+    o.start(t + at);
+    o.stop(t + at + d);
+  }
+}
+
+/** The glass lid of a case being lifted: a light click and a short glassy brush. */
+export function caseLid() {
+  if (!ctx || !master) return;
+  log('caseLid');
+  noiseBurst(0.025, 4200, 5, 0.07);
+  noiseBurst(0.18, 1900, 2.5, 0.035, 0.03);
+}
+
 export function soundOn() {
   return !!master;
 }
