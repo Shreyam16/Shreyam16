@@ -324,7 +324,7 @@ function build() {
     wall: std({ color: '#f6efe4', map: limewash, roughness: 0.94 }),
     // Warm cream limestone for the facade, with slightly darker, recessed joints.
     wallExterior: std({ color: '#e6dcc9', roughness: 0.82 }),
-    limestoneJoint: std({ color: '#b8ab94', roughness: 0.9 }),
+    limestoneJoint: std({ color: '#cbbfa9', roughness: 0.9 }),
     ceiling: std({ color: '#fbfbf9', roughness: 1 }),
     floor: std({ map: terrazzo(), roughness: 0.3, metalness: 0, envMapIntensity: 0.6 }),
     // Honed stone pavers with a slight sheen (they catch the warm light at dusk).
@@ -361,7 +361,8 @@ function build() {
     walnutFluted: std({ color: '#ffffff', map: walnutFlutedMap, roughness: 0.5, normalMap: flutes, normalScale: new THREE.Vector2(1.4, 1.4), envMapIntensity: 0.6 }),
     bronze: std({ color: '#8f6c46', metalness: 1, roughness: 0.34, envMapIntensity: 1.2 }),
     brass: std({ color: '#c09a58', metalness: 1, roughness: 0.22, envMapIntensity: 1.3 }),
-    bronzeCeiling: std({ color: '#f6f3ee', metalness: 0, roughness: 0.95 }),
+    // Lowered white tray: a touch of self-light so it reads as lit plaster, not grey concrete, at dusk.
+    bronzeCeiling: std({ color: '#f6f3ee', metalness: 0, roughness: 0.95, emissive: '#6e5f4c', emissiveIntensity: 0.45 }),
     // Black lacquered panelling for the salon feature wall.
     ebony: phys({ color: '#0e0c0b', roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.7 }),
     goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
@@ -396,7 +397,7 @@ function build() {
     }),
     doorGlass: phys({
       // Clear low-iron glass: the lit interior reads through it; reflections stay faint.
-      color: '#e6ecee', transparent: true, opacity: 0.09, roughness: 0.02, metalness: 0,
+      color: '#f1ebe2', transparent: true, opacity: 0.09, roughness: 0.02, metalness: 0,
       envMapIntensity: 1.1, depthWrite: false, side: THREE.DoubleSide,
       // Warm glow seen from the street in evening mode (intensity driven by Evening.tsx).
       emissive: '#ffc98a', emissiveIntensity: 0,

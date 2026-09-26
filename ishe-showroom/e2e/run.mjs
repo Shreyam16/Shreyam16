@@ -457,12 +457,8 @@ console.log('Desktop 3D (1440x900)');
     await page.waitForTimeout(500);
     await page.getByTestId('choose-centre').click();
     await waitIdle(page);
-    // The combos table stands beside the counter in the back-right corner.
-    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'rightBack' }));
-    await waitIdle(page);
-    const pt = await page.evaluate(() => window.__isheProject(4.0, 0.97, -11.3));
-    assert(pt.visible, 'combos table not in view');
-    await page.mouse.click(pt.x, pt.y);
+    // The combos table stands beside the counter; reach it the way a visitor does, from the room bar.
+    await page.getByTestId('stop-combos').click();
     await page.getByTestId('combos-panel').waitFor({ timeout: 15000 });
     await page.screenshot({ path: `${OUT}/09-combos.png` });
   });

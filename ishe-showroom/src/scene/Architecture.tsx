@@ -1,6 +1,7 @@
 'use client';
 import { useRef } from 'react';
 import * as THREE from 'three';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { mats, type MatKey } from './materials';
 import { CEILING, COLUMN, DEPTH, FAR_END_Z, FRONT_DOOR, HALF_W } from './layout';
@@ -50,28 +51,29 @@ const WIN = { x0: 2.2, x1: 6.5, y0: 0.3, y1: 3.05 };
 /** The official ISHÉ plaque (black lettering on a white rectangle), used exactly as supplied. */
 const PLAQUE_ASPECT = 599 / 1099;
 
-/** Ashlar limestone: 45 cm courses with staggered vertical joints (blocks about 90 cm long). */
+/** Ashlar limestone: 60 cm courses with staggered vertical joints (blocks about 1.2 m long). */
 function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: number }) {
   const rows: number[] = [];
-  for (let y = Math.ceil((y0 + 0.05) / 0.45) * 0.45; y < y1 - 0.05; y += 0.45) rows.push(y);
+  for (let y = Math.ceil((y0 + 0.05) / 0.6) * 0.6; y < y1 - 0.05; y += 0.6) rows.push(y);
   const lo = Math.min(x0, x1), hi = Math.max(x0, x1);
   const verticals: { x: number; y: number; h: number }[] = [];
   rows.forEach((y, i) => {
-    const top = Math.min(y + 0.45, y1);
-    const off = i % 2 ? 0.45 : 0;
-    for (let x = Math.ceil((lo - off) / 0.9) * 0.9 + off; x < hi - 0.08; x += 0.9) if (x > lo + 0.08) verticals.push({ x, y: (y + top) / 2, h: top - y - 0.014 });
+    const top = Math.min(y + 0.6, y1);
+    const off = i % 2 ? 0.6 : 0;
+    for (let x = Math.ceil((lo - off) / 1.2) * 1.2 + off; x < hi - 0.08; x += 1.2) if (x > lo + 0.08) verticals.push({ x, y: (y + top) / 2, h: top - y - 0.014 });
   });
   return (
     <group>
-      {rows.map((y) => <Box key={y} size={[hi - lo, 0.012, 0.01]} pos={[(lo + hi) / 2, y, 0.103]} mat="limestoneJoint" />)}
-      {verticals.map((v) => <Box key={`${v.x}-${v.y}`} size={[0.01, v.h, 0.01]} pos={[v.x, v.y, 0.103]} mat="limestoneJoint" />)}
+      {rows.map((y) => <Box key={y} size={[hi - lo, 0.008, 0.006]} pos={[(lo + hi) / 2, y, 0.101]} mat="limestoneJoint" />)}
+      {verticals.map((v) => <Box key={`${v.x}-${v.y}`} size={[0.007, v.h, 0.006]} pos={[v.x, v.y, 0.101]} mat="limestoneJoint" />)}
     </group>
   );
 }
 
 /** Clipped boxwood: a sphere with a soft, irregular leafy surface (deterministic, built once). */
 const BOXWOOD = (() => {
-  const g = new THREE.IcosahedronGeometry(0.33, 5);
+  // Indexed, so normals are smoothed across faces (no faceting).
+  const g = mergeVertices(new THREE.IcosahedronGeometry(0.33, 5));
   const p = g.getAttribute('position') as THREE.BufferAttribute;
   const v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {

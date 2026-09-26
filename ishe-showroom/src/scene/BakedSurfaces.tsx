@@ -12,7 +12,7 @@ let gainK = 1;
 let warmK = 0;
 const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
 /** Warm 2700 K cast at dusk (multiplies each surface's own colour). */
-const WARM = new THREE.Color('#ffe2c0');
+const WARM = new THREE.Color('#ffe9d3');
 const tmp = new THREE.Color();
 function applyWarmth(m: THREE.MeshBasicMaterial) {
   const b = base.get(m);
@@ -85,7 +85,8 @@ export default function BakedSurfaces() {
         floorUv.needsUpdate = true;
         material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else if (s.name === 'ceiling') {
-        material = new THREE.MeshBasicMaterial({ color: '#fbf8f2', lightMap: tex, lightMapIntensity: GAIN * gainK });
+        // Brighter base so the ceiling stays ivory, not tan, under the dusk cast.
+        material = new THREE.MeshBasicMaterial({ color: '#ffffff', lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else if (s.name !== 'wall-front') {
         // Outer walls: dark espresso wood panelling, so the gaps between the white pillars read as
         // dark recesses and the lit cases glow against them.
