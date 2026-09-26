@@ -392,8 +392,9 @@ function build() {
     downlightLens: std({ color: '#fff8ee', emissive: '#ffe6c4', emissiveIntensity: 2.4 }),
     // Low-iron display glass: almost invisible head-on, crisp reflections at an angle.
     glass: phys({
-      color: '#ffffff', transparent: true, opacity: 0.045, roughness: 0, metalness: 0, clearcoat: 1, clearcoatRoughness: 0,
-      envMapIntensity: 2.4, depthWrite: false, side: THREE.DoubleSide,
+      // Enough body that each vitrine reads as a glass volume (as in the film), not a wire frame.
+      color: '#ffffff', transparent: true, opacity: 0.085, roughness: 0, metalness: 0, clearcoat: 1, clearcoatRoughness: 0,
+      envMapIntensity: 2.8, depthWrite: false, side: THREE.DoubleSide,
     }),
     doorGlass: phys({
       // Clear low-iron glass: the lit interior reads through it; reflections stay faint.
@@ -406,7 +407,7 @@ function build() {
     ceilingPanel: std({ color: '#ffffff', emissive: '#fff6ea', emissiveIntensity: 0.9 }),
     sconce: std({ color: '#fff0d6', emissive: '#ffcf8a', emissiveIntensity: 2.2 }),
     // Clipped boxwood: deep green with a fine leafy surface, not a smooth ball.
-    plant: std({ color: '#3a5631', roughness: 0.95, normalMap: velvetNormal, normalScale: new THREE.Vector2(1.6, 1.6) }),
+    plant: std({ color: '#2f4527', roughness: 0.95, normalMap: velvetNormal, normalScale: new THREE.Vector2(1.6, 1.6) }),
     planter: std({ color: '#141312', roughness: 0.42, envMapIntensity: 0.7 }),
     // Warm light spilling from the façade sconces onto the stone (strength driven by Evening.tsx).
     facadeWash: new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.05 }),

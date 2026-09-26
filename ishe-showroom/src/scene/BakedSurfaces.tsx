@@ -15,6 +15,8 @@ const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
  *  reads cream-amber as in the film; a little less on the ceiling so it never turns peach. */
 const WARM = new THREE.Color('#ffdcb8');
 const CEILING_WARM = new THREE.Color('#ffe8cf');
+/** The terrazzo stays a pale cream, brighter than the walls, as in the film. */
+const FLOOR_WARM = new THREE.Color('#ffecd9');
 const warmOf = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
 const tmp = new THREE.Color();
 function applyWarmth(m: THREE.MeshBasicMaterial) {
@@ -87,17 +89,18 @@ export default function BakedSurfaces() {
         floorUv.repeat.set(7.5, 7);
         floorUv.needsUpdate = true;
         material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN * gainK });
+        warmOf.set(material as THREE.MeshBasicMaterial, FLOOR_WARM);
       } else if (s.name === 'ceiling') {
         // Brighter base so the ceiling stays ivory, not tan, under the dusk cast.
         material = new THREE.MeshBasicMaterial({ color: '#ffffff', lightMap: tex, lightMapIntensity: GAIN * gainK });
         warmOf.set(material as THREE.MeshBasicMaterial, CEILING_WARM);
       } else if (s.name !== 'wall-front') {
-        // Outer walls: dark espresso wood panelling, so the gaps between the white pillars read as
-        // dark recesses and the lit cases glow against them.
+        // Outer walls: very dark espresso wood panelling, so the gaps between the white pillars read
+        // as near-black recesses (as in the film) and the lit cases glow against them.
         const map = wood.clone();
         map.repeat.set((s.uv[1] - s.uv[0]) / 1.2, 1);
         map.needsUpdate = true;
-        material = new THREE.MeshBasicMaterial({ color: '#8d7868', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
+        material = new THREE.MeshBasicMaterial({ color: '#6a5a50', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else {
         // Warm ivory limewash, tiled about every 2 m whatever the wall's size.
         const map = lime.clone();

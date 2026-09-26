@@ -78,7 +78,9 @@ const BOXWOOD = (() => {
   const v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i);
-    const n = Math.sin(v.x * 41) * Math.sin(v.y * 37) * Math.sin(v.z * 43) * 0.018 + Math.sin(v.x * 9 + v.z * 7) * 0.012;
+    // Clipped-leaf texture: fine tufts over a gently lumpy crown.
+    const n = Math.sin(v.x * 71) * Math.sin(v.y * 67) * Math.sin(v.z * 73) * 0.012 + Math.sin(v.x * 41) * Math.sin(v.y * 37) * Math.sin(v.z * 43) * 0.02
+      + Math.sin(v.x * 9 + v.z * 7) * 0.014;
     v.multiplyScalar(1 + n / 0.33);
     p.setXYZ(i, v.x, v.y * 1.04, v.z);
   }

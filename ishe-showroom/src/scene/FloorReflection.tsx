@@ -16,7 +16,7 @@ const shader = {
     color: { value: null },
     tDiffuse: { value: null },
     textureMatrix: { value: null },
-    strength: { value: 0.34 },
+    strength: { value: 0.5 },
     texel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
   },
   vertexShader: /* glsl */ `
@@ -52,7 +52,7 @@ const shader = {
       c /= w;
       // Schlick-style falloff on the view angle (honed stone, not glass).
       vec3 v = normalize(cameraPosition - vWorld);
-      float f = 0.28 + 0.72 * pow(1.0 - clamp(v.y, 0.0, 1.0), 4.0);
+      float f = 0.36 + 0.64 * pow(1.0 - clamp(v.y, 0.0, 1.0), 2.5);
       gl_FragColor = vec4(c, strength * f);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>

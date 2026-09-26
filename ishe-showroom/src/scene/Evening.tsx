@@ -10,6 +10,8 @@ const DAY = {
   hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1, strip: 1.6, pool: 0.35, lens: 2.4, wash: 0.05,
   fog: new THREE.Color('#2a3140'), bg: new THREE.Color('#1b2330'), sunColor: new THREE.Color('#fff4e6'),
 };
+/** Dusk on the limestone front: darker than day, and warm (multiplied with its day colour). */
+const STONE_DUSK = new THREE.Color('#b0a08c');
 /** Warm cast on unbaked plaster at dusk (multiplied with its day colour). */
 const WALL_DUSK = new THREE.Color('#ffdcb4');
 /** Warm fill inside at dusk (the amber of the reference). */
@@ -17,7 +19,7 @@ const DUSK_SKY_FILL = new THREE.Color('#ffd6a6');
 const DUSK = {
   // Dusk: lower ambient and bounce, brighter case lights, coves and sconces, for the warm, lit-from-within look.
   // Inside stays bright (the film's interior glows well above the street); coves and strips stay soft.
-  hemi: 0.2, sun: 0.1, env: 0.5, baked: 0.92, sconce: 4, neighbour: 1.8, glass: 0.1, cove: 1.1, street: 0.3, strip: 1.7, pool: 0.5, lens: 3.2, wash: 0.8,
+  hemi: 0.2, sun: 0.1, env: 0.5, baked: 0.92, sconce: 4, neighbour: 1.8, glass: 0.1, cove: 0.7, street: 0.3, strip: 1.7, pool: 0.5, lens: 3.2, wash: 0.9,
   fog: new THREE.Color('#161b29'), bg: new THREE.Color('#0d1120'), sunColor: new THREE.Color('#9fb0d4'),
 };
 
@@ -37,7 +39,14 @@ export default function Evening() {
   const street = useMemo(() => {
     const M = mats();
     // (The planters and boxwood stand in the shop's light, so they keep theirs.)
-    return (['wallExterior', 'paving', 'asphalt', 'kerb', 'plinth', 'neighbourA', 'neighbourB', 'darkWindow'] as const)
+    return (['paving', 'asphalt', 'kerb', 'plinth', 'neighbourA', 'neighbourB', 'darkWindow'] as const)
+      .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
+  }, []);
+  // The limestone front keeps more of its light at dusk and turns warm: it is lit by its sconces
+  // and the glow of the shop, not by the sky.
+  const stone = useMemo(() => {
+    const M = mats();
+    return (['wallExterior', 'limestoneJoint'] as const)
       .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
   }, []);
   // Interior plaster and stone take the same warm cast as the baked surfaces at dusk.
@@ -81,6 +90,7 @@ export default function Evening() {
     (M.pool as THREE.MeshBasicMaterial).opacity = L(DAY.pool, DUSK.pool);
     (M.facadeWash as THREE.MeshBasicMaterial).opacity = L(DAY.wash, DUSK.wash);
     for (const { m, day } of street) m.color.copy(day).multiplyScalar(L(1, DUSK.street));
+    for (const { m, day } of stone) m.color.setRGB(1, 1, 1).lerp(STONE_DUSK, k).multiply(day);
     for (const { m, day } of warm) m.color.setRGB(1, 1, 1).lerp(WALL_DUSK, k * 0.8).multiply(day);
     // Sky: dip and swap textures halfway so the change reads as a fade.
     const skyMat = M.sky as THREE.MeshBasicMaterial;
