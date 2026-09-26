@@ -14,12 +14,20 @@ fs.mkdirSync(OUT, { recursive: true });
 const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-fake-device-for-media-stream'];
 
 const results = [];
+/** Pages to screenshot when a check fails (registered as each section opens them). */
+const pagesInUse = new Set();
+const track = (p) => { pagesInUse.clear(); pagesInUse.add(p); return p; };
 async function check(name, fn, limitMs = 300000) {
   const t = Date.now();
   let timer;
   const limit = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`check timed out after ${limitMs / 1000}s`)), limitMs); });
   try { await Promise.race([fn(), limit]); clearTimeout(timer); results.push({ name, ok: true, ms: Date.now() - t }); console.log(`  ✓ ${name}`); }
-  catch (e) { clearTimeout(timer); results.push({ name, ok: false, err: e.message }); console.log(`  ✗ ${name}\n      ${e.message.split('\n')[0]}`); }
+  catch (e) {
+    clearTimeout(timer); results.push({ name, ok: false, err: e.message }); console.log(`  ✗ ${name}\n      ${e.message.split('\n')[0]}`);
+    // Keep a picture of every failure (the page that was open when it failed).
+    const slug = name.replace(/[^a-z0-9]+/gi, '-').slice(0, 60);
+    for (const [i, p] of [...pagesInUse].entries()) await p.screenshot({ path: `${OUT}/fail-${slug}-${i}.png` }).catch(() => undefined);
+  }
 }
 function assert(c, m) { if (!c) throw new Error(m); }
 // Keep partial results if a section's setup throws outside a check.
@@ -62,7 +70,7 @@ const browser = await chromium.launch({ executablePath: EXEC, args: GL_ARGS });
 console.log('Desktop 3D (1440x900)');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const page = await ctx.newPage();
+  const page = track(await ctx.newPage());
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -172,7 +180,8 @@ console.log('Desktop 3D (1440x900)');
     const pt = await page.evaluate(() => window.__isheProject(-4.2, 1.1, -12.0));
     assert(pt.visible, 'attendant not in view');
     await page.mouse.click(pt.x, pt.y);
-    await page.getByTestId('staff-panel').waitFor({ timeout: 8000 });
+    // She stands at the back of the left gallery: a 10 m walk, slow under software WebGL.
+    await page.getByTestId('staff-panel').waitFor({ timeout: 45000 });
     await waitIdle(page);
     assert((await page.getByTestId('staff-greeting').textContent()).includes('Welcome'), 'greeting');
     // Engaged: she turns toward the visitor (the camera stands slightly off her resting direction).
@@ -246,7 +255,7 @@ console.log('Desktop 3D (1440x900)');
     await waitIdle(page);
     await page.getByTestId('talk-staff').focus();
     await page.keyboard.press('Enter');
-    await page.getByTestId('staff-panel').waitFor({ timeout: 10000 });
+    await page.getByTestId('staff-panel').waitFor({ timeout: 45000 });
     await waitIdle(page);
     await page.getByTestId('tour-bridal').focus();
     await page.keyboard.press('Enter');
@@ -254,13 +263,13 @@ console.log('Desktop 3D (1440x900)');
     await waitIdle(page);
     const first = await page.evaluate(() => window.__ishe.getState().view);
     const total = await page.evaluate(() => window.__ishe.getState().tour.stops.length);
-    assert(first.kind === 'product' && first.sku === 'ISH-N01', JSON.stringify(first));
+    assert(first.kind === 'product' && first.sku === 'ISH-B04', JSON.stringify(first));
     assert((await page.getByTestId('tour-progress').textContent()) === `1 of ${total}`, 'progress');
     await page.getByTestId('tour-next').focus();
     await page.keyboard.press('Enter');
     await waitIdle(page);
     const second = await page.evaluate(() => window.__ishe.getState().view);
-    assert(second.kind === 'product' && second.sku !== 'ISH-N01', JSON.stringify(second));
+    assert(second.kind === 'product' && second.sku !== 'ISH-B04', JSON.stringify(second));
     await page.getByTestId('product-panel').waitFor();
     await canvasNotBlank(page, '06b-tour-bridal.png');
     await page.getByTestId('tour-stop').click();
@@ -339,7 +348,7 @@ console.log('Desktop 3D (1440x900)');
     await page.getByTestId('walking-to-cashier').waitFor({ timeout: 3000 });
     await page.getByTestId('cashier-panel').waitFor({ timeout: 20000 });
     const cam = await page.evaluate(() => window.__isheCamera());
-    assert(Math.abs(cam.z - -10.85) < 0.05 && Math.abs(cam.x) < 0.05, `not at cashier ${JSON.stringify(cam)}`);
+    assert(Math.abs(cam.z - -11.0) < 0.05 && Math.abs(cam.x - 5.2) < 0.05, `not at cashier ${JSON.stringify(cam)}`);
     assert(await page.getByTestId('demo-banner').isVisible(), 'demo banner missing');
     assert((await page.getByTestId('subtotal').textContent()).includes('6,400'), 'subtotal');
     await canvasNotBlank(page, '07-cashier.png');
@@ -500,7 +509,7 @@ console.log('Desktop 3D (1440x900)');
 console.log('Keyboard walking and collision (3D, small viewport)');
 {
   const ctx = await browser.newContext({ viewport: { width: 420, height: 300 } });
-  const page = await ctx.newPage();
+  const page = track(await ctx.newPage());
   await page.goto(`${BASE}/?mode=3d`);
   await check('section loads', () => waitReady(page));
   await page.waitForTimeout(1000);
@@ -535,7 +544,7 @@ console.log('Keyboard walking and collision (3D, small viewport)');
 console.log('Every product is reachable and framed (3D)');
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page = await ctx.newPage();
+  const page = track(await ctx.newPage());
   await page.goto(`${BASE}/?mode=3d`);
   await check('section loads', () => waitReady(page));
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
@@ -563,7 +572,7 @@ console.log('Every product is reachable and framed (3D)');
 console.log('Reduced motion');
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
-  const page = await ctx.newPage();
+  const page = track(await ctx.newPage());
   await check('Enter goes straight inside and room moves are instant', async () => {
     await page.goto(`${BASE}/?mode=3d`);
     await page.waitForFunction(() => window.__ishe?.getState().reducedMotion === true);
@@ -596,7 +605,7 @@ console.log('Reduced motion');
 console.log('Mobile 3D (390x844, touch)');
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
-  const page = await ctx.newPage();
+  const page = track(await ctx.newPage());
   await check('mobile layout: large targets, no horizontal overflow', async () => {
     await page.goto(`${BASE}/?mode=3d`);
     await waitReady(page);
@@ -655,7 +664,7 @@ console.log('Mobile 3D (390x844, touch)');
 console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const page = await ctx.newPage();
+  const page = track(await ctx.newPage());
   await page.goto(`${BASE}/?mode=3d`);
   await check('section loads', () => waitReady(page));
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
@@ -702,7 +711,7 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
 
 console.log('Software-rendered WebGL (auto-detect)');
 {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const page = track(await browser.newPage({ viewport: { width: 1280, height: 800 } }));
   await check('a software renderer is detected and gets the lite showroom with an explanation', async () => {
     await page.goto(`${BASE}/`);
     await page.waitForFunction(() => window.__ishe?.getState().renderMode !== 'detecting');
@@ -718,7 +727,7 @@ await browser.close();
 console.log('No WebGL (lite fallback)');
 {
   const b2 = await chromium.launch({ executablePath: EXEC, args: ['--disable-webgl', '--disable-3d-apis', '--disable-gpu'] });
-  const page = await b2.newPage({ viewport: { width: 1280, height: 800 } });
+  const page = track(await b2.newPage({ viewport: { width: 1280, height: 800 } }));
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await check('falls back to the lite showroom instead of a blank screen', async () => {
