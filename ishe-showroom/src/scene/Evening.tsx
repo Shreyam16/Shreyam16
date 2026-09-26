@@ -13,7 +13,7 @@ const DAY = {
 /** Dusk on the limestone front, as measured in the film: dark, with a mauve cast away from the lamps. */
 const STONE_DUSK = new THREE.Color('#463639');
 /** Warm cast on unbaked plaster at dusk (multiplied with its day colour). */
-const WALL_DUSK = new THREE.Color('#d69a82');
+const WALL_DUSK = new THREE.Color('#dcac86');
 /** Warm fill inside at dusk (the amber of the reference). */
 const DUSK_SKY_FILL = new THREE.Color('#ffd6a6');
 const DUSK = {

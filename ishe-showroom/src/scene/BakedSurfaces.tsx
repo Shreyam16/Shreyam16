@@ -15,7 +15,7 @@ const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
  *  reads cream-amber as in the film; a little less on the ceiling so it never turns peach. */
 // Values set from the reference film's measured colours (walls, floor, ceiling at dusk).
 const WARM = new THREE.Color('#e6ab83');
-const CEILING_WARM = new THREE.Color('#ba8765');
+const CEILING_WARM = new THREE.Color('#b69a86');
 /** The terrazzo reads a warm polished cream, as measured in the film. */
 const FLOOR_WARM = new THREE.Color('#e6b89b');
 const warmOf = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();

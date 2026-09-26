@@ -356,7 +356,11 @@ function SalonWalls() {
       <Span a={[SALON.x1, t - 0.02, SALON.z0]} b={[SALON.x1 + 0.02, CEILING, SALON.z1]} mat="wall" />
       {/* The film's oval cove: a warm elliptical light line set into the lowered ceiling. */}
       <mesh position={[0, t - 0.012, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} scale={[(SALON.x1 - SALON.x0) / 2 - 0.35, (SALON.z1 - SALON.z0) / 2 - 0.35, 1]} material={mats().cove}>
-        <torusGeometry args={[1, 0.012, 6, 128]} />
+        <torusGeometry args={[1, 0.02, 6, 128]} />
+      </mesh>
+      {/* Its soft glow spilling across the recess. */}
+      <mesh position={[0, t - 0.006, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} scale={[SALON.x1 - SALON.x0 - 0.5, SALON.z1 - SALON.z0 - 0.5, 1]} material={mats().pool}>
+        <planeGeometry args={[1, 1]} />
       </mesh>
     </group>
   );
