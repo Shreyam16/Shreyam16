@@ -1,0 +1,351 @@
+{
+  "results": [
+    {
+      "name": "branded loading screen shows the plaque and real progress, then fades into the street",
+      "ok": true,
+      "ms": 10798
+    },
+    {
+      "name": "loads the 3D showroom outside the store",
+      "ok": true,
+      "ms": 19272
+    },
+    {
+      "name": "seasonal shop windows are dressed for the current season",
+      "ok": true,
+      "ms": 10287
+    },
+    {
+      "name": "first visit: the welcome explains how to move and offers \"Enter the showroom\"",
+      "ok": true,
+      "ms": 15
+    },
+    {
+      "name": "evening toggle: opens at dusk, switches to day and back",
+      "ok": true,
+      "ms": 50786
+    },
+    {
+      "name": "scrolling opens the doors and moves toward the entrance",
+      "ok": true,
+      "ms": 36141
+    },
+    {
+      "name": "at dusk the approach is the reference film, scrubbed by scroll, with the ISHÉ plaque",
+      "ok": true,
+      "ms": 24949
+    },
+    {
+      "name": "\"Walk me in\" carries the visitor through the doors to the junction",
+      "ok": true,
+      "ms": 31000
+    },
+    {
+      "name": "LEFT goes to Necklaces & Bracelets",
+      "ok": true,
+      "ms": 26467
+    },
+    {
+      "name": "no people figures (none pass the realism bar); the concierge opens where the visitor stands",
+      "ok": true,
+      "ms": 22443
+    },
+    {
+      "name": "the store reacts: the case beside the visitor lights up, a case across the shop does not",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "clicking a vitrine in the 3D scene focuses it and opens its panel",
+      "ok": true,
+      "ms": 16332
+    },
+    {
+      "name": "panel shows pairings, adds to Jewel Box and saves",
+      "ok": true,
+      "ms": 15913
+    },
+    {
+      "name": "Escape closes the panel and restores the previous camera position",
+      "ok": true,
+      "ms": 4065
+    },
+    {
+      "name": "browser Back closes a piece and returns to the same spot; \"Back to room\" is labelled",
+      "ok": true,
+      "ms": 15078
+    },
+    {
+      "name": "finder search reaches a product in another room",
+      "ok": true,
+      "ms": 36797
+    },
+    {
+      "name": "occasion finder filters by occasion",
+      "ok": true,
+      "ms": 26649
+    },
+    {
+      "name": "guided tour: keyboard opens the attendant, Bridal walks the vitrines with Next / Stop",
+      "ok": true,
+      "ms": 42580
+    },
+    {
+      "name": "appointment form: field errors, then honest demo mode (nothing sent or booked)",
+      "ok": true,
+      "ms": 31217
+    },
+    {
+      "name": "try-on: camera permission refused shows a clear fallback and loads nothing",
+      "ok": true,
+      "ms": 31120
+    },
+    {
+      "name": "try-on: rings use hand tracking, and a refused camera still falls back cleanly",
+      "ok": true,
+      "ms": 33096
+    },
+    {
+      "name": "Buy Now walks to the cashier, shows the order, and stays honest in demo mode",
+      "ok": true,
+      "ms": 94213
+    },
+    {
+      "name": "Return from the cashier goes back to where the visitor stood",
+      "ok": true,
+      "ms": 13758
+    },
+    {
+      "name": "Jewel Box persists and can be taken to the cashier",
+      "ok": true,
+      "ms": 38706
+    },
+    {
+      "name": "share link: encodes the Jewel Box and shows \"Shared selection\" only after the entrance",
+      "ok": true,
+      "ms": 91745
+    },
+    {
+      "name": "ring size guide page is printable and labelled approximate",
+      "ok": true,
+      "ms": 2167
+    },
+    {
+      "name": "combos table opens curated pairings",
+      "ok": true,
+      "ms": 48778
+    },
+    {
+      "name": "sound is off by default and toggles",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "staff voice: silent with sound off, greets and introduces a tour with sound on",
+      "ok": true,
+      "ms": 45671
+    },
+    {
+      "name": "visit statistics: anonymous batches, re-validated by the server, discarded when unset",
+      "ok": true,
+      "ms": 53
+    },
+    {
+      "name": "no page errors or console errors",
+      "ok": true,
+      "ms": 0
+    },
+    {
+      "name": "section loads",
+      "ok": true,
+      "ms": 7421
+    },
+    {
+      "name": "photo stop: resting at a stop shows its Cycles still, which goes the moment the visitor moves",
+      "ok": true,
+      "ms": 4096
+    },
+    {
+      "name": "W walks forward at eye height",
+      "ok": true,
+      "ms": 2518
+    },
+    {
+      "name": "walls and vitrines stop the visitor",
+      "ok": true,
+      "ms": 26540
+    },
+    {
+      "name": "section loads",
+      "ok": true,
+      "ms": 18266
+    },
+    {
+      "name": "all 24 displays open the matching product panel",
+      "ok": true,
+      "ms": 353418
+    },
+    {
+      "name": "Enter goes straight inside and room moves are instant",
+      "ok": true,
+      "ms": 19248
+    },
+    {
+      "name": "reduced motion: evening switches instantly (no in-between frames)",
+      "ok": true,
+      "ms": 11547
+    },
+    {
+      "name": "mobile layout: large targets, no horizontal overflow",
+      "ok": true,
+      "ms": 36858
+    },
+    {
+      "name": "mobile: tap room, hold-to-walk pad, open a product",
+      "ok": true,
+      "ms": 37857
+    },
+    {
+      "name": "mobile: attendant greeting and tour controls fit the screen",
+      "ok": true,
+      "ms": 38014
+    },
+    {
+      "name": "section loads",
+      "ok": true,
+      "ms": 11643
+    },
+    {
+      "name": "every room renders, day and evening, with draw calls recorded",
+      "ok": true,
+      "ms": 230134
+    },
+    {
+      "name": "a software renderer is detected and gets the lite showroom with an explanation",
+      "ok": true,
+      "ms": 379
+    },
+    {
+      "name": "falls back to the lite showroom instead of a blank screen",
+      "ok": true,
+      "ms": 1759
+    },
+    {
+      "name": "lite: scroll entrance, rooms, product, cashier demo",
+      "ok": true,
+      "ms": 17253
+    },
+    {
+      "name": "lite: no staff models, guided tour still available, evening tint",
+      "ok": true,
+      "ms": 2434
+    },
+    {
+      "name": "lite: no page errors",
+      "ok": true,
+      "ms": 0
+    },
+    {
+      "name": "visit statistics: nothing is sent when the browser asks not to be tracked",
+      "ok": true,
+      "ms": 33087
+    }
+  ],
+  "metrics": {
+    "coldLoadMs": 9724,
+    "loadingProgressSeen": [
+      0,
+      100
+    ],
+    "drawCallsOutside": {
+      "frame": 440,
+      "calls": 758,
+      "triangles": 648001,
+      "points": 0,
+      "lines": 0,
+      "programs": 39,
+      "geometries": 382,
+      "textures": 83
+    },
+    "season": "festive",
+    "drawCallsOutsideEvening": {
+      "frame": 991,
+      "calls": 758,
+      "triangles": 648001,
+      "points": 0,
+      "lines": 0,
+      "programs": 41,
+      "geometries": 382,
+      "textures": 84
+    },
+    "drawCallsJunction": {
+      "frame": 2209,
+      "calls": 400,
+      "triangles": 284069,
+      "points": 0,
+      "lines": 0,
+      "programs": 41,
+      "geometries": 384,
+      "textures": 84
+    },
+    "drawCallsLeftRoom": {
+      "frame": 2528,
+      "calls": 290,
+      "triangles": 254119,
+      "points": 0,
+      "lines": 0,
+      "programs": 41,
+      "geometries": 387,
+      "textures": 84
+    },
+    "caseGlowNearFar": {
+      "b03": 0.515,
+      "e04": 0
+    },
+    "bridalTourStops": 10,
+    "tryOnDeniedStatus": "denied",
+    "drawCallsCashier": {
+      "frame": 6124,
+      "calls": 108,
+      "triangles": 45023,
+      "points": 0,
+      "lines": 0,
+      "programs": 41,
+      "geometries": 409,
+      "textures": 84
+    },
+    "voiceLog": [
+      "greet-attendant",
+      "tour-bridal-attendant"
+    ],
+    "analytics": {
+      "batches": 4,
+      "events": [
+        "session_start",
+        "room_dwell",
+        "staff_greeting",
+        "sound_toggle",
+        "tour_start"
+      ],
+      "stored": false
+    },
+    "rooms": {
+      "day-junction": 400,
+      "day-left": 290,
+      "day-leftBack": 221,
+      "day-centre": 139,
+      "day-right": 296,
+      "day-rightBack": 115,
+      "day-combos": 124,
+      "day-cashier": 103,
+      "evening-junction": 400,
+      "evening-left": 290,
+      "evening-leftBack": 221,
+      "evening-centre": 139,
+      "evening-right": 296,
+      "evening-rightBack": 115,
+      "evening-combos": 124,
+      "evening-cashier": 103
+    }
+  }
+}

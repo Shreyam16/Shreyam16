@@ -1,0 +1,61 @@
+Desktop 3D (1440x900)
+  ✓ branded loading screen shows the plaque and real progress, then fades into the street
+  ✓ loads the 3D showroom outside the store
+  ✓ seasonal shop windows are dressed for the current season
+  ✓ first visit: the welcome explains how to move and offers "Enter the showroom"
+  ✓ evening toggle: opens at dusk, switches to day and back
+  ✓ scrolling opens the doors and moves toward the entrance
+  ✓ at dusk the approach is the reference film, scrubbed by scroll, with the ISHÉ plaque
+  ✓ "Walk me in" carries the visitor through the doors to the junction
+  ✓ LEFT goes to Necklaces & Bracelets
+  ✓ no people figures (none pass the realism bar); the concierge opens where the visitor stands
+  ✓ the store reacts: the case beside the visitor lights up, a case across the shop does not
+  ✓ clicking a vitrine in the 3D scene focuses it and opens its panel
+  ✓ panel shows pairings, adds to Jewel Box and saves
+  ✓ Escape closes the panel and restores the previous camera position
+  ✓ browser Back closes a piece and returns to the same spot; "Back to room" is labelled
+  ✓ finder search reaches a product in another room
+  ✓ occasion finder filters by occasion
+  ✓ guided tour: keyboard opens the attendant, Bridal walks the vitrines with Next / Stop
+  ✓ appointment form: field errors, then honest demo mode (nothing sent or booked)
+  ✓ try-on: camera permission refused shows a clear fallback and loads nothing
+  ✓ try-on: rings use hand tracking, and a refused camera still falls back cleanly
+  ✓ Buy Now walks to the cashier, shows the order, and stays honest in demo mode
+  ✓ Return from the cashier goes back to where the visitor stood
+  ✓ Jewel Box persists and can be taken to the cashier
+  ✓ share link: encodes the Jewel Box and shows "Shared selection" only after the entrance
+  ✓ ring size guide page is printable and labelled approximate
+  ✓ combos table opens curated pairings
+  ✓ sound is off by default and toggles
+  ✓ staff voice: silent with sound off, greets and introduces a tour with sound on
+  ✓ visit statistics: anonymous batches, re-validated by the server, discarded when unset
+  ✓ no page errors or console errors
+Keyboard walking and collision (3D, small viewport)
+  ✓ section loads
+  ✓ photo stop: resting at a stop shows its Cycles still, which goes the moment the visitor moves
+  ✓ W walks forward at eye height
+  ✓ walls and vitrines stop the visitor
+Every product is reachable and framed (3D)
+  ✓ section loads
+  ✓ all 24 displays open the matching product panel
+Reduced motion
+  ✓ Enter goes straight inside and room moves are instant
+  ✓ reduced motion: evening switches instantly (no in-between frames)
+Mobile 3D (390x844, touch)
+  ✓ mobile layout: large targets, no horizontal overflow
+  ✓ mobile: tap room, hold-to-walk pad, open a product
+  ✓ mobile: attendant greeting and tour controls fit the screen
+Room screenshots, day and evening (3D, 1440x900)
+  ✓ section loads
+  ✓ every room renders, day and evening, with draw calls recorded
+Software-rendered WebGL (auto-detect)
+  ✓ a software renderer is detected and gets the lite showroom with an explanation
+No WebGL (lite fallback)
+  ✓ falls back to the lite showroom instead of a blank screen
+  ✓ lite: scroll entrance, rooms, product, cashier demo
+  ✓ lite: no staff models, guided tour still available, evening tint
+  ✓ lite: no page errors
+  ✓ visit statistics: nothing is sent when the browser asks not to be tracked
+
+50/50 checks passed
+METRICS {"coldLoadMs":9724,"loadingProgressSeen":[0,100],"drawCallsOutside":{"frame":440,"calls":758,"triangles":648001,"points":0,"lines":0,"programs":39,"geometries":382,"textures":83},"season":"festive","drawCallsOutsideEvening":{"frame":991,"calls":758,"triangles":648001,"points":0,"lines":0,"programs":41,"geometries":382,"textures":84},"drawCallsJunction":{"frame":2209,"calls":400,"triangles":284069,"points":0,"lines":0,"programs":41,"geometries":384,"textures":84},"drawCallsLeftRoom":{"frame":2528,"calls":290,"triangles":254119,"points":0,"lines":0,"programs":41,"geometries":387,"textures":84},"caseGlowNearFar":{"b03":0.515,"e04":0},"bridalTourStops":10,"tryOnDeniedStatus":"denied","drawCallsCashier":{"frame":6124,"calls":108,"triangles":45023,"points":0,"lines":0,"programs":41,"geometries":409,"textures":84},"voiceLog":["greet-attendant","tour-bridal-attendant"],"analytics":{"batches":4,"events":["session_start","room_dwell","staff_greeting","sound_toggle","tour_start"],"stored":false},"rooms":{"day-junction":400,"day-left":290,"day-leftBack":221,"day-centre":139,"day-right":296,"day-rightBack":115,"day-combos":124,"day-cashier":103,"evening-junction":400,"evening-left":290,"evening-leftBack":221,"evening-centre":139,"evening-right":296,"evening-rightBack":115,"evening-combos":124,"evening-cashier":103}}
