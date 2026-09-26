@@ -1,4 +1,23 @@
 {
-  "v": "mui5sutu",
-  "stops": []
+  "v": "mui6mirk",
+  "stops": [
+    "cashier",
+    "centre",
+    "centreL",
+    "centreL2",
+    "centreR",
+    "centreR2",
+    "junction",
+    "left",
+    "left2",
+    "leftBack",
+    "leftBack2",
+    "leftDoor",
+    "leftMid",
+    "right",
+    "right2",
+    "rightBack",
+    "rightBack2",
+    "rightDoor"
+  ]
 }
