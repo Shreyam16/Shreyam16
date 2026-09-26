@@ -69,10 +69,12 @@ function Case({ spec }: { spec: DisplaySpec }) {
       <Box size={[w, 0.012, d]} pos={[0, top - 0.006, 0]} mat="taupeVelvet" />
       {tall && <Box size={[gw - 0.02, glassH, 0.01]} pos={[0, top + glassH / 2, -gd / 2 + 0.012]} mat="taupeVelvet" />}
       <GlassPanes w={gw} d={gd} y0={top + 0.001} y1={glassTop} top={!tall} />
-      {/* Frameless glass: only the polished edges show at the corners (and round the lid). */}
+      {/* Glass box in a slim dark-bronze frame: corner posts and a frame round the lid. */}
       {corners.map(([x, z], i) => (
-        <Box key={i} size={[0.004, glassH, 0.004]} pos={[x, top + glassH / 2, z]} mat="glassEdge" />
+        <Box key={i} size={[0.01, glassH, 0.01]} pos={[x, top + glassH / 2, z]} mat="darkBronze" />
       ))}
+      {[-gd / 2, gd / 2].map((z) => <Box key={`b${z}`} size={[gw + 0.01, 0.012, 0.01]} pos={[0, top + 0.006, z]} mat="darkBronze" />)}
+      {[-gw / 2, gw / 2].map((x) => <Box key={`s${x}`} size={[0.01, 0.012, gd]} pos={[x, top + 0.006, 0]} mat="darkBronze" />)}
       {tall ? (
         <>
           <Box size={[w, 0.05, d]} pos={[0, h - 0.025, 0]} mat="blackSatin" />
@@ -82,10 +84,10 @@ function Case({ spec }: { spec: DisplaySpec }) {
         </>
       ) : (
         <>
-          <Box size={[gw, 0.004, 0.004]} pos={[0, glassTop, -gd / 2]} mat="glassEdge" />
-          <Box size={[gw, 0.004, 0.004]} pos={[0, glassTop, gd / 2]} mat="glassEdge" />
-          <Box size={[0.004, 0.004, gd]} pos={[gw / 2, glassTop, 0]} mat="glassEdge" />
-          <Box size={[0.004, 0.004, gd]} pos={[-gw / 2, glassTop, 0]} mat="glassEdge" />
+          <Box size={[gw + 0.01, 0.012, 0.01]} pos={[0, glassTop, -gd / 2]} mat="darkBronze" />
+          <Box size={[gw + 0.01, 0.012, 0.01]} pos={[0, glassTop, gd / 2]} mat="darkBronze" />
+          <Box size={[0.01, 0.012, gd]} pos={[gw / 2, glassTop, 0]} mat="darkBronze" />
+          <Box size={[0.01, 0.012, gd]} pos={[-gw / 2, glassTop, 0]} mat="darkBronze" />
           {/* Hidden LED line inside the back edge of the lid, lighting the deck from above. */}
           <mesh position={[0, glassTop - 0.004, -gd / 2 + 0.02]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
             <planeGeometry args={[gw * 0.85, 0.012]} />

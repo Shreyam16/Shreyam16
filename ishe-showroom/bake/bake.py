@@ -111,7 +111,7 @@ def surface_object(s):
             uvl.data[li].uv = uvs[mesh.loops[li].vertex_index]
     o = bpy.data.objects.new(s['name'], mesh)
     bpy.context.collection.objects.link(o)
-    o.data.materials.append(FLOOR if s['name'] == 'floor' else WHITE)
+    o.data.materials.append(FLOOR if s['name'] == 'floor' else WHITE if s['name'] in ('ceiling', 'wall-front') else WALNUT)
     return o
 
 surf_objs = [(s, surface_object(s)) for s in L['surfaces']]

@@ -101,7 +101,7 @@ export const WINDOW_DISPLAYS: { x: number; z: number }[] = [{ x: -4.9, z: -0.5 }
 export const WINDOW_PLINTH = { w: 0.62, d: 0.42, h: 0.92 };
 
 /** White pilasters on both outer walls, between the tall vitrines and mirrors; each carries a brass sconce. */
-export const PILASTER = { w: 0.36, d: 0.1 };
+export const PILASTER = { w: 0.5, d: 0.12 };
 export const PILASTER_Z: { left: number[]; right: number[] } = {
   left: [-2.2, -5.25, -7.9, -10.6, -12.6],
   right: [-1.8, -4.45, -6.75, -9.05, -11.6],

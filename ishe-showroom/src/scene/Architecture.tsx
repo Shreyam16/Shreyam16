@@ -23,6 +23,19 @@ export function Box({ size, pos, mat, rot }: { size: V3; pos: V3; mat: MatKey; r
   );
 }
 
+/**
+ * Wall sconce as in the boutique: a slim dark-bronze frame round a tall glowing diffuser, mounted on
+ * a pillar face that points along x (`face` = +1 or -1).
+ */
+function Sconce({ x, z, face }: { x: number; z: number; face: number }) {
+  return (
+    <group position={[x, 2.2, z]}>
+      <Box size={[0.05, 0.56, 0.15]} pos={[face * 0.025, 0, 0]} mat="darkBronze" />
+      <Box size={[0.012, 0.48, 0.1]} pos={[face * 0.052, 0, 0]} mat="sconce" />
+    </group>
+  );
+}
+
 /** Box spanning two corners, handy for walls. */
 function Span({ a, b, mat }: { a: V3; b: V3; mat: MatKey }) {
   const size: V3 = [Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), Math.abs(b[2] - a[2])];
@@ -274,8 +287,7 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
             <group key={z}>
               <Box size={[PILASTER.d, wallH, PILASTER.w]} pos={[s * (hw - 0.1 - PILASTER.d / 2), wallH / 2, z]} mat="wall" />
               <Box size={[PILASTER.d + 0.01, 0.1, PILASTER.w + 0.01]} pos={[s * (hw - 0.1 - PILASTER.d / 2), 0.05, z]} mat="blackSatin" />
-              <Box size={[0.03, 0.62, 0.07]} pos={[s * (hw - 0.1 - PILASTER.d - 0.015), 2.25, z]} mat="brass" />
-              <Box size={[0.01, 0.54, 0.035]} pos={[s * (hw - 0.1 - PILASTER.d - 0.032), 2.25, z]} mat="sconce" />
+              <Sconce x={s * (hw - 0.1 - PILASTER.d)} z={z} face={-s} />
             </group>
           ))}
           {/* The colonnade: square white columns on black bases, a brass linear sconce facing the aisle. */}
@@ -284,12 +296,7 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
               <Box size={[COLUMN.size, wallH, COLUMN.size]} pos={[0, wallH / 2, 0]} mat="wall" />
               <Box size={[COLUMN.size + 0.02, 0.12, COLUMN.size + 0.02]} pos={[0, 0.06, 0]} mat="blackSatin" />
               <Box size={[COLUMN.size + 0.06, 0.08, COLUMN.size + 0.06]} pos={[0, wallH - 0.04, 0]} mat="wall" />
-              {[-1, 1].map((f) => (
-                <group key={f}>
-                  <Box size={[0.03, 0.62, 0.07]} pos={[f * (COLUMN.size / 2 + 0.015), 2.25, 0]} mat="brass" />
-                  <Box size={[0.01, 0.54, 0.035]} pos={[f * (COLUMN.size / 2 + 0.032), 2.25, 0]} mat="sconce" />
-                </group>
-              ))}
+              {[-1, 1].map((f) => <Sconce key={f} x={f * (COLUMN.size / 2)} z={0} face={f} />)}
             </group>
           ))}
           {/* Linear light slots in the ceiling along the aisle, as in a gallery. */}

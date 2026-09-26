@@ -16,7 +16,7 @@ export const HALF_W = 7.5;
 export const DEPTH = 14;
 export const WALL_T = 0.2;
 /** Square white columns either side of the aisle. */
-export const COLUMN = { x: 2.9, size: 0.46, z: [-2.4, -5.0, -7.6, -10.2] };
+export const COLUMN = { x: 2.9, size: 0.6, z: [-2.4, -5.0, -7.6, -10.2] };
 export const COLUMNS: Box2[] = [-1, 1].flatMap((s) => COLUMN.z.map((z) => ({
   x0: s * COLUMN.x - COLUMN.size / 2, z0: z - COLUMN.size / 2, x1: s * COLUMN.x + COLUMN.size / 2, z1: z + COLUMN.size / 2,
 })));

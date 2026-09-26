@@ -34,8 +34,8 @@ const FACE_WEST = -Math.PI / 2; // front faces -x
 const FACE_STREET = 0; // front faces +z
 
 const TALL = { w: 0.8, d: 0.6, h: 2.05, style: 'tall' as const };
-/** Wide, low glass-topped gallery case (the aisle and side-gallery tables). */
-const TABLE = { w: 0.9, d: 0.6, h: 1.2, style: 'table' as const };
+/** Wide, low glass-topped gallery case (the aisle and side-gallery tables), as in the boutique. */
+const TABLE = { w: 1.2, d: 0.7, h: 1.28, style: 'table' as const };
 const RING = { w: 0.55, d: 0.55, h: 1.2, style: 'table' as const };
 
 /**
@@ -46,7 +46,7 @@ const RING = { w: 0.55, d: 0.55, h: 1.2, style: 'table' as const };
  */
 export const DISPLAYS: DisplaySpec[] = [
   // Far end: hero necklace on a lit pedestal, centred on the black feature wall.
-  { sku: 'ISH-N01', kind: 'bust', x: 0, z: -12.9, rotY: FACE_STREET, ...TABLE, w: 0.7, d: 0.7, h: 1.55, itemY: 1.16 },
+  { sku: 'ISH-N01', kind: 'bust', x: 0, z: -12.9, rotY: FACE_STREET, ...TABLE, w: 0.66, d: 0.66, h: 1.55, itemY: 1.16 },
   // LEFT side gallery: necklace busts in tall vitrines along the outer wall.
   { sku: 'ISH-N02', kind: 'bust', x: -6.9, z: -3.7, rotY: FACE_EAST, ...TALL, itemY: 1.21 },
   { sku: 'ISH-N03', kind: 'bust', x: -6.9, z: -6.3, rotY: FACE_EAST, ...TALL, itemY: 1.21 },

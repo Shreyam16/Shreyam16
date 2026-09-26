@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { useLoader } from '@react-three/fiber';
 import { BAKE_SURFACES, type BakeSurface } from './bakeSurfaces';
-import { limewashTexture, mats } from './materials';
+import { limewashTexture, mats, walnutTexture } from './materials';
 
 /** How much the baked irradiance is scaled up (MeshBasicMaterial divides light maps by π). */
 const GAIN = Math.PI * 1.3;
@@ -56,6 +56,7 @@ export default function BakedSurfaces() {
   const items = useMemo(() => {
     const M = mats();
     const lime = limewashTexture();
+    const wood = walnutTexture(43);
     baked.length = 0;
     return BAKE_SURFACES.map((s, i) => {
       const tex = textures[i];
@@ -71,12 +72,19 @@ export default function BakedSurfaces() {
         material = new THREE.MeshBasicMaterial({ map: floorUv, lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else if (s.name === 'ceiling') {
         material = new THREE.MeshBasicMaterial({ color: '#fbf8f2', lightMap: tex, lightMapIntensity: GAIN * gainK });
+      } else if (s.name !== 'wall-front') {
+        // Outer walls: dark espresso wood panelling, so the gaps between the white pillars read as
+        // dark recesses and the lit cases glow against them.
+        const map = wood.clone();
+        map.repeat.set((s.uv[1] - s.uv[0]) / 1.2, 1);
+        map.needsUpdate = true;
+        material = new THREE.MeshBasicMaterial({ color: '#8d7868', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
       } else {
-        // Warm white limewash, tiled about every 2 m whatever the wall's size.
+        // Warm ivory limewash, tiled about every 2 m whatever the wall's size.
         const map = lime.clone();
         map.repeat.set((s.uv[1] - s.uv[0]) / 2, (s.uv[3] - s.uv[2]) / 2);
         map.needsUpdate = true;
-        material = new THREE.MeshBasicMaterial({ color: '#ffffff', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
+        material = new THREE.MeshBasicMaterial({ color: '#fbf3e6', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
       }
       baked.push(material as THREE.MeshBasicMaterial);
       return { s, geometry: geometryFor(s), material };

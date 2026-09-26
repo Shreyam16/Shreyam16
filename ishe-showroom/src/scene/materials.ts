@@ -103,7 +103,7 @@ export function limewashTexture() {
 }
 
 /** Walnut veneer with vertical grain; `dark` for the salon panelling. */
-function walnutTexture(seed: number) {
+export function walnutTexture(seed: number) {
   const r = rng(seed);
   const t = canvasTexture(512, 512, (ctx) => {
     ctx.fillStyle = '#5a3a25';
@@ -320,7 +320,8 @@ function build() {
 
   const m = {
     // Architecture
-    wall: std({ color: '#fbf8f3', map: limewash, roughness: 0.94 }),
+    // Warm ivory plaster, lit warm (the video's walls and pillars).
+    wall: std({ color: '#f6efe4', map: limewash, roughness: 0.94 }),
     // Warm cream limestone for the facade, with slightly darker, recessed joints.
     wallExterior: std({ color: '#e6dcc9', roughness: 0.82 }),
     limestoneJoint: std({ color: '#b8ab94', roughness: 0.9 }),
@@ -336,11 +337,15 @@ function build() {
     warmWindow: std({ color: '#2b2622', emissive: '#f3cf94', emissiveIntensity: 0.35, roughness: 0.3 }),
     // Furniture
     // Lacquered cabinetry: dark satin base with a clear coat that picks up the lights.
-    blackSatin: phys({ color: '#111111', roughness: 0.5, metalness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.22, envMapIntensity: 0.9 }),
+    // Espresso lacquer: near-black with a warm brown undertone, as on the boutique's cabinets.
+    blackSatin: phys({ color: '#1b1511', roughness: 0.45, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.9 }),
+    // Thin dark-bronze frames on the glass boxes.
+    darkBronze: std({ color: '#4a3622', metalness: 0.85, roughness: 0.32, envMapIntensity: 1.2 }),
     blackMetal: std({ color: '#0b0b0b', roughness: 0.32, metalness: 0.8, normalMap: brushed, normalScale: new THREE.Vector2(0.25, 0.25) }),
     velvet: phys({
       // Champagne suede busts, bolsters and cushions, as in the boutique's cases.
-      color: '#8a6d49', roughness: 0.92, sheen: 1, sheenColor: new THREE.Color('#f0d9ae'), sheenRoughness: 0.45,
+      color: '#b08a55', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#f6dfae'), sheenRoughness: 0.45,
+      emissive: '#3a2610', emissiveIntensity: 0.35,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
     linen: std({ color: '#ffffff', map: linenTexture(), roughness: 1, normalMap: weave, normalScale: new THREE.Vector2(0.3, 0.3) }),
@@ -358,9 +363,9 @@ function build() {
     ebony: phys({ color: '#0e0c0b', roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.7 }),
     goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
     taupeVelvet: phys({
-      color: '#a88c64', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#ecd6ae'), sheenRoughness: 0.45,
-      // A little self-glow reads as the case's own LED lighting on the deck.
-      emissive: '#5a3c18', emissiveIntensity: 0.25,
+      // Cream suede deck, brightly lit by the case LEDs (the glass boxes glow warm in the video).
+      color: '#e9dcc3', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#fff1d6'), sheenRoughness: 0.45,
+      emissive: '#7a5a2e', emissiveIntensity: 0.45,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
     boucle: std({ color: '#e7dfd1', roughness: 1, normalMap: velvetNormal, normalScale: new THREE.Vector2(0.8, 0.8) }),
@@ -386,17 +391,15 @@ function build() {
       color: '#ffffff', transparent: true, opacity: 0.045, roughness: 0, metalness: 0, clearcoat: 1, clearcoatRoughness: 0,
       envMapIntensity: 2.4, depthWrite: false, side: THREE.DoubleSide,
     }),
-    // Polished glass edge: the faint green line that frameless cases show at their corners.
-    glassEdge: std({ color: '#cfe4dc', transparent: true, opacity: 0.55, roughness: 0.05, envMapIntensity: 1.5, depthWrite: false }),
     doorGlass: phys({
       color: '#dfe7ea', transparent: true, opacity: 0.18, roughness: 0.02, metalness: 0,
       envMapIntensity: 1.8, depthWrite: false, side: THREE.DoubleSide,
       // Warm glow seen from the street in evening mode (intensity driven by Evening.tsx).
       emissive: '#ffc98a', emissiveIntensity: 0,
     }),
-    lightStrip: std({ color: '#fff4e0', emissive: '#ffe2b8', emissiveIntensity: 1.6 }),
+    lightStrip: std({ color: '#fff4e0', emissive: '#ffd6a0', emissiveIntensity: 1.6 }),
     ceilingPanel: std({ color: '#ffffff', emissive: '#fff6ea', emissiveIntensity: 0.9 }),
-    sconce: std({ color: '#fff0d6', emissive: '#ffd79a', emissiveIntensity: 2.2 }),
+    sconce: std({ color: '#fff0d6', emissive: '#ffcf8a', emissiveIntensity: 2.2 }),
     plant: std({ color: '#2f4a33', roughness: 0.9 }),
     planter: std({ color: '#161616', roughness: 0.5 }),
     ao: new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false }),
