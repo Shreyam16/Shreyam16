@@ -209,7 +209,7 @@ jobs:
   stops-commit:
     needs: stops-render
     # Commit whatever rendered (a failed shard only leaves its stops on live 3D), never on cancel.
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && contains(github.event.head_commit.message, '[ishe-assets:stops]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
