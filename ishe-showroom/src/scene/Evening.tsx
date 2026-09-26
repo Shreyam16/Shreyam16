@@ -4,12 +4,14 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useShowroom } from '@/store/showroom';
 import { duskSkyTexture, mats } from './materials';
-import { bakedGain } from './BakedSurfaces';
+import { bakedGain, bakedWarmth } from './BakedSurfaces';
 
 const DAY = {
   hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1, strip: 1.6, pool: 0.35, lens: 2.4, wash: 0.05,
   fog: new THREE.Color('#2a3140'), bg: new THREE.Color('#1b2330'), sunColor: new THREE.Color('#fff4e6'),
 };
+/** Warm fill inside at dusk (the amber of the reference). */
+const DUSK_SKY_FILL = new THREE.Color('#ffd6a6');
 const DUSK = {
   // Dusk: lower ambient and bounce, brighter case lights, coves and sconces, for the warm, lit-from-within look.
   hemi: 0.15, sun: 0.1, env: 0.5, baked: 0.68, sconce: 4, neighbour: 1.8, glass: 0.12, cove: 2.2, street: 0.34, strip: 2.6, pool: 0.55, lens: 3.2, wash: 0.5,
@@ -47,13 +49,17 @@ export default function Evening() {
     const k = THREE.MathUtils.smoothstep(next, 0, 1);
     const L = (a: number, b: number) => a + (b - a) * k;
     const M = mats();
-    if (hemi.current) hemi.current.intensity = L(DAY.hemi, DUSK.hemi);
+    if (hemi.current) {
+      hemi.current.intensity = L(DAY.hemi, DUSK.hemi);
+      hemi.current.color.set('#fff3e3').lerp(DUSK_SKY_FILL, k);
+    }
     if (sun.current) {
       sun.current.intensity = L(DAY.sun, DUSK.sun);
       sun.current.color.copy(DAY.sunColor).lerp(DUSK.sunColor, k);
     }
     (scene as THREE.Scene & { environmentIntensity: number }).environmentIntensity = L(DAY.env, DUSK.env);
     bakedGain(L(DAY.baked, DUSK.baked));
+    bakedWarmth(k);
     (M.sconce as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.sconce, DUSK.sconce);
     (M.warmWindow as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.neighbour, DUSK.neighbour);
     (M.doorGlass as THREE.MeshPhysicalMaterial).emissiveIntensity = L(DAY.glass, DUSK.glass);

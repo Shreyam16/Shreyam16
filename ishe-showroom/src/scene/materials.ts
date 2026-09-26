@@ -327,7 +327,8 @@ function build() {
     limestoneJoint: std({ color: '#b8ab94', roughness: 0.9 }),
     ceiling: std({ color: '#fbfbf9', roughness: 1 }),
     floor: std({ map: terrazzo(), roughness: 0.3, metalness: 0, envMapIntensity: 0.6 }),
-    paving: std({ map: paving(), roughness: 0.9 }),
+    // Honed stone pavers with a slight sheen (they catch the warm light at dusk).
+    paving: std({ map: paving(), roughness: 0.6, envMapIntensity: 0.6 }),
     asphalt: std({ color: '#3b3d40', roughness: 0.95 }),
     kerb: std({ color: '#9f9b94', roughness: 0.9 }),
     plinth: std({ color: '#2a2a2a', roughness: 0.6 }),

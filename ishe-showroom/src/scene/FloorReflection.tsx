@@ -60,10 +60,13 @@ const shader = {
 export default function FloorReflection() {
   const { size, viewport } = useThree();
   const reflector = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(HALF_W * 2, DEPTH);
+    // Covers the terrazzo inside and the stone pavement outside: at dusk the lit windows, sconces
+    // and doors show softly in the paving, as in the reference.
+    const front = 5.2, wide = HALF_W + 4.5;
+    const geo = new THREE.PlaneGeometry(wide * 2, DEPTH + front);
     const r = new Reflector(geo, { textureWidth: 512, textureHeight: 512, clipBias: 0.003, shader });
     r.rotation.x = -Math.PI / 2;
-    r.position.set(0, 0.0015, -DEPTH / 2);
+    r.position.set(0, 0.0015, (front - DEPTH) / 2);
     const m = r.material as THREE.ShaderMaterial;
     m.transparent = true;
     m.blending = THREE.AdditiveBlending;

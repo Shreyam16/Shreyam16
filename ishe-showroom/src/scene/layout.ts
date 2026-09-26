@@ -22,7 +22,8 @@ export const COLUMNS: Box2[] = [-1, 1].flatMap((s) => COLUMN.z.map((z) => ({
 })));
 /** Where the aisle opens into the far end (Rings & Combos). */
 export const FAR_END_Z = -9.0;
-export const FRONT_DOOR = { halfWidth: 1.1, height: 2.75 };
+/** Tall glass double doors (3.05 m) flush with the full-height shop windows, as in the reference. */
+export const FRONT_DOOR = { halfWidth: 1.1, height: 3.05 };
 export const BODY_RADIUS = 0.3;
 
 export * from './displays-data';

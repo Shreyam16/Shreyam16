@@ -9,10 +9,24 @@ import { limewashTexture, mats, walnutTexture } from './materials';
 const GAIN = Math.PI * 1.3;
 const baked: THREE.MeshBasicMaterial[] = [];
 let gainK = 1;
+let warmK = 0;
+const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
+/** Warm 2700 K cast at dusk (multiplies each surface's own colour). */
+const WARM = new THREE.Color('#ffe2c0');
+const tmp = new THREE.Color();
+function applyWarmth(m: THREE.MeshBasicMaterial) {
+  const b = base.get(m);
+  if (b) m.color.copy(b).multiply(tmp.setRGB(1, 1, 1).lerp(WARM, warmK));
+}
 /** Scales every baked surface (evening mode dims the room slightly); also applies to surfaces loaded later. */
 export function bakedGain(k: number) {
   gainK = k;
   for (const m of baked) m.lightMapIntensity = GAIN * k;
+}
+/** 0 = daylight white balance, 1 = the warm dusk cast of the reference. */
+export function bakedWarmth(k: number) {
+  warmK = k;
+  for (const m of baked) applyWarmth(m);
 }
 /** Lift each surface off the old geometry toward the room so nothing z-fights. */
 const OFFSET = 0.003;
@@ -87,6 +101,8 @@ export default function BakedSurfaces() {
         material = new THREE.MeshBasicMaterial({ color: '#fbf3e6', map, lightMap: tex, lightMapIntensity: GAIN * gainK });
       }
       baked.push(material as THREE.MeshBasicMaterial);
+      base.set(material as THREE.MeshBasicMaterial, (material as THREE.MeshBasicMaterial).color.clone());
+      applyWarmth(material as THREE.MeshBasicMaterial);
       return { s, geometry: geometryFor(s), material };
     });
   }, [textures]);

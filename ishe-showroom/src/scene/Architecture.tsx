@@ -44,7 +44,8 @@ function Span({ a, b, mat }: { a: V3; b: V3; mat: MatKey }) {
 }
 
 const FACADE_H = 4.7;
-const WIN = { x0: 2.2, x1: 6.5, y0: 0.45, y1: 3.1 };
+/** Shop windows: nearly full height, low stone sill, tops aligned with the doors. */
+const WIN = { x0: 2.2, x1: 6.5, y0: 0.3, y1: 3.05 };
 
 /** The official ISHÉ plaque (black lettering on a white rectangle), used exactly as supplied. */
 const PLAQUE_ASPECT = 599 / 1099;
@@ -127,7 +128,7 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
       {/* Cornice. */}
       <Span a={[-hw - 0.05, FACADE_H - 0.1, -0.1]} b={[hw + 0.05, FACADE_H + 0.05, 0.25]} mat="wallExterior" />
       {/* Sign: the official ISHÉ plaque, as supplied, in a slim bronze frame. */}
-      <group position={[0, 3.62, 0.13]}>
+      <group position={[0, 3.72, 0.13]}>
         <Box size={[2.08, 2.0 * PLAQUE_ASPECT + 0.08, 0.06]} pos={[0, 0, 0]} mat="bronze" />
         <mesh position={[0, 0, 0.032]}>
           <planeGeometry args={[2.0, 2.0 * PLAQUE_ASPECT]} />
@@ -205,6 +206,12 @@ function Street() {
         <planeGeometry args={[40, 5.2]} />
       </mesh>
       <Box size={[40, 0.14, 0.25]} pos={[0, 0.07, 5.3]} mat="kerb" />
+      {/* Warm light from the shop windows and doors pooling on the pavement at dusk. */}
+      {[-4.35, 0, 4.35].map((x) => (
+        <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.004, 1.1]} material={M.facadeWash}>
+          <planeGeometry args={[x === 0 ? 3.2 : 5.2, 2.6]} />
+        </mesh>
+      ))}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 12]} material={M.asphalt}>
         <planeGeometry args={[60, 14]} />
       </mesh>
@@ -217,11 +224,20 @@ function Street() {
       {[11.2, 15.2].map((x) => [1.6, 4.6, 7.6].map((y) => (
         <Box key={`${x}${y}`} size={[1.5, 2, 0.05]} pos={[x, y, 0.07]} mat="darkWindow" />
       )))}
-      {/* Upper storey above the showroom. */}
-      <Span a={[-HALF_W - 0.1, FACADE_H + 0.05, -1]} b={[HALF_W + 0.1, 9.5, -0.1]} mat="neighbourA" />
+      {/* Upper storey above the showroom: pale stone with tall black-framed windows. */}
+      <Span a={[-HALF_W - 0.1, FACADE_H + 0.05, -1]} b={[HALF_W + 0.1, 9.5, -0.1]} mat="wallExterior" />
       {[-5, -1.7, 1.7, 5].map((x) => (
-        <Box key={x} size={[1.3, 1.9, 0.05]} pos={[x, 6.9, -0.07]} mat="darkWindow" />
+        <group key={x} position={[x, 6.95, -0.07]}>
+          <Box size={[1.16, 2.2, 0.04]} pos={[0, 0, 0]} mat="darkWindow" />
+          <Box size={[1.26, 0.05, 0.08]} pos={[0, 1.12, 0.02]} mat="blackMetal" />
+          <Box size={[1.26, 0.05, 0.08]} pos={[0, -1.12, 0.02]} mat="blackMetal" />
+          <Box size={[0.05, 2.28, 0.08]} pos={[-0.605, 0, 0.02]} mat="blackMetal" />
+          <Box size={[0.05, 2.28, 0.08]} pos={[0.605, 0, 0.02]} mat="blackMetal" />
+          <Box size={[0.035, 2.2, 0.06]} pos={[0, 0, 0.02]} mat="blackMetal" />
+          <Box size={[1.4, 0.08, 0.14]} pos={[0, -1.2, 0.04]} mat="limestoneJoint" />
+        </group>
       ))}
+      <Span a={[-HALF_W - 0.2, FACADE_H + 0.05, 0.12]} b={[HALF_W + 0.2, FACADE_H + 0.12, 0.2]} mat="wallExterior" />
       <mesh position={[0, 0, 0]} material={M.sky}>
         <sphereGeometry args={[80, 24, 16]} />
       </mesh>
@@ -375,16 +391,16 @@ function Thresholds() {
   );
 }
 
-/** Sheer curtains drawn to either side of each shop window, on a slim bronze rod. */
+/** Sheer curtains drawn right back to the ends of each shop window, so the lit interior shows through. */
 function Curtains() {
   return (
     <group>
       {CURTAINS.map((c) => (
         <group key={c.x0}>
           <Box size={[c.x1 - c.x0 - 0.02, 0.02, 0.02]} pos={[(c.x0 + c.x1) / 2, 3.28, -0.24]} mat="bronze" />
-          {[c.x0 + 0.65, c.x1 - 0.65].map((x) => (
-            <mesh key={x} position={[x, 1.75, -0.24]} material={mats().sheer}>
-              <planeGeometry args={[1.3, 3.05]} />
+          {[c.x0 + 0.26, c.x1 - 0.26].map((x) => (
+            <mesh key={x} position={[x, 1.68, -0.24]} material={mats().sheer}>
+              <planeGeometry args={[0.52, 2.85]} />
             </mesh>
           ))}
         </group>

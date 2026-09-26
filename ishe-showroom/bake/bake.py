@@ -125,8 +125,8 @@ for w in L['walls'][1:]:  # walls[0] is the facade collider (door closed); rebui
 for c in L['columns']:
     box(c['x0'], 0, c['z0'], c['x1'], H, c['z1'], WHITE)
 # Facade with the door and window openings.
-for x0, x1, y0, y1 in [(-7.6, -6.5, 0, H), (-6.5, -2.2, 0, 0.45), (-6.5, -2.2, 3.1, H), (-2.2, -1.1, 0, H), (-1.1, 1.1, 2.75, H),
-                       (1.1, 2.2, 0, H), (2.2, 6.5, 0, 0.45), (2.2, 6.5, 3.1, H), (6.5, 7.6, 0, H)]:
+for x0, x1, y0, y1 in [(-7.6, -6.5, 0, H), (-6.5, -2.2, 0, 0.3), (-6.5, -2.2, 3.05, H), (-2.2, -1.1, 0, H), (-1.1, 1.1, 3.05, H),
+                       (1.1, 2.2, 0, H), (2.2, 6.5, 0, 0.3), (2.2, 6.5, 3.05, H), (6.5, 7.6, 0, H)]:
     box(x0, y0, -0.1, x1, y1, 0.1, WHITE)
 
 F = L['features']
@@ -230,8 +230,8 @@ for s in (-1, 1):
 area(0, H - 0.12, -13.7, 14.6, 0.08, 160, 3000)
 # Daylight through the shop windows and glass door (cool, soft).
 for x in (-4.35, 4.35):
-    area(x, 1.8, 0.4, 4.3, 2.6, 260, 6500, rot=(math.radians(90), 0, 0))
-area(0, 1.4, 0.4, 2.2, 2.7, 140, 6500, rot=(math.radians(90), 0, 0))
+    area(x, 1.675, 0.4, 4.3, 2.75, 270, 6500, rot=(math.radians(90), 0, 0))
+area(0, 1.525, 0.4, 2.2, 3.05, 150, 6500, rot=(math.radians(90), 0, 0))
 # Lit kick strip on the cashier counter and the brand-wall wash.
 area(k['x'], 0.9, k['z'] + k['d'] / 2 + 0.05, k['w'] - 0.1, 0.05, 25, 3000, rot=(math.radians(90), 0, 0))
 

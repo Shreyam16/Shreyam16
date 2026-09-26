@@ -20,9 +20,10 @@ const lerp = THREE.MathUtils.lerp;
 const smooth = (x: number, a: number, b: number) => THREE.MathUtils.smoothstep(x, a, b);
 
 /**
- * Scroll-driven approach, framed like a film shot: it opens on a three-quarter view from across the
- * pavement, arcs round to face the storefront while pushing in, the doors swing open, and the camera
- * glides through the doorway to the junction, looking down the aisle to the hero piece.
+ * Scroll-driven approach, framed like the reference film: a centred, symmetrical view of the
+ * storefront from across the pavement, a slow push in on the entrance axis at eye height, the doors
+ * swing inward, and the camera glides through the doorway to the junction, looking down the aisle
+ * to the hero piece.
  */
 export function entrancePose(p: number): Pose {
   const keys = [[0, 10.5], [0.22, 5.6], [0.62, 1.9], [1, -2.8]];
@@ -34,10 +35,8 @@ export function entrancePose(p: number): Pose {
   }
   const look = smooth(p, 0.35, 1);
   const end = nodePose('junction');
-  // Arc in from the left of the street, square to the door by the time it opens.
-  const arc = 1 - smooth(p, 0, 0.3);
   return {
-    x: -4.4 * arc, y: EYE + 0.15 * arc, z,
+    x: 0, y: EYE, z,
     tx: 0, ty: lerp(2.35, end.ty, look), tz: lerp(0, end.tz, look),
   };
 }
@@ -216,11 +215,11 @@ export default function CameraRig() {
     }
     const p = pose.current;
     camera.position.set(p.x, p.y, p.z);
-    // Outside, a faint hand-held drift keeps the street shot alive (never with reduced motion).
+    // Outside, a barely perceptible drift, like a steady hand-held camera (never with reduced motion).
     if (s.phase === 'outside' && !s.reducedMotion) {
       const t = performance.now() / 1000;
-      camera.position.x += Math.sin(t * 0.53) * 0.035;
-      camera.position.y += Math.sin(t * 0.81 + 1.3) * 0.018;
+      camera.position.x += Math.sin(t * 0.41) * 0.01;
+      camera.position.y += Math.sin(t * 0.63 + 1.3) * 0.006;
     }
     camera.lookAt(p.tx, p.ty, p.tz);
     // Optional sound: a footstep every ~0.7 m walked, and the door as it starts to swing.
