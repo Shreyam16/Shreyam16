@@ -61,8 +61,10 @@ function Rail() {
   const room = useShowroom((s) => s.room);
   const view = useShowroom((s) => s.view);
   const goTo = useShowroom((s) => s.goTo);
+  const touring = useShowroom((s) => s.tour !== null);
   const panelOpen = view.kind === 'product' || view.kind === 'combos';
-  if (room === 'foyer' || view.kind === 'cashier') return null;
+  // During a tour the tour bar does the navigating; the rail would sit on top of it.
+  if (room === 'foyer' || view.kind === 'cashier' || touring) return null;
   const items = PRODUCTS.filter((p) => p.room === room);
   return (
     <section aria-label={`Vitrines in ${ROOMS[room].label}`} className={`pointer-events-auto fixed inset-x-0 top-20 z-[15] md:top-28 ${panelOpen ? 'hidden md:block md:right-[440px]' : ''}`} data-testid="lite-rail">

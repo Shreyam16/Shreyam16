@@ -408,7 +408,7 @@ console.log('Desktop 3D (1440x900)');
     assert(/ISH-N02/.test(box) && /ISH-E02\*2/.test(box), `box=${box}`);
     // WhatsApp: a contact-picker link with the list and the share link; the store button is honest when unset.
     const wa = await page.getByTestId('box-whatsapp-share').getAttribute('href');
-    const text = decodeURIComponent(new URL(wa).searchParams.get('text') ?? '');
+    const text = new URL(wa).searchParams.get('text') ?? '';
     assert(wa.startsWith('https://wa.me/?text='), `wa ${wa}`);
     assert(text.includes('(ISH-E02) × 2') && text.includes(link), `text ${text}`);
     const storeSet = await page.getByTestId('box-whatsapp-store').count();
