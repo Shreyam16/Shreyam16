@@ -51,7 +51,7 @@ const WIN = { x0: 2.2, x1: 6.5, y0: 0.3, y1: 3.05 };
 /** The official ISHÉ plaque (black lettering on a white rectangle), used exactly as supplied. */
 const PLAQUE_ASPECT = 599 / 1099;
 /** A lit sign: the plaque's white sits just above the brightest wall, so the dusk grade leaves it white. */
-const PLAQUE_LIT = new THREE.Color(1.2, 1.2, 1.2);
+const PLAQUE_LIT = new THREE.Color(1.1, 1.1, 1.1);
 
 /** Ashlar limestone: 60 cm courses with staggered vertical joints (blocks about 1.2 m long). */
 function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: number }) {
