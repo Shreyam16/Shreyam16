@@ -7,11 +7,12 @@ import { duskSkyTexture, mats } from './materials';
 import { bakedGain } from './BakedSurfaces';
 
 const DAY = {
-  hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1,
+  hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1, strip: 1.6, pool: 0.35, lens: 2.4,
   fog: new THREE.Color('#2a3140'), bg: new THREE.Color('#1b2330'), sunColor: new THREE.Color('#fff4e6'),
 };
 const DUSK = {
-  hemi: 0.22, sun: 0.1, env: 0.62, baked: 0.84, sconce: 5, neighbour: 1.8, glass: 0.7, cove: 1.6, street: 0.34,
+  // Dusk: lower ambient and bounce, brighter case lights, coves and sconces, for the warm, lit-from-within look.
+  hemi: 0.15, sun: 0.1, env: 0.5, baked: 0.68, sconce: 5, neighbour: 1.8, glass: 0.7, cove: 2.4, street: 0.34, strip: 2.8, pool: 0.62, lens: 3.4,
   fog: new THREE.Color('#161b29'), bg: new THREE.Color('#0d1120'), sunColor: new THREE.Color('#9fb0d4'),
 };
 
@@ -57,6 +58,9 @@ export default function Evening() {
     (M.warmWindow as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.neighbour, DUSK.neighbour);
     (M.doorGlass as THREE.MeshPhysicalMaterial).emissiveIntensity = L(DAY.glass, DUSK.glass);
     (M.cove as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.cove, DUSK.cove);
+    (M.lightStrip as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.strip, DUSK.strip);
+    (M.downlightLens as THREE.MeshStandardMaterial).emissiveIntensity = L(DAY.lens, DUSK.lens);
+    (M.pool as THREE.MeshBasicMaterial).opacity = L(DAY.pool, DUSK.pool);
     for (const { m, day } of street) m.color.copy(day).multiplyScalar(L(1, DUSK.street));
     // Sky: dip and swap textures halfway so the change reads as a fade.
     const skyMat = M.sky as THREE.MeshBasicMaterial;

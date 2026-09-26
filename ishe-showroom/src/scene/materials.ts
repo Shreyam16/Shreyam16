@@ -339,8 +339,9 @@ function build() {
     blackSatin: phys({ color: '#111111', roughness: 0.5, metalness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.22, envMapIntensity: 0.9 }),
     blackMetal: std({ color: '#0b0b0b', roughness: 0.32, metalness: 0.8, normalMap: brushed, normalScale: new THREE.Vector2(0.25, 0.25) }),
     velvet: phys({
-      color: '#141414', roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#5a5552'), sheenRoughness: 0.55,
-      normalMap: velvetNormal, normalScale: new THREE.Vector2(0.35, 0.35),
+      // Champagne suede busts, bolsters and cushions, as in the boutique's cases.
+      color: '#8a6d49', roughness: 0.92, sheen: 1, sheenColor: new THREE.Color('#f0d9ae'), sheenRoughness: 0.45,
+      normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
     linen: std({ color: '#ffffff', map: linenTexture(), roughness: 1, normalMap: weave, normalScale: new THREE.Vector2(0.3, 0.3) }),
     floorGloss: std({
@@ -358,6 +359,8 @@ function build() {
     goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
     taupeVelvet: phys({
       color: '#a88c64', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#ecd6ae'), sheenRoughness: 0.45,
+      // A little self-glow reads as the case's own LED lighting on the deck.
+      emissive: '#5a3c18', emissiveIntensity: 0.25,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
     boucle: std({ color: '#e7dfd1', roughness: 1, normalMap: velvetNormal, normalScale: new THREE.Vector2(0.8, 0.8) }),
@@ -378,10 +381,13 @@ function build() {
     travertine: std({ color: '#f1ede6', roughness: 0.35 }),
     downlightTrim: std({ color: '#1a1a1a', roughness: 0.4, metalness: 0.6 }),
     downlightLens: std({ color: '#fff8ee', emissive: '#ffe6c4', emissiveIntensity: 2.4 }),
+    // Low-iron display glass: almost invisible head-on, crisp reflections at an angle.
     glass: phys({
-      color: '#ffffff', transparent: true, opacity: 0.1, roughness: 0.02, metalness: 0,
-      envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide,
+      color: '#ffffff', transparent: true, opacity: 0.045, roughness: 0, metalness: 0, clearcoat: 1, clearcoatRoughness: 0,
+      envMapIntensity: 2.4, depthWrite: false, side: THREE.DoubleSide,
     }),
+    // Polished glass edge: the faint green line that frameless cases show at their corners.
+    glassEdge: std({ color: '#cfe4dc', transparent: true, opacity: 0.55, roughness: 0.05, envMapIntensity: 1.5, depthWrite: false }),
     doorGlass: phys({
       color: '#dfe7ea', transparent: true, opacity: 0.18, roughness: 0.02, metalness: 0,
       envMapIntensity: 1.8, depthWrite: false, side: THREE.DoubleSide,

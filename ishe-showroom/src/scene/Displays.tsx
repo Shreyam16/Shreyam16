@@ -28,7 +28,7 @@ function Plaque({ sku, width, y, z }: { sku: string; width: number; y: number; z
   );
   useEffect(() => () => tex.dispose(), [tex]);
   return (
-    <mesh position={[0, y, z]} rotation={[-0.12, 0, 0]}>
+    <mesh position={[0, y, z]}>
       <planeGeometry args={[width, width * (220 / 1024)]} />
       <meshBasicMaterial map={tex} toneMapped={false} />
     </mesh>
@@ -58,55 +58,44 @@ function Case({ spec }: { spec: DisplaySpec }) {
   const glassTop = tall ? h - 0.08 : h;
   const glassH = glassTop - top;
   const gw = w - 0.02, gd = d - 0.02;
-  const posts: [number, number][] = [[-gw / 2, -gd / 2], [gw / 2, -gd / 2], [-gw / 2, gd / 2], [gw / 2, gd / 2]];
+  const corners: [number, number][] = [[-gw / 2, -gd / 2], [gw / 2, -gd / 2], [-gw / 2, gd / 2], [gw / 2, gd / 2]];
   return (
     <group>
-      {/* Base cabinet on a recessed black plinth. */}
+      {/* Black lacquered cabinet on a recessed plinth, with a slim bronze reveal under the deck. */}
       <Box size={[w, top - 0.07, d]} pos={[0, (top - 0.07) / 2 + 0.06, 0]} mat="blackSatin" />
       <Box size={[w - 0.06, 0.06, d - 0.06]} pos={[0, 0.03, 0]} mat="blackMetal" />
+      <Box size={[w + 0.004, 0.01, d + 0.004]} pos={[0, top - 0.017, 0]} mat="bronze" />
       {/* Deck the jewellery sits on. */}
       <Box size={[w, 0.012, d]} pos={[0, top - 0.006, 0]} mat="taupeVelvet" />
       {tall && <Box size={[gw - 0.02, glassH, 0.01]} pos={[0, top + glassH / 2, -gd / 2 + 0.012]} mat="taupeVelvet" />}
       <GlassPanes w={gw} d={gd} y0={top + 0.001} y1={glassTop} top={!tall} />
-      {posts.map(([x, z], i) => (
-        <Box key={i} size={[tall ? 0.012 : 0.007, glassH, tall ? 0.012 : 0.007]} pos={[x, top + glassH / 2, z]} mat="bronze" />
+      {/* Frameless glass: only the polished edges show at the corners (and round the lid). */}
+      {corners.map(([x, z], i) => (
+        <Box key={i} size={[0.004, glassH, 0.004]} pos={[x, top + glassH / 2, z]} mat="glassEdge" />
       ))}
       {tall ? (
         <>
-          <Box size={[w, 0.08, d]} pos={[0, h - 0.04, 0]} mat="blackSatin" />
-          <mesh position={[0, h - 0.081, 0]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
-            <planeGeometry args={[w * 0.7, 0.03]} />
+          <Box size={[w, 0.05, d]} pos={[0, h - 0.025, 0]} mat="blackSatin" />
+          <mesh position={[0, h - 0.051, 0]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
+            <planeGeometry args={[w * 0.8, 0.02]} />
           </mesh>
         </>
       ) : (
-        // Slim black frame on the back and sides of the lid; the front edge is frameless so the
-        // visitor's line of sight onto the piece stays clear.
         <>
-          <Box size={[gw + 0.007, 0.007, 0.007]} pos={[0, glassTop, -gd / 2]} mat="bronze" />
-          <Box size={[0.007, 0.007, gd]} pos={[gw / 2, glassTop, 0]} mat="bronze" />
-          <Box size={[0.007, 0.007, gd]} pos={[-gw / 2, glassTop, 0]} mat="bronze" />
-          <TableMirror x={gw / 2 - 0.07} y={glassTop} z={-gd / 2 + 0.07} />
+          <Box size={[gw, 0.004, 0.004]} pos={[0, glassTop, -gd / 2]} mat="glassEdge" />
+          <Box size={[gw, 0.004, 0.004]} pos={[0, glassTop, gd / 2]} mat="glassEdge" />
+          <Box size={[0.004, 0.004, gd]} pos={[gw / 2, glassTop, 0]} mat="glassEdge" />
+          <Box size={[0.004, 0.004, gd]} pos={[-gw / 2, glassTop, 0]} mat="glassEdge" />
+          {/* Hidden LED line inside the back edge of the lid, lighting the deck from above. */}
+          <mesh position={[0, glassTop - 0.004, -gd / 2 + 0.02]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
+            <planeGeometry args={[gw * 0.85, 0.012]} />
+          </mesh>
         </>
       )}
       {/* Warm pool of light on the deck. */}
       <mesh position={[0, top + 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}>
         <planeGeometry args={[w * 0.9, d * 0.9]} />
       </mesh>
-    </group>
-  );
-}
-
-/** Small stand try-on mirror on the glass lid of a table vitrine (tilted toward the visitor). */
-function TableMirror({ x, y, z }: { x: number; y: number; z: number }) {
-  const M = mats();
-  return (
-    <group position={[x, y, z]} rotation={[0, -0.5, 0]}>
-      <mesh position={[0, 0.006, 0]} material={M.bronze}><cylinderGeometry args={[0.035, 0.04, 0.012, 24]} /></mesh>
-      <mesh position={[0, 0.05, 0]} material={M.bronze}><cylinderGeometry args={[0.004, 0.004, 0.08, 8]} /></mesh>
-      <group position={[0, 0.14, 0]} rotation={[-0.12, 0, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} scale={[0.075, 1, 0.1]} material={M.bronze}><cylinderGeometry args={[1, 1, 0.01, 32]} /></mesh>
-        <mesh position={[0, 0, 0.006]} scale={[0.066, 0.09, 1]} material={M.mirror}><circleGeometry args={[1, 32]} /></mesh>
-      </group>
     </group>
   );
 }
@@ -152,7 +141,7 @@ function Display({ spec, fontsReady }: { spec: DisplaySpec; fontsReady: boolean 
       <mesh ref={setGlow} visible={false} position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} material={highlight}>
         <planeGeometry args={[spec.w * 2.2, spec.d * 2.2]} />
       </mesh>
-      {fontsReady && <Plaque sku={spec.sku} width={Math.min(0.5, spec.w * 0.8)} y={spec.style === 'tall' ? 0.72 : 0.68} z={spec.d / 2 + 0.004} />}
+      {fontsReady && <Plaque sku={spec.sku} width={Math.min(0.3, spec.w * 0.5)} y={spec.style === 'tall' ? 0.74 : 0.7} z={spec.d / 2 + 0.003} />}
     </group>
   );
 }

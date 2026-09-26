@@ -46,7 +46,7 @@ const RING = { w: 0.55, d: 0.55, h: 1.2, style: 'table' as const };
  */
 export const DISPLAYS: DisplaySpec[] = [
   // Far end: hero necklace on a lit pedestal, centred on the black feature wall.
-  { sku: 'ISH-N01', kind: 'bust', x: 0, z: -12.9, rotY: FACE_STREET, ...TALL, itemY: 1.21 },
+  { sku: 'ISH-N01', kind: 'bust', x: 0, z: -12.9, rotY: FACE_STREET, ...TABLE, w: 0.7, d: 0.7, h: 1.55, itemY: 1.16 },
   // LEFT side gallery: necklace busts in tall vitrines along the outer wall.
   { sku: 'ISH-N02', kind: 'bust', x: -6.9, z: -3.7, rotY: FACE_EAST, ...TALL, itemY: 1.21 },
   { sku: 'ISH-N03', kind: 'bust', x: -6.9, z: -6.3, rotY: FACE_EAST, ...TALL, itemY: 1.21 },
