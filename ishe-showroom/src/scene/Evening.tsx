@@ -39,14 +39,14 @@ export default function Evening() {
   const street = useMemo(() => {
     const M = mats();
     // (The planters and boxwood stand in the shop's light, so they keep theirs.)
-    return (['paving', 'asphalt', 'kerb', 'plinth', 'neighbourA', 'neighbourB', 'darkWindow'] as const)
+    return (['asphalt', 'plinth', 'neighbourA', 'neighbourB', 'darkWindow'] as const)
       .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
   }, []);
   // The limestone front keeps more of its light at dusk and turns warm: it is lit by its sconces
   // and the glow of the shop, not by the sky.
   const stone = useMemo(() => {
     const M = mats();
-    return (['wallExterior', 'limestoneJoint'] as const)
+    return (['wallExterior', 'limestoneJoint', 'paving', 'kerb'] as const)
       .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
   }, []);
   // Interior plaster and stone take the same warm cast as the baked surfaces at dusk.

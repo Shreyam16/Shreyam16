@@ -184,11 +184,12 @@ function Doors() {
   useFrame(() => {
     const s = useShowroom.getState();
     const p = s.phase === 'inside' ? 1 : s.entrance;
-    // Doors swing inward between 20% and 62% of the entrance scroll, eased.
+    // Doors swing slowly out toward the visitor between 20% and 62% of the entrance scroll, as in
+    // the film, eased.
     const t = THREE.MathUtils.smoothstep(p, 0.2, 0.62);
     const open = s.phase === 'inside' ? 0 : t * 1.45; // closed again behind the visitor once inside
-    if (left.current) left.current.rotation.y = open;
-    if (right.current) right.current.rotation.y = -open;
+    if (left.current) left.current.rotation.y = -open;
+    if (right.current) right.current.rotation.y = open;
   });
   return (
     <group>
