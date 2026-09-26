@@ -12,6 +12,7 @@ import WindowDisplays from './WindowDisplays';
 import { useShowroom } from '@/store/showroom';
 import Polish from './Polish';
 import FloorReflection from './FloorReflection';
+import StopExport from './StopExport';
 import { detectQuality } from './quality';
 
 /** Image-based lighting from a procedural studio room: no downloads, no extra real-time lights. */
@@ -75,6 +76,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
   const tryOn = useShowroom((s) => s.tryOn);
   const ready = useShowroom((s) => s.sceneReady);
   const [quality] = useState(detectQuality);
+  const [capture] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('capture') === '1');
   return (
     <Canvas
       className="!fixed inset-0"
@@ -110,6 +112,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
       {/* People stream in after the room is up, so they never hold the entrance back. */}
       {ready && <Staff />}
       <CameraRig />
+      {capture && <StopExport />}
       {quality === 'high' && <FloorReflection />}
       {quality === 'high' && <Polish />}
       <PerformanceWatch onSlow={onSlow} />

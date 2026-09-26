@@ -301,11 +301,22 @@ node bake/to-png.mjs && mv public/bake/*.webp public/bake/exposure.npy bake/raw/
 node bake/postprocess.mjs   # partial white balance (35% of the warmth kept), denoise, ceiling lift
 ```
 
+### Photo stops
+
+When the camera rests at a room stop at dusk, a Blender Cycles still of the same view fades in over
+the live 3D (`src/components/PhotoStop.tsx`) and disappears the moment the visitor moves or drags to
+look. The stills are rendered from the live scene itself, so nothing is invented:
+`scripts/export-stops.mjs` exports it as glTF with every stop's camera pose (`?capture=1`),
+`bake/render_stops.py` renders each stop with real glass, reflections and the bake's light rig
+(landscape 2.4:1 at 52°, portrait 0.8:1 at 68°, matching the live camera), and
+`scripts/stops-to-webp.mjs` writes `public/stops/*.webp` and `manifest.json`. Stops missing from the
+manifest, daylight mode and screens wider than 2.4:1 keep the live 3D.
+
 ### CI workflow
 
 `.github/workflows/ishe-assets.yml` runs on pushes to `claude/**` branches whose commit message
 contains a tag: `[ishe-assets]` (lint, typecheck, unit tests, bake, lite stills, e2e; commits the
-bake and stills back), `[ishe-assets:stills]` or `[ishe-assets:qa]`. Add `samples=256` to the
+bake and stills back), `[ishe-assets:stills]`, `[ishe-assets:qa]` or `[ishe-assets:stops]` (photo stops only). Add `samples=256` to the
 message to change bake quality. e2e screenshots (as JPEG) and `results.json` are force-pushed to
 the `qa-screenshots` branch for review.
 

@@ -429,6 +429,9 @@ function build() {
     enamelRed: phys({ color: '#8f1426', roughness: 0.2, clearcoat: 1, envMapIntensity: 1.2 }),
     enamelGreen: phys({ color: '#155c3c', roughness: 0.2, clearcoat: 1, envMapIntensity: 1.2 }),
   };
+  // Named after their keys: the photo-stop renderer (bake/render_stops.py) recognises glass, lights
+  // and decals by name.
+  for (const [k, v] of Object.entries(m)) (v as THREE.Material).name = k;
   return m;
 }
 

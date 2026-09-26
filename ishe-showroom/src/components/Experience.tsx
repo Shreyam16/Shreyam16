@@ -6,6 +6,7 @@ import { detectRenderMode } from '@/lib/capabilities';
 import Entrance from './Entrance';
 import Overlay from './Overlay';
 import LoadingScreen from './LoadingScreen';
+import PhotoStop from './PhotoStop';
 import { decodeBox } from '@/lib/share';
 import { startDwellTracking } from '@/lib/analytics';
 import { startHistorySync } from '@/lib/history';
@@ -62,6 +63,7 @@ export default function Experience() {
             <Showroom3D onSlow={() => setSlow(true)} />
           </SceneBoundary>
           <Entrance />
+          {!capture && <PhotoStop />}
         </>
       )}
       {mode === 'lite' && (

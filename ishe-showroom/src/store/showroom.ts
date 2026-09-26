@@ -44,6 +44,8 @@ interface State {
   returning: boolean;
   moving: boolean;
   freeLook: boolean;
+  /** Room stop the camera is resting exactly at (a photo stop can show), or null while moving. */
+  still: string | null;
   cart: CartLine[];
   saved: string[];
   drawer: null | 'finder' | 'jewelBox' | 'help' | 'appointment';
@@ -69,6 +71,7 @@ interface State {
   setRoom: (r: RoomId | 'foyer') => void;
   setMoving: (m: boolean) => void;
   setFreeLook: (f: boolean) => void;
+  setStill: (k: string | null) => void;
   addToCart: (sku: string, qty?: number) => void;
   setQty: (sku: string, qty: number) => void;
   removeFromCart: (sku: string) => void;
@@ -108,6 +111,7 @@ export const useShowroom = create<State>()(
       returning: false,
       moving: false,
       freeLook: false,
+      still: null,
       cart: [],
       saved: [],
       drawer: null,
@@ -140,6 +144,7 @@ export const useShowroom = create<State>()(
       setRoom: (room) => set({ room }),
       setMoving: (moving) => set({ moving }),
       setFreeLook: (freeLook) => set({ freeLook }),
+      setStill: (still) => set({ still }),
       addToCart: (sku, qty = 1) => {
         const cart = [...get().cart];
         const line = cart.find((l) => l.sku === sku);

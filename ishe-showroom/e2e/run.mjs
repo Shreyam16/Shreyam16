@@ -529,6 +529,18 @@ console.log('Keyboard walking and collision (3D, small viewport)');
   await page.waitForTimeout(800);
   await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'left' }));
   await page.waitForTimeout(800);
+  await check('photo stop: resting at a stop shows its Cycles still, which goes the moment the visitor moves', async () => {
+    await page.waitForFunction(() => window.__ishe.getState().still === 'left', null, { timeout: 5000 });
+    const m = await page.evaluate(() => fetch('/stops/manifest.json').then((r) => r.json()));
+    if (!m.stops.includes('left')) { console.log('    (no stills rendered yet: live 3D only)'); return; }
+    await page.locator('[data-testid="photo-stop"][data-stop="left"]').waitFor({ timeout: 8000 });
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${OUT}/05b-photo-stop-left.png` });
+    await page.keyboard.down('KeyW'); await page.waitForTimeout(300); await page.keyboard.up('KeyW');
+    await page.locator('[data-testid="photo-stop"]').waitFor({ state: 'detached', timeout: 2000 });
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'left' }));
+    await page.waitForTimeout(800);
+  });
   await check('W walks forward at eye height', async () => {
     const a = await page.evaluate(() => window.__isheCamera());
     await page.keyboard.down('KeyW'); await page.waitForTimeout(2500); await page.keyboard.up('KeyW');

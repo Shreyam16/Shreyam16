@@ -245,6 +245,15 @@ export default function CameraRig() {
       else cam.clearViewOffset();
       cam.updateProjectionMatrix();
     }
+    // Photo stops: report the room stop the camera is resting exactly at (same pose and field of
+    // view the stop was rendered with), so its photoreal still can fade in; null the moment it moves.
+    let still: string | null = null;
+    if (s.phase === 'inside' && !s.moving && s.view.kind === 'node' && Math.abs(cam.fov - baseFov) < 0.05 && Math.abs(offset.current) < 0.5) {
+      const n = nodePose(s.view.node);
+      const d = Math.abs(p.x - n.x) + Math.abs(p.y - n.y) + Math.abs(p.z - n.z) + Math.abs(p.tx - n.tx) + Math.abs(p.ty - n.ty) + Math.abs(p.tz - n.tz);
+      if (d < 1e-3) still = s.view.node;
+    }
+    if (still !== s.still) s.setStill(still);
   });
 
   function walk(dt: number) {
