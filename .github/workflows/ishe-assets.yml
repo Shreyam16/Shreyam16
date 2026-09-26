@@ -91,7 +91,8 @@ jobs:
         run: node scripts/render-lite-backdrops.mjs
 
       - name: Commit baked lighting and lite stills
-        if: always() && (steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true')
+        # Not on a cancelled run: a superseded run must never commit half-captured assets.
+        if: ${{ !cancelled() && (steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true') }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
