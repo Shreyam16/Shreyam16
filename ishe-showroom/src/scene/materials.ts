@@ -50,7 +50,8 @@ function terrazzo() {
       for (const [dx, dy] of [[0, 0], [1024, 0], [-1024, 0], [0, 1024], [0, -1024]]) { ctx.save(); ctx.translate(dx, dy); ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); ctx.restore(); }
     }
     const chips: [string, number, number][] = [
-      ['#8d8780', 4200, 1.8], ['#b9b1a5', 4200, 2.0], ['#2e2c2a', 2600, 1.4], ['#cdbb9c', 1600, 2.0], ['#fbfaf7', 2600, 2.2], ['#6f6a64', 700, 2.8], ['#a8927a', 300, 3.2],
+      // Low-contrast flecks, as measured in the film (darkest 6% only ~10% below the matrix).
+      ['#d6cdc0', 4200, 1.8], ['#cfc5b6', 4200, 2.0], ['#bdb2a2', 2200, 1.4], ['#e0d2bb', 1600, 2.0], ['#fbf8f2', 2600, 2.2], ['#b3a898', 600, 2.6], ['#cbb89c', 300, 3.0],
     ];
     for (const [c, n, size] of chips) {
       ctx.fillStyle = c;
@@ -66,8 +67,8 @@ function terrazzo() {
         ctx.fill();
       }
     }
-    // Hairline brass-toned joints between 1 m panels.
-    ctx.fillStyle = 'rgba(176,160,132,0.55)';
+    // Hairline joints between 1 m panels (barely visible in the film).
+    ctx.fillStyle = 'rgba(176,160,132,0.3)';
     for (const k of [0, 512]) { ctx.fillRect(0, k, 1024, 2); ctx.fillRect(k, 0, 2, 1024); }
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -357,7 +358,8 @@ function build() {
     // Thin dark-bronze frames on the glass boxes.
     darkBronze: std({ color: '#5b4128', metalness: 0.85, roughness: 0.35, envMapIntensity: 1.1 }),
     // Display cabinets: dark chocolate-brown satin lacquer with a soft, warm sheen (not glossy black).
-    caseWood: phys({ color: '#18120e', roughness: 0.5, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.32, envMapIntensity: 0.5 }),
+    // Measured in the film: the cabinets read warm black (about 43, 29, 17), so little environment light.
+    caseWood: phys({ color: '#0f0a07', roughness: 0.5, metalness: 0, clearcoat: 0.3, clearcoatRoughness: 0.32, envMapIntensity: 0.15 }),
     blackMetal: std({ color: '#0b0b0b', roughness: 0.32, metalness: 0.8, normalMap: brushed, normalScale: new THREE.Vector2(0.25, 0.25) }),
     velvet: phys({
       // Champagne suede busts, bolsters and cushions, as in the boutique's cases.
@@ -378,7 +380,7 @@ function build() {
     // Lowered white tray: a touch of self-light so it reads as lit plaster, not grey concrete, at dusk.
     bronzeCeiling: std({ color: '#f6f3ee', metalness: 0, roughness: 0.95, emissive: '#6e5f4c', emissiveIntensity: 0.45 }),
     // Black lacquered panelling for the salon feature wall.
-    ebony: phys({ color: '#0e0c0b', roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.7 }),
+    ebony: phys({ color: '#0c0806', roughness: 0.42, metalness: 0.05, clearcoat: 0.4, clearcoatRoughness: 0.3, envMapIntensity: 0.2 }),
     // The gilded painting from the reference film (cut from its frames, public/art/film-painting.webp),
     // cropped to the panel's proportion (10 KB, loaded with the scene).
     goldLeaf: std({ color: '#ffffff', map: filmPainting(), metalness: 0.35, roughness: 0.55, envMapIntensity: 1 }),

@@ -28,7 +28,7 @@ args = sys.argv[1:]
 def arg(name, default):
     return type(default)(args[args.index(name) + 1]) if name in args else default
 SHARD, OF = arg('--shard', 0), arg('--of', 1)
-SAMPLES, EXPOSURE = arg('--samples', 64), arg('--exposure', 0.7)
+SAMPLES, EXPOSURE = arg('--samples', 64), arg('--exposure', 0.35)
 VARIANTS = {'land': (2304, 960, STOPS['fov']['land']), 'port': (1080, 1350, STOPS['fov']['port'])}
 
 def B(x, y, z):
@@ -127,7 +127,8 @@ sal = F['salon']
 k = L['cashier']
 
 def kelvin(kv):
-    t = kv / 100
+    # 350 K warmer than the bake's rig: the reference film's interior reads deep amber.
+    t = (kv - 350) / 100
     r = 255 if t <= 66 else 329.7 * (t - 60) ** -0.1332
     g = 99.47 * math.log(t) - 161.12 if t <= 66 else 288.12 * (t - 60) ** -0.0755
     b = 255 if t >= 66 else (0 if t <= 19 else 138.52 * math.log(t - 10) - 305.04)

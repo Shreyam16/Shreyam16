@@ -354,14 +354,10 @@ function SalonWalls() {
       <Span a={[SALON.x0, t - 0.02, SALON.z1 - 0.02]} b={[SALON.x1, CEILING, SALON.z1]} mat="wall" />
       <Span a={[SALON.x0 - 0.02, t - 0.02, SALON.z0]} b={[SALON.x0, CEILING, SALON.z1]} mat="wall" />
       <Span a={[SALON.x1, t - 0.02, SALON.z0]} b={[SALON.x1 + 0.02, CEILING, SALON.z1]} mat="wall" />
-      <mesh position={[0, t - 0.021, SALON.z1 - 0.06]} rotation={[Math.PI / 2, 0, 0]} material={mats().cove}>
-        <planeGeometry args={[SALON.x1 - SALON.x0 - 0.1, 0.03]} />
+      {/* The film's oval cove: a warm elliptical light line set into the lowered ceiling. */}
+      <mesh position={[0, t - 0.012, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} scale={[(SALON.x1 - SALON.x0) / 2 - 0.35, (SALON.z1 - SALON.z0) / 2 - 0.35, 1]} material={mats().cove}>
+        <torusGeometry args={[1, 0.012, 6, 128]} />
       </mesh>
-      {[SALON.x0 + 0.06, SALON.x1 - 0.06].map((x) => (
-        <mesh key={x} position={[x, t - 0.021, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats().cove}>
-          <planeGeometry args={[0.03, SALON.z1 - SALON.z0 - 0.1]} />
-        </mesh>
-      ))}
     </group>
   );
 }

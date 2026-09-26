@@ -10,10 +10,10 @@ const DAY = {
   hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1, strip: 1.6, pool: 0.35, lens: 2.4, wash: 0.05,
   fog: new THREE.Color('#2a3140'), bg: new THREE.Color('#1b2330'), sunColor: new THREE.Color('#fff4e6'),
 };
-/** Dusk on the limestone front: darker than day, and warm (multiplied with its day colour). */
-const STONE_DUSK = new THREE.Color('#7d7061');
+/** Dusk on the limestone front, as measured in the film: dark, with a mauve cast away from the lamps. */
+const STONE_DUSK = new THREE.Color('#463639');
 /** Warm cast on unbaked plaster at dusk (multiplied with its day colour). */
-const WALL_DUSK = new THREE.Color('#ffd3a6');
+const WALL_DUSK = new THREE.Color('#d69a82');
 /** Warm fill inside at dusk (the amber of the reference). */
 const DUSK_SKY_FILL = new THREE.Color('#ffd6a6');
 const DUSK = {
