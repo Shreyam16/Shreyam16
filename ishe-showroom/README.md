@@ -240,10 +240,16 @@ and `/api/appointment`, which run as serverless functions because their tokens m
   procedural studio environment. Display glow, wall washes and contact shadows are baked decals,
   not extra lights. No shadow maps.
 - Static geometry (including all new furniture, mouldings, curtains, mirrors and the chandelier)
-  is merged by material at load. Measured draw calls: DRAWCALLS_PLACEHOLDER
+  is merged by material at load. Measured draw calls per frame (whole frame, e2e on the gallery
+  plan, before the floor reflection): street 257, junction 149, left gallery 112, far end 84,
+  right gallery 125, cashier 51–56.
+- "High" tier (desktops): a soft planar reflection in the terrazzo (one extra low-resolution scene
+  pass, about a third of the canvas size, so draw calls roughly double), ambient occlusion, glow
+  on the lights (strong at dusk, nearly off in daylight), a light contrast/saturation grade, SMAA
+  and a vignette; DPR up to 2. Phones and small or low-memory devices ("standard") get none of these.
 - Try-on mirrors reflect the environment map (metal, low roughness): no render targets.
 - Staff: 4 skinned meshes, one material each, 1024 px WebP textures, 1.8–2.2 MB per GLB.
-- DPR is capped at 1.75.
+- DPR is capped at 1.75 on the standard tier.
 - The lite showroom is used when WebGL is missing, when the GPU is a software renderer, on
   devices reporting under 2 GB memory or 2 cores, or if the WebGL context is lost. It keeps the
   scroll entrance (stills captured from the 3D scene), room navigation, vitrine browsing, the product

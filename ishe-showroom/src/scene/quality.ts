@@ -1,5 +1,5 @@
 /**
- * Rendering tier. "high" adds post-processing (ambient occlusion, bloom, SMAA) on capable
+ * Rendering tier. "high" adds floor reflections and post-processing (ambient occlusion, glow, grade, SMAA) on capable
  * desktops; phones and small or low-memory devices stay on "standard". `?quality=high|standard`
  * overrides for QA.
  */

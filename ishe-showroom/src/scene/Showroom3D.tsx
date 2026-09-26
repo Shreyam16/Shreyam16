@@ -11,6 +11,7 @@ import Evening from './Evening';
 import WindowDisplays from './WindowDisplays';
 import { useShowroom } from '@/store/showroom';
 import Polish from './Polish';
+import FloorReflection from './FloorReflection';
 import { detectQuality } from './quality';
 
 /** Image-based lighting from a procedural studio room: no downloads, no extra real-time lights. */
@@ -78,7 +79,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
     <Canvas
       className="!fixed inset-0"
       style={{ position: 'fixed', inset: 0, pointerEvents: phase === 'inside' ? 'auto' : 'none', touchAction: 'none' }}
-      dpr={[1, 1.75]}
+      dpr={quality === 'high' ? [1, 2] : [1, 1.75]}
       // The camera try-on runs its own small renderer; pause the showroom meanwhile.
       frameloop={tryOn ? 'never' : 'always'}
       gl={{ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false }}
@@ -109,6 +110,7 @@ export default function Showroom3D({ onSlow }: { onSlow: () => void }) {
       {/* People stream in after the room is up, so they never hold the entrance back. */}
       {ready && <Staff />}
       <CameraRig />
+      {quality === 'high' && <FloorReflection />}
       {quality === 'high' && <Polish />}
       <PerformanceWatch onSlow={onSlow} />
     </Canvas>
