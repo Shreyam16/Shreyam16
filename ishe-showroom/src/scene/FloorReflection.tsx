@@ -16,7 +16,7 @@ const shader = {
     color: { value: null },
     tDiffuse: { value: null },
     textureMatrix: { value: null },
-    strength: { value: 0.5 },
+    strength: { value: 0.42 },
     texel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
   },
   vertexShader: /* glsl */ `
@@ -46,7 +46,7 @@ const shader = {
       float w = 0.0;
       for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) {
         float k = x == 0 && y == 0 ? 2.0 : 1.0;
-        c += texture2D(tDiffuse, uv + vec2(float(x), float(y)) * texel * 2.5).rgb * k;
+        c += texture2D(tDiffuse, uv + vec2(float(x), float(y)) * texel * 4.0).rgb * k;
         w += k;
       }
       c /= w;

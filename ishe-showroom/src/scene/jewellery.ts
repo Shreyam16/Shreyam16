@@ -72,10 +72,10 @@ function flower(p: Parts, center: THREE.Vector3, size: number, petal: MatKey, he
 // --- props -----------------------------------------------------------------------------------
 
 /** Velvet necklace bust: lathe profile flattened front-to-back. Returns a surface sampler. */
-// Chest cut flat at the base, widest across the shoulders, then a smooth slope into a tall neck:
-// the shape of a boutique display bust (the neck and chain zone keep their former radii).
+// Chest tapering in toward the base, widest across the shoulders, then a smooth slope into a tall
+// neck: the shape of a boutique display bust, not a bottle (the neck and chain zone keep their radii).
 const BUST_PROFILE: [number, number][] = [
-  [0.0, 0.0], [0.196, 0.0], [0.198, 0.06], [0.2, 0.14], [0.2, 0.2], [0.188, 0.232], [0.145, 0.258],
+  [0.0, 0.0], [0.15, 0.0], [0.163, 0.06], [0.186, 0.14], [0.2, 0.2], [0.188, 0.232], [0.145, 0.258],
   [0.098, 0.278], [0.07, 0.3], [0.058, 0.33], [0.056, 0.39], [0.055, 0.47], [0.052, 0.5], [0.0, 0.505],
 ];
 const BUST_SX = 1.35, BUST_SZ = 0.5;
