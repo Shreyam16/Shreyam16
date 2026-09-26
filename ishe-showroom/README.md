@@ -1,7 +1,7 @@
 # ISHÉ Private Showroom
 
 An appointment-only jewellery showroom on the web. Visitors start on the street outside a
-black-framed glass double door under the ISHÉ sign, scroll to open the doors and walk in, then
+black-framed glass double door under the official ISHÉ plaque (used exactly as supplied), scroll to open the doors and walk in, then
 explore one long, open gallery (15 m × 14 m, 3.8 m ceiling) in real-time 3D: a central aisle lined
 with low glass-topped cases between two rows of white columns, a side gallery beyond each colonnade,
 and one hero necklace on a lit pedestal in front of a black feature wall at the far end.
@@ -12,13 +12,13 @@ and one hero necklace on a lit pedestal in front of a black feature wall at the 
 
 Look: a warm, gallery-like boutique. Outside, a cream limestone facade with rusticated joints, a
 black-framed shopfront, tall linear sconces, square black planters with boxwood, and the ISHÉ
-wordmark in white on a black lacquered fascia. Inside, warm white limewash walls with pilasters and
+official black-on-white plaque in a slim bronze frame. Inside, warm white limewash walls with pilasters and
 brass linear sconces, a polished white terrazzo floor with brass inlays at each threshold, black
 lacquered vitrines with glass tops and champagne suede decks, linear light slots along the aisle
 ceiling, and gold-leaf art. The far end's feature wall is black lacquer with thin warm light slits
-and the wordmark in white, under a lowered white tray, with a statement chandelier over the combos
+and the official plaque in a brass frame, under a lowered white tray, with a statement chandelier over the combos
 table. A small lounge (two armchairs, side table with a tea tray, rug) sits at the back of the left
-gallery; there are four staff. The showroom opens at dusk, lit from within; the sun icon switches
+gallery. No people figures are shown (see People below). The showroom opens at dusk, lit from within; the sun icon switches
 to daylight.
 
 ## Run it
@@ -54,7 +54,7 @@ URL options: `?mode=3d` forces the 3D showroom, `?mode=lite` forces the lite sho
 | `src/scene/*.tsx` | Three.js / React Three Fiber scene: architecture, vitrines, jewellery, camera rig |
 | `src/components/*` | Interface: wayfinding, product panel, Jewel Box, finder, cashier, lite showroom |
 | `src/scene/features.ts` | Decor, furniture, staff spots, salon tray, thresholds (pure data, shared with the bake) |
-| `src/scene/Staff.tsx` | The four staff: rigged GLBs, idle loop, head turn, click to talk |
+| `src/scene/Staff.tsx` | Staff figures (switched off; kept for licensed figures later) |
 | `src/scene/Evening.tsx` | Day / evening lighting balance |
 | `src/components/StaffPanel.tsx`, `TourBar.tsx` | Staff greeting and guided tours |
 | `src/components/AppointmentDrawer.tsx`, `src/app/api/appointment/route.ts` | Private appointment requests |
@@ -69,8 +69,8 @@ URL options: `?mode=3d` forces the 3D showroom, `?mode=lite` forces the lite sho
 `brand-source/ishe-brand-board.webp` is the supplied ISHÉ board. `scripts/build-logo.mjs` crops the
 main wordmark from it without redrawing any letters and writes:
 
-- `public/brand/ishe-logo-plaque.png`: black wordmark on a white rectangular plaque (storefront sign, header)
-- `public/brand/ishe-wordmark-black.png`: black wordmark on transparent (wall behind the cashier)
+- `public/brand/ishe-logo-plaque.png`: black wordmark on a white rectangular plaque (storefront sign, feature wall, header, loading screen), never recoloured
+- `public/brand/ishe-wordmark-black.png`: black wordmark on transparent (printed receipt)
 
 UI type is Bodoni Moda, Cormorant Garamond and Jost, self-hosted through `@fontsource`.
 
@@ -175,6 +175,16 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 - **Entrance first.** Every visit starts outside. Scrolling (GSAP ScrollTrigger + Lenis) approaches
   the store, swings the doors open and carries the camera through them. "Walk me in" plays the same
   walk automatically.
+- **Welcome.** On the street, a short welcome with one "Enter the showroom" action; on a first visit
+  it adds three lines on how to move. Help → "Replay the welcome" returns to the street to see it
+  again (the Jewel Box is kept). No store location is shown anywhere.
+- **Back where you were.** "Back to room" (and Esc) closes a piece, the combos table, the counter or
+  the concierge and restores the exact camera position. The browser's Back button does the same:
+  each detail adds one history entry; walking between rooms does not.
+- **Jewel Box** is a light side panel (a short bottom sheet on phones): the showroom stays visible,
+  and on desktop the visitor can keep walking while it is open.
+- **Resilience.** If the 3D view fails for any reason, an error boundary switches to the lite
+  showroom with an explanation instead of leaving a blank page.
 - **Wayfinding.** At the junction the visitor chooses Left / Straight / Right. After that a room bar,
   a small plan and a "Displays here" list reach any room or vitrine. Routes follow a navigation graph
   so the camera never passes through walls or cases.
@@ -196,15 +206,11 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 - **Loading.** A branded screen (the ISHÉ plaque and a thin line driven by real texture and model
   loading) fades into the street once the first frame is drawn. Staff stream in afterwards so they
   never hold the entrance back.
-- **Staff.** A cashier and a consultant behind the counter, an attendant by the lounge at the back
-  of the left gallery, and one greeting visitors at the front of the right gallery. Each
-  holds a calm standing pose with a slowed, low-weight idle layered on top (breathing, a little
-  weight shift); the clip's root turn and drift are cancelled so they stay on their spot. They glance
-  at a nearby visitor now and then rather than staring, and keep polite eye contact only while the
-  visitor is talking to them (or is at the counter, for the cashier and consultant). Selecting one, or "Ask the attendant" in the room bar, walks the camera
-  to a polite distance and opens a greeting with guided tours. The cashier greets the visitor in
-  the order summary. Staff are not shown in the lite showroom; there the same tours sit behind
-  "Guided tour".
+- **People.** No staff figures are shown. The AI-generated figures made for this demo did not look
+  convincing at close range, so they are switched off (`STAFF_ENABLED` in `src/scene/features.ts`)
+  rather than faking realism. The concierge remains: "Concierge" in the room bar opens the greeting,
+  guided tours and appointment booking where the visitor stands, with recorded greetings if sound
+  is on. Licensed scanned figures could be switched back on later.
 - **Guided tours.** Bridal, Everyday, Gifting and Festive visit every piece tagged with that
   (sample) occasion in walking order; "Show me around" walks every room. Previous / Next / Stop;
   Stop returns the visitor to where the tour began. Fully keyboard operable; instant under reduced
@@ -224,7 +230,7 @@ and `/api/appointment`, which run as serverless functions because their tokens m
   warm glow in the shop windows and neighbouring flats, slightly lower light inside. Instant under reduced motion. The
   lite showroom uses a dusk tint over its daylight stills.
 - **Sound.** Off by default. A synthesised ambience (Web Audio, no files) plays only after the
-  visitor turns it on. With sound on, staff also speak: a greeting from each attendant, the
+  visitor turns it on. With sound on, the concierge also speaks: a greeting in the attendant's, the
   consultant and the cashier, a line introducing each tour, and a line at each step of the counter
   ceremony (17 short clips in `public/voice/`, about 190 KB each, fetched only when played). Nothing
   is spoken while sound is off.
@@ -270,7 +276,7 @@ and `/api/appointment`, which run as serverless functions because their tokens m
 
 - **Staff voices** (`public/voice/*.wav`): generated for this project with Higgsfield text-to-speech
   (Seed Audio; stock voices Maya, Julian and Gia), down-mixed to mono. Not recordings of ISHÉ staff.
-- **Staff figures** (`public/staff/*.glb`): generated for this project with Higgsfield. A
+- **Staff figures** (`public/staff/*.glb`, currently not shown): generated for this project with Higgsfield. A
   photoreal full-body reference image of each person (GPT Image 2.5) was converted with Meshy 7
   image-to-3D (ultra detail), auto-rigged with the Idle_02 clip. Re-packed for the web with
   `scripts/repack-staff.cjs` (textures to 1024 px WebP via `EXT_texture_webp`, duplicated emissive

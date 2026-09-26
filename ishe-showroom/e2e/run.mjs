@@ -164,54 +164,25 @@ console.log('Desktop 3D (1440x900)');
     metrics.drawCallsLeftRoom = await page.evaluate(() => window.__isheRenderInfo());
   });
 
-  await check('staff: all four load at human scale with feet on the floor, idle animation playing', async () => {
-    await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 });
-    const a = await page.evaluate(() => window.__isheStaff());
-    // Software GL can stall for seconds while the skinned shaders compile: wait for the clock to
-    // move (i.e. frames to render), then give the idle a moment before comparing poses.
-    await page.waitForFunction((t) => window.__isheStaff().every((p) => p.animTime > t + 0.5), a[0].animTime, { timeout: 120000 });
-    const b = await page.evaluate(() => window.__isheStaff());
-    metrics.staff = b;
-    // Within 40° of the spot's direction: the idle keeps some natural sway (it was ~90° before stabilising).
-    for (const p of b) assert(Math.abs(p.facingErrDeg) < 40, `${p.id} faces ${p.facingErrDeg}° off its spot`);
-    for (const p of b) assert(p.hips[2] < -0.5 && Math.abs(p.hips[0]) < 7.3, `${p.id} hips outside the shop ${p.hips}`);
-    for (const p of a) {
-      assert(p.head[1] > 1.35 && p.head[1] < 1.8, `${p.id} head at ${p.head[1]}`);
-      assert(p.toe[1] > -0.05 && p.toe[1] < 0.2, `${p.id} toe at ${p.toe[1]}`);
-    }
-    // The idle clip is advancing and actually moves the skeleton.
-    const still = a.filter((p, i) => !(b[i].animTime !== p.animTime && [...p.spine, ...p.hips, ...p.headQuat].some((v, k) => Math.abs(v - [...b[i].spine, ...b[i].hips, ...b[i].headQuat][k]) > 1e-5)));
-    assert(still.length === 0, `idle not playing for ${still.map((p) => p.id)} ${JSON.stringify(still)}`);
-  });
-
-  await check('the store reacts: case lights rise on approach, and the attendant greets you entering her gallery', async () => {
-    // "LEFT" just took the visitor into the left gallery.
-    const left = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'left');
-    assert(left.greetings >= 1, `left attendant greetings ${left.greetings}`);
-    const right = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'right');
-    assert(right.greetings === 0, `right attendant greeted without the visitor in her gallery (${right.greetings})`);
-    // The necklace case beside the visitor is lit up; a case across the shop is not.
-    await page.waitForFunction(() => (window.__isheCaseGlow()['ISH-N02'] ?? 0) > 0.2, null, { timeout: 20000 });
-    const glow = await page.evaluate(() => window.__isheCaseGlow());
-    assert((glow['ISH-E04'] ?? 0) < 0.05, `far case lit ${glow['ISH-E04']}`);
-    metrics.caseGlowNearFar = { n02: glow['ISH-N02'], e04: glow['ISH-E04'] };
-  });
-
-  await check('staff: clicking the attendant opens her greeting, and she looks at the visitor while talking', async () => {
-    const pt = await page.evaluate(() => window.__isheProject(-4.2, 1.1, -12.0));
-    assert(pt.visible, 'attendant not in view');
-    await page.mouse.click(pt.x, pt.y);
-    // She stands at the back of the left gallery: a 10 m walk, slow under software WebGL.
-    await page.getByTestId('staff-panel').waitFor({ timeout: 45000 });
-    await waitIdle(page);
+  await check('no people figures (none pass the realism bar); the concierge opens where the visitor stands', async () => {
+    assert(await page.evaluate(() => typeof window.__isheStaff === 'undefined'), 'staff figures present');
+    const at = await page.evaluate(() => window.__isheCamera());
+    await page.getByTestId('talk-staff').click();
+    await page.getByTestId('staff-panel').waitFor({ timeout: 20000 });
     assert((await page.getByTestId('staff-greeting').textContent()).includes('Welcome'), 'greeting');
-    // Engaged: she turns toward the visitor (the camera stands slightly off her resting direction).
-    await page.waitForTimeout(3000);
-    const left = (await page.evaluate(() => window.__isheStaff())).find((p) => p.id === 'left');
-    metrics.leftAttendantTurn = { headYaw: left.headYaw, bodyYaw: left.bodyYaw };
-    await canvasNotBlank(page, '04b-attendant-left.png');
+    assert(await page.getByRole('button', { name: 'Back to room' }).isVisible(), 'Back to room');
+    const cam = await page.evaluate(() => window.__isheCamera());
+    assert(Math.hypot(cam.x - at.x, cam.z - at.z) < 0.05, 'camera moved for the concierge');
+    await canvasNotBlank(page, '04b-concierge.png');
     await page.keyboard.press('Escape');
     await waitIdle(page);
+  });
+
+  await check('the store reacts: the case beside the visitor lights up, a case across the shop does not', async () => {
+    await page.waitForFunction(() => (window.__isheCaseGlow()['ISH-B03'] ?? 0) > 0.2, null, { timeout: 20000 });
+    const glow = await page.evaluate(() => window.__isheCaseGlow());
+    assert((glow['ISH-E04'] ?? 0) < 0.05, `far case lit ${glow['ISH-E04']}`);
+    metrics.caseGlowNearFar = { b03: glow['ISH-B03'], e04: glow['ISH-E04'] };
   });
 
   let before;
@@ -306,7 +277,7 @@ console.log('Desktop 3D (1440x900)');
     await waitIdle(page);
     const second = await page.evaluate(() => window.__ishe.getState().view);
     assert(second.kind === 'product' && second.sku !== 'ISH-B04', JSON.stringify(second));
-    await page.getByTestId('product-panel').waitFor();
+    await page.getByTestId('product-sku').filter({ hasText: second.sku }).waitFor({ timeout: 10000 });
     await canvasNotBlank(page, '06b-tour-bridal.png');
     await page.getByTestId('tour-stop').click();
     await waitIdle(page);
@@ -706,14 +677,13 @@ console.log('Mobile 3D (390x844, touch)');
   await ctx.close();
 }
 
-console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
+console.log('Room screenshots, day and evening (3D, 1440x900)');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = track(await ctx.newPage());
   await page.goto(`${BASE}/?mode=3d`);
   await check('section loads', () => waitReady(page));
   await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEntrance(1); s.enter(); });
-  await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 90000 }).catch(() => undefined);
   await check('every room renders, day and evening, with draw calls recorded', async () => {
     metrics.rooms = {};
     for (const evening of [false, true]) {
@@ -721,7 +691,6 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
       const views = [
         ...['junction', 'left', 'leftBack', 'centre', 'right', 'rightBack'].map((n) => ({ kind: 'node', node: n })),
         { kind: 'combos' }, { kind: 'cashier' },
-        { kind: 'staff', id: 'left' }, { kind: 'staff', id: 'right' },
       ];
       for (const v of views) {
         await page.evaluate((vv) => window.__ishe.getState().goTo(vv), v);
@@ -733,24 +702,6 @@ console.log('Room and staff screenshots, day and evening (3D, 1440x900)');
       }
     }
   }, 900000);
-  await check('staff close-ups (cashier and consultant behind the counter)', async () => {
-    await page.evaluate(() => window.__ishe.getState().setEvening(false));
-    for (const [id, x] of [['cashier', 4.6], ['consultant', 5.9]]) {
-      await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'cashier' }));
-      await page.waitForTimeout(800);
-      const pt = await page.evaluate((xx) => window.__isheProject(xx, 1.3, -13.38), x);
-      assert(pt.visible, `${id} not visible from the cashier`);
-      await page.screenshot({ path: `${OUT}/staff-${id}.png`, clip: { x: Math.max(0, pt.x - 260), y: Math.max(0, pt.y - 300), width: 520, height: 600 } });
-    }
-    for (const id of ['left', 'right']) {
-      await page.evaluate((i) => window.__ishe.getState().goTo({ kind: 'staff', id: i }), id);
-      await page.waitForTimeout(1500);
-      const [x, z] = id === 'left' ? [-4.2, -12.0] : [4.1, -2.4];
-      const pt = await page.evaluate(([xx, zz]) => window.__isheProject(xx, 1.1, zz), [x, z]);
-      await page.screenshot({ path: `${OUT}/staff-attendant-${id}.png`, clip: { x: Math.max(0, pt.x - 300), y: 0, width: 600, height: 900 } });
-      await page.keyboard.press('Escape');
-    }
-  });
   await ctx.close();
 }
 

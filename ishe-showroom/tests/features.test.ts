@@ -13,10 +13,10 @@ import { createCheckout, extrasToCart, validateExtras } from '@/lib/shopify';
 const overlap = (a: { x0: number; z0: number; x1: number; z1: number }, b: typeof a) => a.x0 < b.x1 && b.x0 < a.x1 && a.z0 < b.z1 && b.z0 < a.z1;
 
 describe('staff and new furniture on the floor plan', () => {
-  it('turns staff on and gives the side-room attendants colliders', () => {
-    expect(STAFF_ENABLED).toBe(true);
+  it('shows no people figures (none pass the realism bar) and leaves their spots walkable', () => {
+    expect(STAFF_ENABLED).toBe(false);
     expect(STAFF.map((s) => s.id).sort()).toEqual(['cashier', 'consultant', 'left', 'right']);
-    for (const s of STAFF.filter((p) => p.half > 0)) expect(collides(s.x, s.z, 0.05)).toBe(true);
+    for (const s of STAFF.filter((p) => p.half > 0)) expect(collides(s.x, s.z, 0.05)).toBe(false);
   });
   it('keeps furniture colliders in the collision map, clear of displays and nav nodes', () => {
     for (const f of FURNITURE_COLLIDERS) {

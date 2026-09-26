@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PRODUCTS, ROOMS, type RoomId } from '@/data/catalogue';
 import { ROOM_ENTRY, ROOM_STOPS } from '@/scene/layout';
+import { STAFF_ENABLED } from '@/scene/features';
 import { useShowroom } from '@/store/showroom';
 import { held, type HeldKey } from '@/scene/input';
 import { Icon } from './ui/primitives';
@@ -103,7 +104,7 @@ export function RoomNav() {
                 ))}
                 <button type="button" onClick={() => goTo({ kind: 'staff', id: room === 'centre' ? 'consultant' : room })} data-testid="talk-staff"
                   className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 px-2.5 font-ui text-[11px] uppercase tracking-[0.18em] text-ink/80 underline-offset-4 hover:underline">
-                  <Icon name="chat" className="h-3.5 w-3.5" /> {mode === 'lite' ? 'Guided tour' : room === 'centre' ? 'Ask the consultant' : 'Ask the attendant'}
+                  <Icon name="chat" className="h-3.5 w-3.5" /> {mode === 'lite' ? 'Guided tour' : !STAFF_ENABLED ? 'Concierge' : room === 'centre' ? 'Ask the consultant' : 'Ask the attendant'}
                 </button>
                 <button type="button" aria-expanded={open} aria-controls="displays-here" onClick={() => setOpen((o) => !o)}
                   className="ml-auto min-h-[40px] shrink-0 border border-ink/25 px-3 font-ui text-[11px] uppercase tracking-[0.18em] hover:border-ink" data-testid="displays-toggle">

@@ -79,8 +79,12 @@ export interface StaffSpot {
   half: number;
 }
 
-/** The Staff component and colliders follow this flag. */
-export const STAFF_ENABLED = true;
+/**
+ * The Staff component and colliders follow this flag. Off: the available figures (AI-generated)
+ * do not look convincing at close range, so no people are shown; the attendant / concierge panel,
+ * guided tours and recorded greetings stay, opened from "Concierge" in the room bar.
+ */
+export const STAFF_ENABLED = false;
 
 /**
  * Showroom staff: two behind the cashier counter (back-right corner), an attendant by the lounge at

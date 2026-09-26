@@ -13,8 +13,6 @@ const browser = await chromium.launch({ executablePath: EXEC, args: ['--use-gl=a
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await page.goto(`${BASE}/?mode=3d&capture=1`);
 await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: 240000 });
-// Staff stream in after the room; wait so every still (street views included) shows them settled.
-await page.waitForFunction(() => window.__isheStaff?.().every((p) => p.loaded), null, { timeout: 120000 }).catch(() => console.warn('staff not loaded'));
 await page.waitForTimeout(3000);
 // Stills are daylight; the lite showroom adds its own dusk tint for evening (the default).
 await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEvening(false); });

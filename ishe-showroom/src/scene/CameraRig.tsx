@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import gsap from 'gsap';
+import { STAFF_ENABLED } from './features';
 import { useShowroom, type View } from '@/store/showroom';
 import {
   EYE, cashierPose, comboPose, focusPose, nodePose, roomAt, routeTo, slideMove, staffPose, type Pose,
@@ -143,7 +144,8 @@ export default function CameraRig() {
     tween.current?.kill();
     clearHeld();
 
-    let dest = destination(s.view);
+    // Without staff figures, the concierge panel opens where the visitor stands.
+    let dest = s.view.kind === 'staff' && !STAFF_ENABLED ? { ...pose.current } : destination(s.view);
     if (s.view.kind === 'node') {
       if (s.returning && saved.current) dest = saved.current;
       saved.current = null;

@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { speak, stopVoice } from '@/lib/voice';
 import { track } from '@/lib/analytics';
-import { STAFF_BY_ID, type StaffId } from '@/scene/features';
+import { STAFF_BY_ID, STAFF_ENABLED, type StaffId } from '@/scene/features';
 import { TOURS, type TourId } from '@/scene/layout';
 import { cartCount, useShowroom } from '@/store/showroom';
 import { Button, Icon, Sheet, SheetHeader } from './ui/primitives';
@@ -20,6 +20,7 @@ export default function StaffPanel({ id }: { id: StaffId }) {
   const mode = useShowroom((s) => s.renderMode);
   const moving = useShowroom((s) => s.moving);
   const lite = mode === 'lite';
+  const concierge = lite || !STAFF_ENABLED;
   const voice = id === 'consultant' ? 'consultant' : 'attendant';
   useEffect(() => {
     const line = speak(id === 'cashier' ? 'greet-cashier' : id === 'consultant' ? 'greet-consultant' : 'greet-attendant');
@@ -27,8 +28,8 @@ export default function StaffPanel({ id }: { id: StaffId }) {
     return () => stopVoice(line);
   }, [id]);
   return (
-    <Sheet label={`${lite ? 'Concierge' : spot.role}: greeting`} onClose={back} testId="staff-panel">
-      <SheetHeader eyebrow={lite ? 'Concierge' : spot.role} title="Welcome to ISHÉ" onClose={back} closeLabel="Back" />
+    <Sheet label={`${concierge ? 'Concierge' : spot.role}: greeting`} onClose={back} testId="staff-panel">
+      <SheetHeader eyebrow={concierge ? 'Concierge' : spot.role} title="Welcome to ISHÉ" onClose={back} closeLabel="Back to room" />
       <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         <p className="editorial mt-4 text-[20px] italic leading-snug text-ink/85" data-testid="staff-greeting">“{spot.greeting}”</p>
         {id === 'cashier' ? (
@@ -63,7 +64,7 @@ export default function StaffPanel({ id }: { id: StaffId }) {
           </Button>
         </div>
         <p className="mt-4 font-ui text-[11px] leading-snug text-ink/50">
-          {lite ? 'Tours move through the showroom stills.' : 'Staff are illustrative 3D figures.'} Recommendations use sample demo data.
+          {lite ? 'Tours move through the showroom stills.' : concierge ? 'Tours walk you through the showroom.' : 'Staff are illustrative 3D figures.'} Recommendations use sample demo data.
         </p>
       </div>
     </Sheet>

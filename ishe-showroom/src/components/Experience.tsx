@@ -1,6 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState, type ReactNode } from 'react';
 import { useShowroom } from '@/store/showroom';
 import { detectRenderMode } from '@/lib/capabilities';
 import Entrance from './Entrance';
@@ -12,6 +12,17 @@ import { startHistorySync } from '@/lib/history';
 
 const Showroom3D = dynamic(() => import('@/scene/Showroom3D'), { ssr: false });
 const LiteShowroom = dynamic(() => import('./LiteShowroom'), { ssr: false });
+
+/** If the 3D view fails for any reason (driver, shader, asset), fall back to the lite showroom instead of a blank page. */
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(e: unknown) {
+    console.warn('3D showroom unavailable, switching to lite', e);
+    useShowroom.getState().setRenderMode('lite', 'The 3D view could not start on this device, so we switched to the lite showroom.');
+  }
+  render() { return this.state.failed ? null : this.props.children; }
+}
 
 export default function Experience() {
   const mode = useShowroom((s) => s.renderMode);
@@ -47,7 +58,9 @@ export default function Experience() {
       {!capture && <LoadingScreen />}
       {mode === '3d' && (
         <>
-          <Showroom3D onSlow={() => setSlow(true)} />
+          <SceneBoundary>
+            <Showroom3D onSlow={() => setSlow(true)} />
+          </SceneBoundary>
           <Entrance />
         </>
       )}
