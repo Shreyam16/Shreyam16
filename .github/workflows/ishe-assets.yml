@@ -3,6 +3,7 @@
 #   [ishe-assets]        checks + bake + lite stills + e2e (commits bake and stills back)
 #   [ishe-assets:qa]     checks + e2e only
 #   [ishe-assets:stills] checks + lite stills + e2e
+#   [ishe-assets:art]    checks + art-direction frames only (fast visual iteration, no e2e)
 #   [ishe-assets:stops]  photoreal stills of every room stop (export, Cycles render in 6 shards,
 #                        WebP into public/stops); add samples=N to change Cycles samples (default 64)
 # e2e screenshots (JPEG) and results are force-pushed to the `qa-screenshots` branch for review.
@@ -16,7 +17,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: ishe-assets-${{ github.ref }}
+  # Photo-stop renders take long: they queue among themselves, not in front of QA runs.
+  group: ishe-assets-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[ishe-assets:stops]') && 'stops' || 'qa' }}
   cancel-in-progress: false
 
 jobs:
@@ -35,11 +37,12 @@ jobs:
         env:
           MSG: ${{ github.event.head_commit.message }}
         run: |
-          bake=false; lite=false
+          bake=false; lite=false; e2e=true
+          if [[ "$MSG" == *"[ishe-assets:art]"* ]]; then e2e=false; fi
           if [[ "$MSG" == *"[ishe-assets]"* ]]; then bake=true; lite=true; fi
           if [[ "$MSG" == *"[ishe-assets:stills]"* ]]; then lite=true; fi
           samples=$(echo "$MSG" | grep -oP 'samples=\K[0-9]+' || echo 128)
-          echo "bake=$bake" >> "$GITHUB_OUTPUT"; echo "lite=$lite" >> "$GITHUB_OUTPUT"; echo "samples=$samples" >> "$GITHUB_OUTPUT"
+          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"; echo "bake=$bake" >> "$GITHUB_OUTPUT"; echo "lite=$lite" >> "$GITHUB_OUTPUT"; echo "samples=$samples" >> "$GITHUB_OUTPUT"
           echo "bake=$bake lite=$lite samples=$samples"
 
       - uses: actions/setup-node@v4
@@ -105,8 +108,14 @@ jobs:
           git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
+      - name: Art-direction frames (film moments, desktop and phone)
+        continue-on-error: true
+        timeout-minutes: 20
+        run: node scripts/art-capture.mjs
+
       - name: End-to-end checks
         id: e2e
+        if: steps.plan.outputs.e2e == 'true'
         continue-on-error: true
         timeout-minutes: 75
         run: mkdir -p e2e/output && node e2e/run.mjs 2>&1 | tee e2e/output/log.txt; exit ${PIPESTATUS[0]}

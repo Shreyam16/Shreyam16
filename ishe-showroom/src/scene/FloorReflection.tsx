@@ -6,10 +6,9 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { DEPTH, HALF_W } from './layout';
 
 /**
- * Soft, faint mirror of the room in the polished terrazzo ("high" tier only): the lit cases,
- * columns and light slots show in the floor the way they do in a real boutique. It is a
- * low-resolution planar reflection, blurred and added on top of the baked floor, strongest
- * straight below the camera's line of sight and fading with distance.
+ * Polished terrazzo ("high" tier only): a blurred planar reflection blended over the baked floor,
+ * so the dark cabinets read as soft dark reflections and the lights as warm streaks, as in the
+ * film. Fresnel: faint looking down at your feet, stronger toward the far end; never a mirror.
  */
 const shader = {
   name: 'TerrazzoReflection',
@@ -17,7 +16,7 @@ const shader = {
     color: { value: null },
     tDiffuse: { value: null },
     textureMatrix: { value: null },
-    strength: { value: 0.3 },
+    strength: { value: 0.34 },
     texel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
   },
   vertexShader: /* glsl */ `
@@ -51,9 +50,12 @@ const shader = {
         w += k;
       }
       c /= w;
-      // Only bright things (lights, lit cases, white columns) read in the reflection.
-      c = max(c - 0.08, 0.0) * 1.1;
-      gl_FragColor = vec4(c * strength, 1.0);
+      // Schlick-style falloff on the view angle (honed stone, not glass).
+      vec3 v = normalize(cameraPosition - vWorld);
+      float f = 0.28 + 0.72 * pow(1.0 - clamp(v.y, 0.0, 1.0), 4.0);
+      gl_FragColor = vec4(c, strength * f);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
     }`,
 };
 
@@ -69,7 +71,7 @@ export default function FloorReflection() {
     r.position.set(0, 0.0015, (front - DEPTH) / 2);
     const m = r.material as THREE.ShaderMaterial;
     m.transparent = true;
-    m.blending = THREE.AdditiveBlending;
+    m.blending = THREE.NormalBlending;
     m.depthWrite = false;
     r.renderOrder = 2;
     r.name = 'floor-reflection';

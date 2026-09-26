@@ -118,7 +118,7 @@ function Downlights() {
           </group>
           {/* The soft pool each open-floor downlight throws on the terrazzo. */}
           {d.kind === 'general' && (
-            <mesh position={[d.x, 0.005, d.z]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}>
+            <mesh position={[d.x, 0.005, d.z]} rotation={[-Math.PI / 2, 0, 0]} material={M.floorPool}>
               <planeGeometry args={[1.7, 1.7]} />
             </mesh>
           )}

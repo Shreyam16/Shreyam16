@@ -11,12 +11,15 @@ const baked: THREE.MeshBasicMaterial[] = [];
 let gainK = 1;
 let warmK = 0;
 const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
-/** Warm 2700 K cast at dusk (multiplies each surface's own colour). */
-const WARM = new THREE.Color('#ffe9d3');
+/** Warm cast at dusk (multiplies each surface's own colour): creamy on floor and walls, and only a
+ *  touch on the ceiling, which reads warm white in the reference, not peach. */
+const WARM = new THREE.Color('#ffeedd');
+const CEILING_WARM = new THREE.Color('#fff7ee');
+const warmOf = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
 const tmp = new THREE.Color();
 function applyWarmth(m: THREE.MeshBasicMaterial) {
   const b = base.get(m);
-  if (b) m.color.copy(b).multiply(tmp.setRGB(1, 1, 1).lerp(WARM, warmK));
+  if (b) m.color.copy(b).multiply(tmp.setRGB(1, 1, 1).lerp(warmOf.get(m) ?? WARM, warmK));
 }
 /** Scales every baked surface (evening mode dims the room slightly); also applies to surfaces loaded later. */
 export function bakedGain(k: number) {
@@ -87,6 +90,7 @@ export default function BakedSurfaces() {
       } else if (s.name === 'ceiling') {
         // Brighter base so the ceiling stays ivory, not tan, under the dusk cast.
         material = new THREE.MeshBasicMaterial({ color: '#ffffff', lightMap: tex, lightMapIntensity: GAIN * gainK });
+        warmOf.set(material as THREE.MeshBasicMaterial, CEILING_WARM);
       } else if (s.name !== 'wall-front') {
         // Outer walls: dark espresso wood panelling, so the gaps between the white pillars read as
         // dark recesses and the lit cases glow against them.

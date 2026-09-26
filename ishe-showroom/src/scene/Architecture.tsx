@@ -111,8 +111,8 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
           {/* Tall linear sconce on each pier beside the door, with its warm wash on the stone. */}
           <Box size={[0.1, 0.62, 0.1]} pos={[s * 1.65, 2.35, 0.16]} mat="blackMetal" />
           <Box size={[0.05, 0.52, 0.02]} pos={[s * 1.65, 2.35, 0.215]} mat="sconce" />
-          <mesh position={[s * 1.65, 2.35, 0.104]} material={mats().facadeWash}>
-            <planeGeometry args={[1.0, 2.0]} />
+          <mesh position={[s * 1.65, 2.3, 0.104]} material={mats().facadeWash}>
+            <planeGeometry args={[1.3, 2.8]} />
           </mesh>
           {/* Tall square black planter with a clipped boxwood ball. */}
           <mesh position={[s * 1.75, 0.45, 0.55]} rotation={[0, Math.PI / 4, 0]} material={mats().planter}>
@@ -325,17 +325,23 @@ function Atmosphere() {
 }
 
 /**
- * Rings & Combos salon: a black lacquered feature wall with thin warm light slits and a slim brass
- * frame round the wordmark, under a lowered white tray edged with a warm cove.
+ * Far end, as in the film: a black lacquered wall in tall panels (fine dark-bronze reveals), a short
+ * warm wall light on each outer panel and a slim brass frame round the wordmark, under a lowered
+ * white tray edged with a warm cove.
  */
 function SalonWalls() {
   const z = -DEPTH + 0.1;
   const t = SALON.trayY;
-  const slits = [-1.9, -1.08, 1.08, 1.9];
   return (
     <group>
       <Span a={[-2.6, 0.1, z]} b={[2.6, t, z + 0.03]} mat="ebony" />
-      {slits.map((x) => <Span key={x} a={[x - 0.006, 0.25, z + 0.03]} b={[x + 0.006, t - 0.15, z + 0.034]} mat="lightStrip" />)}
+      {[-1.5, -0.8, 0.8, 1.5].map((x) => <Span key={x} a={[x - 0.004, 0.1, z + 0.03]} b={[x + 0.004, t - 0.03, z + 0.036]} mat="darkBronze" />)}
+      {[-2.05, 2.05].map((x) => (
+        <group key={x}>
+          <Span a={[x - 0.035, 1.45, z + 0.03]} b={[x + 0.035, 2.15, z + 0.06]} mat="darkBronze" />
+          <Span a={[x - 0.012, 1.49, z + 0.06]} b={[x + 0.012, 2.11, z + 0.064]} mat="sconce" />
+        </group>
+      ))}
       {/* Brass frame round the wordmark panel. */}
       {/* Slim brass frame round the plaque. */}
       <Span a={[-0.68, 2.365, z + 0.03]} b={[0.68, 3.135, z + 0.036]} mat="brass" />

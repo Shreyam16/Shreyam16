@@ -37,7 +37,7 @@ function rng(seed: number) {
 function terrazzo() {
   const r = rng(29);
   const t = canvasTexture(1024, 1024, (ctx) => {
-    ctx.fillStyle = '#ece8e1';
+    ctx.fillStyle = '#f0ebe2';
     ctx.fillRect(0, 0, 1024, 1024);
     // Soft cloudiness in the matrix.
     for (let i = 0; i < 60; i++) {
@@ -50,7 +50,7 @@ function terrazzo() {
       for (const [dx, dy] of [[0, 0], [1024, 0], [-1024, 0], [0, 1024], [0, -1024]]) { ctx.save(); ctx.translate(dx, dy); ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); ctx.restore(); }
     }
     const chips: [string, number, number][] = [
-      ['#8d8780', 5200, 2.2], ['#b9b1a5', 5200, 2.4], ['#2e2c2a', 1600, 1.8], ['#cdbb9c', 2600, 2.6], ['#fbfaf7', 2600, 2.4], ['#6f6a64', 900, 3.6], ['#a8927a', 500, 4.2],
+      ['#8d8780', 4200, 1.8], ['#b9b1a5', 4200, 2.0], ['#2e2c2a', 2600, 1.4], ['#cdbb9c', 1600, 2.0], ['#fbfaf7', 2600, 2.2], ['#6f6a64', 700, 2.8], ['#a8927a', 300, 3.2],
     ];
     for (const [c, n, size] of chips) {
       ctx.fillStyle = c;
@@ -343,11 +343,11 @@ function build() {
     // Thin dark-bronze frames on the glass boxes.
     darkBronze: std({ color: '#5b4128', metalness: 0.85, roughness: 0.35, envMapIntensity: 1.1 }),
     // Display cabinets: dark chocolate-brown satin lacquer with a soft, warm sheen (not glossy black).
-    caseWood: phys({ color: '#241a13', roughness: 0.55, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.4, envMapIntensity: 0.45 }),
+    caseWood: phys({ color: '#18120e', roughness: 0.5, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.32, envMapIntensity: 0.5 }),
     blackMetal: std({ color: '#0b0b0b', roughness: 0.32, metalness: 0.8, normalMap: brushed, normalScale: new THREE.Vector2(0.25, 0.25) }),
     velvet: phys({
       // Champagne suede busts, bolsters and cushions, as in the boutique's cases.
-      color: '#b08a55', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#f6dfae'), sheenRoughness: 0.45,
+      color: '#b08a55', roughness: 0.9, sheen: 0.45, sheenColor: new THREE.Color('#e9cf9c'), sheenRoughness: 0.6,
       emissive: '#3a2610', emissiveIntensity: 0.35,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
@@ -368,7 +368,7 @@ function build() {
     goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
     taupeVelvet: phys({
       // Golden-tan suede deck, brightly lit by the case LEDs (the glass boxes glow warm in the video).
-      color: '#c9a877', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#ffe3b0'), sheenRoughness: 0.45,
+      color: '#c9a877', roughness: 0.9, sheen: 0.45, sheenColor: new THREE.Color('#f0d6a4'), sheenRoughness: 0.6,
       emissive: '#6a4a20', emissiveIntensity: 0.5,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
@@ -388,7 +388,7 @@ function build() {
     petal: phys({ color: '#fbf8f2', roughness: 0.55, sheen: 0.6, sheenColor: new THREE.Color('#ffffff'), side: THREE.DoubleSide }),
     petalHeart: std({ color: '#c9a36b', roughness: 0.5 }),
     travertine: std({ color: '#f1ede6', roughness: 0.35 }),
-    downlightTrim: std({ color: '#1a1a1a', roughness: 0.4, metalness: 0.6 }),
+    downlightTrim: std({ color: '#e8e3da', roughness: 0.5, metalness: 0.2 }),
     downlightLens: std({ color: '#fff8ee', emissive: '#ffe6c4', emissiveIntensity: 2.4 }),
     // Low-iron display glass: almost invisible head-on, crisp reflections at an angle.
     glass: phys({
@@ -415,6 +415,8 @@ function build() {
     cove: std({ color: '#fff3e2', emissive: '#ffd9a8', emissiveIntensity: 1.1 }),
     shadow: new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }),
     pool: new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.35 }),
+    // The bake already holds each downlight's pool on the floor: this only lifts its centre a little.
+    floorPool: new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.1 }),
     highlight: new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }),
     sky: new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, depthWrite: false, fog: false }),
     // Jewellery
