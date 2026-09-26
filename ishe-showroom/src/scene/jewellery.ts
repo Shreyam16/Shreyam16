@@ -75,8 +75,8 @@ function flower(p: Parts, center: THREE.Vector3, size: number, petal: MatKey, he
 // Chest cut flat at the base, widest across the shoulders, then a smooth slope into a tall neck:
 // the shape of a boutique display bust (the neck and chain zone keep their former radii).
 const BUST_PROFILE: [number, number][] = [
-  [0.0, 0.0], [0.155, 0.0], [0.165, 0.03], [0.182, 0.1], [0.2, 0.165], [0.197, 0.205], [0.168, 0.245], [0.117, 0.285],
-  [0.077, 0.316], [0.061, 0.345], [0.056, 0.39], [0.055, 0.47], [0.052, 0.5], [0.0, 0.505],
+  [0.0, 0.0], [0.15, 0.0], [0.16, 0.03], [0.18, 0.1], [0.198, 0.16], [0.2, 0.2], [0.186, 0.234], [0.142, 0.26],
+  [0.096, 0.279], [0.068, 0.3], [0.058, 0.33], [0.056, 0.39], [0.055, 0.47], [0.052, 0.5], [0.0, 0.505],
 ];
 const BUST_SX = 1.35, BUST_SZ = 0.5;
 /** Smooth the profile with a spline so the lathe reads as a soft velvet form, not facets. */

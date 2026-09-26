@@ -17,7 +17,7 @@ const shader = {
     color: { value: null },
     tDiffuse: { value: null },
     textureMatrix: { value: null },
-    strength: { value: 0.22 },
+    strength: { value: 0.5 },
     texel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
   },
   vertexShader: /* glsl */ `
@@ -52,7 +52,7 @@ const shader = {
       }
       c /= w;
       // Only bright things (lights, lit cases, white columns) read in the reflection.
-      c = max(c - 0.18, 0.0) * 1.2;
+      c = max(c - 0.08, 0.0) * 1.1;
       gl_FragColor = vec4(c * strength, 1.0);
     }`,
 };
