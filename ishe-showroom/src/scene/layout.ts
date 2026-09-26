@@ -31,7 +31,8 @@ import { CONSOLE, FURNITURE_COLLIDERS, STAFF, STAFF_BY_ID, STAFF_ENABLED, type S
 
 export const DISPLAY_BY_SKU: Record<string, DisplaySpec> = Object.fromEntries(DISPLAYS.map((d) => [d.sku, d]));
 
-export const COMBO_TABLE = { x: 0, z: -10.4, r: 0.42, h: 0.95 };
+/** Combos table in the back-right corner, beside the counter, so the aisle stays clear to the hero pedestal. */
+export const COMBO_TABLE = { x: 4.0, z: -11.3, r: 0.42, h: 0.95 };
 /** Cashier counter in the back-right corner of the far end, facing the street. */
 export const CASHIER = { x: 5.2, z: -12.85, w: 2.8, d: 0.6, h: 1.02, customerZ: -11.0 };
 
@@ -242,7 +243,7 @@ export function routeTo(fromX: number, fromZ: number, dest: Pose): { x: number; 
 export function roomAt(x: number, z: number): RoomId | 'foyer' {
   // The far end (and the cashier corner) is Rings & Combos.
   if (z < FAR_END_Z && Math.abs(x) < COLUMN.x) return 'centre';
-  if (x > COLUMN.x && z < -10.6) return 'centre';
+  if (x > COLUMN.x && z < -10.0) return 'centre';
   // The aisle itself is the gallery; its cases belong to the side they stand on.
   if (Math.abs(x) < 0.8 || z > -1.2) return 'foyer';
   return x < 0 ? 'left' : 'right';

@@ -15,7 +15,7 @@ export const ARTWORK = { x: -4.6, z: -13.84, y: 1.72, w: 1.1, h: 1.45, rotY: 0 }
  * statement chandelier over the combos table.
  */
 export const SALON = { x0: -2.6, x1: 2.6, z0: -13.9, z1: -9.0, trayY: 3.55 };
-export const CHANDELIER = { x: 0, z: -10.4, top: SALON.trayY, bottom: 2.55, r: 0.42 };
+export const CHANDELIER = { x: 0, z: -10.6, top: SALON.trayY, bottom: 2.55, r: 0.42 };
 
 /** Lounge in the back corner of the left gallery: two armchairs and a tea table, on a rug. */
 export const ARMCHAIRS: { x: number; z: number; rotY: number; w: number; d: number }[] = [

@@ -72,9 +72,11 @@ function flower(p: Parts, center: THREE.Vector3, size: number, petal: MatKey, he
 // --- props -----------------------------------------------------------------------------------
 
 /** Velvet necklace bust: lathe profile flattened front-to-back. Returns a surface sampler. */
+// Chest cut flat at the base, widest across the shoulders, then a smooth slope into a tall neck:
+// the shape of a boutique display bust (the neck and chain zone keep their former radii).
 const BUST_PROFILE: [number, number][] = [
-  [0.0, 0.0], [0.19, 0.0], [0.198, 0.02], [0.2, 0.09], [0.192, 0.17], [0.165, 0.235], [0.12, 0.285], [0.08, 0.318],
-  [0.062, 0.345], [0.056, 0.39], [0.055, 0.47], [0.052, 0.5], [0.0, 0.505],
+  [0.0, 0.0], [0.155, 0.0], [0.165, 0.03], [0.182, 0.1], [0.2, 0.165], [0.197, 0.205], [0.168, 0.245], [0.117, 0.285],
+  [0.077, 0.316], [0.061, 0.345], [0.056, 0.39], [0.055, 0.47], [0.052, 0.5], [0.0, 0.505],
 ];
 const BUST_SX = 1.35, BUST_SZ = 0.5;
 /** Smooth the profile with a spline so the lathe reads as a soft velvet form, not facets. */
@@ -95,6 +97,8 @@ function bustRadiusAt(y: number) {
 }
 function addBust(p: Parts, scale = 1) {
   p.add(new THREE.LatheGeometry(smoothProfile(scale), 64), 'velvet', V(), new THREE.Euler(), V(BUST_SX, 1, BUST_SZ));
+  // Lacquered cap on the neck, as on real display busts.
+  p.add(new THREE.CylinderGeometry(0.056 * scale, 0.056 * scale, 0.012 * scale, 32), 'blackSatin', V(0, 0.506 * scale, 0), new THREE.Euler(), V(BUST_SX, 1, BUST_SZ));
 }
 /** Curve lying on the bust surface, from one side of the neck, dropping `drop` at the front. */
 function bustCurve(yTop: number, drop: number, spread = 1.35, lift = 0.006, scale = 1) {
