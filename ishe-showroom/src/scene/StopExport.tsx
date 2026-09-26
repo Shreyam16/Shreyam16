@@ -37,7 +37,7 @@ export default function StopExport() {
             roughness: floor ? 0.22 : mesh.name.startsWith('baked-') ? 0.9 : 0.5, metalness: 0,
             transparent: m.transparent, opacity: m.opacity,
           });
-          std.name = floor ? 'terrazzo' : mesh.name.startsWith('baked-') ? 'plaster' : 'print';
+          std.name = floor ? 'terrazzo' : mesh.name.startsWith('baked-') ? 'plaster' : m.name === 'plaque' ? 'plaque' : 'print';
           swapped.push({ mesh, mat: mesh.material });
           mesh.material = std;
         }

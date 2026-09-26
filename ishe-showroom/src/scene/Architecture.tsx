@@ -138,7 +138,7 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
         <Box size={[2.08, 2.0 * PLAQUE_ASPECT + 0.08, 0.06]} pos={[0, 0, 0]} mat="bronze" />
         <mesh position={[0, 0, 0.032]}>
           <planeGeometry args={[2.0, 2.0 * PLAQUE_ASPECT]} />
-          <meshBasicMaterial map={plaque} color={PLAQUE_LIT} />
+          <meshBasicMaterial map={plaque} color={PLAQUE_LIT} name="plaque" />
         </mesh>
       </group>
     </group>
@@ -292,7 +292,7 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
       {/* The official plaque on the black feature wall, above the hero pedestal. */}
       <mesh position={[0, 2.75, -DEPTH + 0.14]}>
         <planeGeometry args={[1.3, 1.3 * PLAQUE_ASPECT]} />
-        <meshBasicMaterial map={logoWall} color={PLAQUE_LIT} />
+        <meshBasicMaterial map={logoWall} color={PLAQUE_LIT} name="plaque" />
       </mesh>
       <SalonWalls />
     </group>

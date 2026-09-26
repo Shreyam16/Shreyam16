@@ -28,7 +28,7 @@ args = sys.argv[1:]
 def arg(name, default):
     return type(default)(args[args.index(name) + 1]) if name in args else default
 SHARD, OF = arg('--shard', 0), arg('--of', 1)
-SAMPLES, EXPOSURE = arg('--samples', 64), arg('--exposure', 0.0)
+SAMPLES, EXPOSURE = arg('--samples', 64), arg('--exposure', 0.7)
 VARIANTS = {'land': (2304, 960, STOPS['fov']['land']), 'port': (1080, 1350, STOPS['fov']['port'])}
 
 def B(x, y, z):
@@ -59,6 +59,10 @@ scene.render.image_settings.file_format = 'PNG'
 scene.render.image_settings.color_depth = '8'
 scene.view_settings.view_transform = 'AgX'
 scene.view_settings.exposure = EXPOSURE
+try:
+    scene.view_settings.look = 'AgX - Medium High Contrast'
+except TypeError:
+    print('AgX look unavailable; default contrast', flush=True)
 
 world = bpy.data.worlds.new('dusk')
 world.use_nodes = True
@@ -85,11 +89,26 @@ def thin_glass(m):
     nt.links.new(gl.outputs['BSDF'], mix.inputs[2])
     nt.links.new(mix.outputs['Shader'], out.inputs['Surface'])
 
-EMIT = {'sconce': 3.0, 'downlightLens': 3.0, 'lightStrip': 4.0, 'cove': 4.0, 'candle': 3.0, 'warmWindow': 2.0}
+# The scene is exported with daylight emissive levels; these bring the fittings up to dusk.
+EMIT = {'sconce': 9.0, 'downlightLens': 4.0, 'lightStrip': 6.0, 'cove': 5.0, 'candle': 3.0, 'warmWindow': 6.0}
+
+def plaque(m):
+    # The official ISHÉ plaque is shown exactly as supplied (a lit sign), never shaded or tinted.
+    nt = m.node_tree
+    tex = next((n for n in nt.nodes if n.type == 'TEX_IMAGE'), None)
+    out = next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL')
+    em = nt.nodes.new('ShaderNodeEmission')
+    em.inputs['Strength'].default_value = 1.6
+    if tex:
+        nt.links.new(tex.outputs['Color'], em.inputs['Color'])
+    nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
 for m in bpy.data.materials:
     base = m.name.split('.')[0]
     if base in ('glass', 'doorGlass'):
         thin_glass(m)
+        continue
+    if base == 'plaque':
+        plaque(m)
         continue
     p = principled(m)
     if not p:
@@ -98,7 +117,8 @@ for m in bpy.data.materials:
         s = p.inputs['Emission Strength']
         s.default_value = max(1.0, s.default_value) * EMIT[base]
     if base == 'terrazzo':
-        p.inputs['Roughness'].default_value = 0.22
+        # Polished terrazzo: soft, visible reflections of the cases and lights, as in the film.
+        p.inputs['Roughness'].default_value = 0.12
 
 # --- lights (as the bake) -----------------------------------------------------------------------
 F = L['features']

@@ -13,8 +13,9 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 page.on('console', (m) => { if (m.type() === 'error') console.log('page error:', m.text()); });
 await page.goto(`${BASE}/?mode=3d&capture=1&quality=standard`);
 await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: 240000 });
-// Dusk (the default look), inside, every texture and font settled.
-await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEvening(true); s.setEntrance(1); s.enter(); });
+// Neutral (daylight) material colours: the dusk warmth comes from Cycles' own 2700-3000 K lights, not
+// from the real-time tints (which would double it). Inside, every texture and font settled.
+await page.evaluate(() => { const s = window.__ishe.getState(); s.setReducedMotion(true); s.setEvening(false); s.setEntrance(1); s.enter(); });
 await page.waitForTimeout(6000);
 await page.waitForFunction(() => typeof window.__isheExportStops === 'function', null, { timeout: 30000 });
 const out = await page.evaluate(() => window.__isheExportStops());
