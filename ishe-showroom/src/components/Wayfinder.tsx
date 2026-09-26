@@ -41,23 +41,26 @@ function MiniMap({ room, onPick }: { room: RoomId | 'foyer'; onPick: (r: RoomId 
   // 15 x 14 m plan drawn at 8 px/m; front (street) at the bottom.
   return (
     <svg viewBox="0 0 120 112" className="h-[92px] w-[98px]" role="img" aria-label="Showroom plan">
-      <title>Showroom plan: U-shaped, entrance at the bottom</title>
+      <title>Showroom plan: a central aisle between two colonnades, side galleries left and right, the far end at the top; entrance at the bottom</title>
       <g stroke="#0d0d0d" strokeWidth="1" onClick={() => onPick('left')} style={{ cursor: 'pointer' }}>
-        <path d="M0 0H36V64H40V112H0Z" fill={fill('left')} />
+        <rect x="0" y="0" width="36.8" height="112" fill={fill('left')} />
       </g>
       <g stroke="#0d0d0d" strokeWidth="1" onClick={() => onPick('right')} style={{ cursor: 'pointer' }}>
-        <path d="M84 0H120V112H80V64H84Z" fill={fill('right')} />
+        <path d="M83.2 32H120V112H83.2Z" fill={fill('right')} />
       </g>
       <g stroke="#0d0d0d" strokeWidth="1" onClick={() => onPick('centre')} style={{ cursor: 'pointer' }}>
-        <rect x="36" y="0" width="48" height="48" fill={fill('centre')} />
+        <path d="M36.8 0H120V32H83.2V40H36.8Z" fill={fill('centre')} />
       </g>
       <g stroke="#0d0d0d" strokeWidth="1" onClick={() => onPick('foyer')} style={{ cursor: 'pointer' }}>
-        <rect x="40" y="48" width="40" height="64" fill={fill('foyer')} />
+        <rect x="36.8" y="40" width="46.4" height="72" fill={fill('foyer')} />
       </g>
+      {[92.8, 72, 51.2, 30.4].flatMap((y) => [36.8, 83.2].map((x) => (
+        <rect key={`${x}${y}`} x={x - 2} y={y - 2} width="4" height="4" fill="#fbf9f3" stroke="#0d0d0d" strokeWidth="0.8" pointerEvents="none" />
+      )))}
       <text x="18" y="60" fontSize="7" textAnchor="middle" fill={text('left')} fontFamily="Jost">L</text>
-      <text x="60" y="26" fontSize="7" textAnchor="middle" fill={text('centre')} fontFamily="Jost">C</text>
-      <text x="102" y="60" fontSize="7" textAnchor="middle" fill={text('right')} fontFamily="Jost">R</text>
-      <text x="60" y="84" fontSize="6" textAnchor="middle" fill={text('foyer')} fontFamily="Jost">IN</text>
+      <text x="60" y="22" fontSize="7" textAnchor="middle" fill={text('centre')} fontFamily="Jost">C</text>
+      <text x="102" y="74" fontSize="7" textAnchor="middle" fill={text('right')} fontFamily="Jost">R</text>
+      <text x="60" y="80" fontSize="6" textAnchor="middle" fill={text('foyer')} fontFamily="Jost">IN</text>
       <rect x="52" y="108" width="16" height="4" fill="#0d0d0d" />
     </svg>
   );

@@ -46,22 +46,8 @@ function Span({ a, b, mat }: { a: V3; b: V3; mat: MatKey }) {
 const FACADE_H = 4.7;
 const WIN = { x0: 2.2, x1: 6.5, y0: 0.45, y1: 3.1 };
 
-/** The official wordmark recoloured white (same artwork, alpha kept), for dark signs and walls. */
-function whiteWordmark(src: THREE.Texture) {
-  const img = src.image as HTMLImageElement;
-  const c = document.createElement('canvas');
-  c.width = img.width; c.height = img.height;
-  const ctx = c.getContext('2d')!;
-  ctx.drawImage(img, 0, 0);
-  ctx.globalCompositeOperation = 'source-in';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, c.width, c.height);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
-}
-const WORDMARK_ASPECT = 315 / 774;
+/** The official ISHÉ plaque (black lettering on a white rectangle), used exactly as supplied. */
+const PLAQUE_ASPECT = 599 / 1099;
 
 /** Rusticated limestone: shallow horizontal joints every 45 cm across a facade panel. */
 function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: number }) {
@@ -74,7 +60,7 @@ function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: nu
   );
 }
 
-function Facade({ logo }: { logo: THREE.Texture }) {
+function Facade({ plaque }: { plaque: THREE.Texture }) {
   const hw = HALF_W + 0.1;
   const dw = FRONT_DOOR.halfWidth;
   const z0 = -0.1, z1 = 0.1;
@@ -116,13 +102,12 @@ function Facade({ logo }: { logo: THREE.Texture }) {
       <Span a={[dw + 0.09, 0, 0.1]} b={[hw, 0.3, 0.14]} mat="plinth" />
       {/* Cornice. */}
       <Span a={[-hw - 0.05, FACADE_H - 0.1, -0.1]} b={[hw + 0.05, FACADE_H + 0.05, 0.25]} mat="wallExterior" />
-      {/* Sign: the official ISHÉ wordmark in white on a black lacquered fascia with a bronze edge. */}
+      {/* Sign: the official ISHÉ plaque, as supplied, in a slim bronze frame. */}
       <group position={[0, 3.62, 0.13]}>
-        <Box size={[2.5, 1.1, 0.07]} pos={[0, 0, 0]} mat="bronze" />
-        <Box size={[2.42, 1.02, 0.08]} pos={[0, 0, 0.002]} mat="ebony" />
-        <mesh position={[0, 0, 0.043]}>
-          <planeGeometry args={[1.9, 1.9 * WORDMARK_ASPECT]} />
-          <meshBasicMaterial map={logo} transparent toneMapped={false} />
+        <Box size={[2.08, 2.0 * PLAQUE_ASPECT + 0.08, 0.06]} pos={[0, 0, 0]} mat="bronze" />
+        <mesh position={[0, 0, 0.032]}>
+          <planeGeometry args={[2.0, 2.0 * PLAQUE_ASPECT]} />
+          <meshBasicMaterial map={plaque} />
         </mesh>
       </group>
     </group>
@@ -306,10 +291,10 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
         </group>
       ))}
       <Atmosphere />
-      {/* The wordmark in white on the black feature wall, above the hero pedestal. */}
+      {/* The official plaque on the black feature wall, above the hero pedestal. */}
       <mesh position={[0, 2.75, -DEPTH + 0.14]}>
-        <planeGeometry args={[1.5, 1.5 * WORDMARK_ASPECT]} />
-        <meshBasicMaterial map={logoWall} transparent toneMapped={false} />
+        <planeGeometry args={[1.3, 1.3 * PLAQUE_ASPECT]} />
+        <meshBasicMaterial map={logoWall} />
       </mesh>
       <SalonWalls />
     </group>
@@ -355,10 +340,8 @@ function SalonWalls() {
       <Span a={[-2.6, 0.1, z]} b={[2.6, t, z + 0.03]} mat="ebony" />
       {slits.map((x) => <Span key={x} a={[x - 0.006, 0.25, z + 0.03]} b={[x + 0.006, t - 0.15, z + 0.034]} mat="lightStrip" />)}
       {/* Brass frame round the wordmark panel. */}
-      <Span a={[-1.02, 2.3, z + 0.03]} b={[1.02, 2.32, z + 0.036]} mat="brass" />
-      <Span a={[-1.02, 3.18, z + 0.03]} b={[1.02, 3.2, z + 0.036]} mat="brass" />
-      <Span a={[-1.02, 2.3, z + 0.03]} b={[-1.0, 3.2, z + 0.036]} mat="brass" />
-      <Span a={[1.0, 2.3, z + 0.03]} b={[1.02, 3.2, z + 0.036]} mat="brass" />
+      {/* Slim brass frame round the plaque. */}
+      <Span a={[-0.68, 2.365, z + 0.03]} b={[0.68, 3.135, z + 0.036]} mat="brass" />
       <Span a={[-2.6, t - 0.03, z]} b={[2.6, t, z + 0.05]} mat="brass" />
       {/* Lowered tray: white soffit and fascia, warm cove light along its edge. */}
       <mesh position={[0, t, (SALON.z0 + SALON.z1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats().bronzeCeiling}>
@@ -433,15 +416,16 @@ function Curtains() {
 
 export default function Architecture() {
   // Load textures here so nothing below suspends while it is being merged.
-  const wordmark = useLoader(THREE.TextureLoader, '/brand/ishe-wordmark-black.png');
-  const logo = useMemo(() => whiteWordmark(wordmark), [wordmark]);
+  const plaque = useLoader(THREE.TextureLoader, '/brand/ishe-logo-plaque.png');
+  plaque.colorSpace = THREE.SRGBColorSpace;
+  plaque.anisotropy = 8;
   const fontsReady = useFontsReady();
   return (
     <group>
       {fontsReady && <Merged>
         <Street />
-        <Facade logo={logo} />
-        <Interior logoWall={logo} />
+        <Facade plaque={plaque} />
+        <Interior logoWall={plaque} />
         <Wayfinding />
         <Moulding />
         <Thresholds />

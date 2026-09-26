@@ -26,7 +26,7 @@ export default function JewelBoxDrawer({ announce }: { announce: (m: string) => 
   const close = () => s.openDrawer(null);
   const subtotal = s.cart.reduce((n, l) => n + (PRODUCT_BY_SKU[l.sku]?.priceINR ?? 0) * l.qty, 0);
   return (
-    <Sheet label="Jewel Box" onClose={close} testId="jewel-box">
+    <Sheet label="Jewel Box" onClose={close} testId="jewel-box" light>
       <SheetHeader eyebrow="Your selection" title="Jewel Box" onClose={close} />
       <div role="tablist" aria-label="Jewel Box sections" className="flex border-b border-ink/10 px-5">
         {(['box', 'saved'] as const).map((t) => (

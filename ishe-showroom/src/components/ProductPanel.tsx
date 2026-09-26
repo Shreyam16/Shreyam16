@@ -25,7 +25,7 @@ export default function ProductPanel({ sku, announce }: { sku: string; announce:
 
   return (
     <Sheet label={`${product.name} details`} onClose={back} testId="product-panel">
-      <SheetHeader eyebrow={<>{CATEGORY_LABEL[product.category]} · {ROOMS[product.room].direction} room</>} title={<span data-testid="product-name">{product.name}</span>} onClose={back} closeLabel="Back" />
+      <SheetHeader eyebrow={<>{CATEGORY_LABEL[product.category]} · {ROOMS[product.room].direction} room</>} title={<span data-testid="product-name">{product.name}</span>} onClose={back} closeLabel="Back to room" />
       <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         <figure className="mt-4">
           <ProductImage product={product} className="aspect-[4/3] w-full" />

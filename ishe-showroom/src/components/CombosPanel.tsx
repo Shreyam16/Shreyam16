@@ -9,7 +9,7 @@ export default function CombosPanel({ announce }: { announce: (m: string) => voi
   const addToCart = useShowroom((s) => s.addToCart);
   return (
     <Sheet label="Combos" onClose={back} wide testId="combos-panel">
-      <SheetHeader eyebrow="Rings & Combos" title="Curated pairings" onClose={back} closeLabel="Back" />
+      <SheetHeader eyebrow="Rings & Combos" title="Curated pairings" onClose={back} closeLabel="Back to room" />
       <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
         <p className="editorial mt-4 text-[18px] leading-snug text-ink/80">
           Each combo pairs two pieces already on display in the showroom. Visit either piece, or add both to your Jewel Box.

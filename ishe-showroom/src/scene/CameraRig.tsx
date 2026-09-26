@@ -209,7 +209,8 @@ export default function CameraRig() {
         lastNonce.current = -1;
       }
       if (s.viewNonce !== lastNonce.current) startNav();
-      if (!s.moving && s.view.kind === 'node' && !s.drawer) walk(dt);
+      // The Jewel Box is a light side panel: the visitor can keep walking while it is open.
+      if (!s.moving && s.view.kind === 'node' && (!s.drawer || s.drawer === 'jewelBox')) walk(dt);
     }
     const p = pose.current;
     camera.position.set(p.x, p.y, p.z);

@@ -92,7 +92,11 @@ export function SampleTag({ children = 'Sample' }: { children?: ReactNode }) {
 }
 
 /** Side sheet on desktop, bottom sheet on phones. Escape closes; focus moves in and is restored. */
-export function Sheet({ label, onClose, children, side = 'right', wide, testId }: { label: string; onClose: () => void; children: ReactNode; side?: 'right' | 'left'; wide?: boolean; testId?: string }) {
+/**
+ * Side panel (bottom sheet on phones). `light` panels are non-modal and shorter on phones, so the
+ * showroom stays visible and usable behind them (no focus trap; Esc still closes).
+ */
+export function Sheet({ label, onClose, children, side = 'right', wide, testId, light }: { label: string; onClose: () => void; children: ReactNode; side?: 'right' | 'left'; wide?: boolean; testId?: string; light?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useShowroom((s) => s.reducedMotion);
   useEffect(() => {
@@ -101,7 +105,7 @@ export function Sheet({ label, onClose, children, side = 'right', wide, testId }
     first?.focus({ preventScroll: true });
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-      if (e.key === 'Tab' && ref.current) {
+      if (e.key === 'Tab' && ref.current && !light) {
         const f = Array.from(ref.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
         if (!f.length) return;
         if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
@@ -110,12 +114,13 @@ export function Sheet({ label, onClose, children, side = 'right', wide, testId }
     };
     window.addEventListener('keydown', key);
     return () => { window.removeEventListener('keydown', key); prev?.focus?.({ preventScroll: true }); };
-  }, [onClose]);
+  }, [onClose, light]);
   const fromX = side === 'right' ? 40 : -40;
   return (
     <motion.div
       ref={ref}
       role="dialog"
+      aria-modal={light ? false : true}
       aria-label={label}
       data-testid={testId}
       initial={reduced ? { opacity: 0 } : { opacity: 0, x: fromX }}
@@ -123,7 +128,7 @@ export function Sheet({ label, onClose, children, side = 'right', wide, testId }
       exit={reduced ? { opacity: 0 } : { opacity: 0, x: fromX }}
       transition={{ duration: reduced ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
       className={`glass-panel pointer-events-auto fixed z-40 flex flex-col text-ink
-        inset-x-0 bottom-0 max-h-[82dvh] md:inset-x-auto md:bottom-4 md:top-4 md:max-h-none
+        inset-x-0 bottom-0 ${light ? 'max-h-[58dvh]' : 'max-h-[82dvh]'} md:inset-x-auto md:bottom-4 md:top-4 md:max-h-none
         ${side === 'right' ? 'md:right-4' : 'md:left-4'} ${wide ? 'md:w-[460px]' : 'md:w-[400px]'}`}
     >
       {children}

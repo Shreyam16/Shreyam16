@@ -116,6 +116,14 @@ console.log('Desktop 3D (1440x900)');
     await page.evaluate(() => window.__ishe.getState().setEntrance(0));
   });
 
+  await check('first visit: the welcome explains how to move and offers "Enter the showroom"', async () => {
+    await page.getByTestId('welcome-orientation').waitFor({ timeout: 10000 });
+    const t = await page.getByTestId('welcome-orientation').textContent();
+    assert(/left/.test(t) && /W A S D/.test(t) && /Back to room/.test(t), `orientation "${t}"`);
+    assert((await page.getByTestId('enter-button').textContent()).includes('Enter the showroom'), 'enter label');
+    assert(!(await page.content()).match(/Ahmedabad/i), 'store location shown');
+  });
+
   await check('evening toggle: opens at dusk, switches to day and back', async () => {
     const pressed = await page.getByTestId('evening-toggle').getAttribute('aria-pressed');
     assert(pressed === 'true', `evening default ${pressed}`);
@@ -239,6 +247,21 @@ console.log('Desktop 3D (1440x900)');
     const cam = await page.evaluate(() => window.__isheCamera());
     const d = Math.hypot(cam.x - before.x, cam.z - before.z) + Math.abs(cam.tx - before.tx) + Math.abs(cam.tz - before.tz);
     assert(d < 0.02, `camera not restored (${d.toFixed(3)})`);
+  });
+
+  await check('browser Back closes a piece and returns to the same spot; "Back to room" is labelled', async () => {
+    const start = await page.evaluate(() => window.__isheCamera());
+    await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'product', sku: 'ISH-N03' }));
+    await page.getByTestId('product-panel').waitFor({ timeout: 30000 });
+    await waitIdle(page);
+    assert(await page.getByRole('button', { name: 'Back to room' }).isVisible(), 'Back to room button');
+    await page.goBack();
+    await page.waitForFunction(() => window.__ishe.getState().view.kind === 'node', null, { timeout: 10000 });
+    await waitIdle(page);
+    const cam = await page.evaluate(() => window.__isheCamera());
+    const d = Math.hypot(cam.x - start.x, cam.z - start.z);
+    assert(d < 0.05, `not back at the same spot (${d.toFixed(3)})`);
+    assert(page.url().startsWith(BASE), 'left the site');
   });
 
   await check('finder search reaches a product in another room', async () => {

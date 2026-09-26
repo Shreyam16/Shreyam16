@@ -1,6 +1,7 @@
 'use client';
 import { useShowroom } from '@/store/showroom';
 import { Sheet, SheetHeader } from './ui/primitives';
+import { replayWelcome } from './EntranceHUD';
 
 export default function HelpDialog() {
   const openDrawer = useShowroom((s) => s.openDrawer);
@@ -16,7 +17,7 @@ export default function HelpDialog() {
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>Use the room buttons at the bottom, or the plan, to walk to any room. The route avoids walls and cases.</li>
             <li>Select a vitrine (click, tap, or “Displays here”) to step up to it and open its details.</li>
-            <li>“Back” returns you to exactly where you were standing.</li>
+            <li>“Back to room” (or your browser’s Back button) returns you to exactly where you were standing.</li>
             {mode === '3d' && <li>Desktop: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys to walk, <kbd>Q</kbd>/<kbd>E</kbd> to turn, drag to look around.</li>}
             {mode === '3d' && <li>Phones: hold the arrow pad to walk and turn; drag the view to look around.</li>}
             <li><kbd>Esc</kbd> closes any panel.</li>
@@ -49,6 +50,14 @@ export default function HelpDialog() {
             Switch to the {switchTo === '3d' ? '3D' : 'lite'} showroom
           </a>
           <p className="mt-2 text-[12px] text-ink/60">Motion follows your system’s reduced-motion setting.</p>
+        </section>
+        <section>
+          <h3 className="plaque-label text-ink/60">Welcome</h3>
+          <button type="button" onClick={replayWelcome} data-testid="replay-welcome"
+            className="mt-2 inline-flex min-h-[44px] items-center border border-ink px-4 font-ui text-[11px] uppercase tracking-[0.2em] hover:bg-ink hover:text-bone">
+            Replay the welcome
+          </button>
+          <p className="mt-2 text-[12px] text-ink/60">Returns to the street; your Jewel Box and saved pieces stay as they are.</p>
         </section>
       </div>
     </Sheet>
