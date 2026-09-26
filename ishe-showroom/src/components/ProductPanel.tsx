@@ -1,4 +1,5 @@
 'use client';
+import { DISPLAYS } from '@/scene/displays-data';
 import { useMemo } from 'react';
 import { CATEGORY_LABEL, OCCASION_LABEL, PRODUCTS, PRODUCT_BY_SKU, ROOMS, formatINR } from '@/data/catalogue';
 import { useShowroom } from '@/store/showroom';
@@ -9,6 +10,9 @@ import { whatsappLink } from '@/lib/appointment';
 
 export default function ProductPanel({ sku, announce }: { sku: string; announce: (msg: string) => void }) {
   const product = PRODUCT_BY_SKU[sku];
+  // Wide table cases also hold unnamed display pieces (src/scene/Displays.tsx): say so plainly.
+  const dressed = ['bracelet', 'earring', 'pendant'].includes(product.category)
+    && DISPLAYS.some((d) => d.sku === sku && d.style === 'table' && d.w >= 1);
   const back = useShowroom((s) => s.back);
   const goTo = useShowroom((s) => s.goTo);
   const addToCart = useShowroom((s) => s.addToCart);
@@ -43,6 +47,9 @@ export default function ProductPanel({ sku, announce }: { sku: string; announce:
 
         <p className="editorial mt-4 text-[19px] leading-snug text-ink/85">{product.description}</p>
         <p className="mt-2 font-ui text-[11px] text-ink/50">Demo copy. Materials and specifications to be confirmed by ISHÉ.</p>
+        {dressed && (
+          <p className="mt-1 font-ui text-[11px] text-ink/50" data-testid="display-pieces-note">Other pieces in this vitrine are unnamed display pieces, not listed online.</p>
+        )}
 
         <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Occasions">
           {product.occasions.map((o) => (

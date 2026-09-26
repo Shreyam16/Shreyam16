@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { PRODUCT_BY_SKU, COMBOS, formatINR } from '@/data/catalogue';
 import { DISPLAYS, COMBO_TABLE, CASHIER, type DisplaySpec } from './layout';
-import { buildPiece } from './jewellery';
+import { buildDisplayPiece, buildPiece, type DisplayPiece } from './jewellery';
 import { mats, textPlaque } from './materials';
 import { Box } from './Architecture';
 import { useShowroom } from '@/store/showroom';
@@ -105,6 +105,33 @@ function Case({ spec }: { spec: DisplaySpec }) {
   );
 }
 
+/**
+ * How each wide table case is dressed around its featured piece (as in the film, several pieces on
+ * small stands): two beside it, one low at the back. Unnamed display pieces, not catalogue products.
+ */
+const DRESSING: Partial<Record<string, [DisplayPiece, DisplayPiece, DisplayPiece]>> = {
+  bracelet: ['bangles', 'rings', 'studs'],
+  earring: ['studs', 'drops', 'rings'],
+  pendant: ['chain', 'studs', 'drops'],
+};
+const DRESS_AT: [number, number][] = [[-0.4, -0.04], [0.4, -0.04], [0, -0.25]];
+
+function Dressing({ spec, top }: { spec: DisplaySpec; top: number }) {
+  const product = PRODUCT_BY_SKU[spec.sku];
+  const pieces = useMemo(() => {
+    const kinds = DRESSING[product.category];
+    if (!kinds || spec.style !== 'table' || spec.w < 1) return [];
+    const seed = Number(spec.sku.replace(/\D/g, '')) || 0;
+    return kinds.map((k, i) => {
+      const g = buildDisplayPiece(k, product.tone, seed + i);
+      g.position.set(DRESS_AT[i][0], top, DRESS_AT[i][1]);
+      g.rotation.y = (i - 1) * 0.12;
+      return g;
+    });
+  }, [product, spec, top]);
+  return <>{pieces.map((g, i) => <primitive key={i} object={g} />)}</>;
+}
+
 function Display({ spec, fontsReady }: { spec: DisplaySpec; fontsReady: boolean }) {
   const product = PRODUCT_BY_SKU[spec.sku];
   const top = spec.style === 'tall' ? TALL_TOP : TABLE_TOP;
@@ -152,6 +179,7 @@ function Display({ spec, fontsReady }: { spec: DisplaySpec; fontsReady: boolean 
         <boxGeometry args={[spec.w, spec.h, spec.d]} />
       </mesh>
       <primitive object={piece} position={[0, top, 0]} />
+      <Dressing spec={spec} top={top} />
       {/* Brighter light on the deck as the visitor comes close. */}
       <mesh ref={setDeck} visible={false} position={[0, top + 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]} material={deckLight}>
         <planeGeometry args={[spec.w * 0.85, spec.d * 0.85]} />

@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import type { Product } from '@/data/catalogue';
+import type { Product, Tone } from '@/data/catalogue';
 import { mats, toneMat, type MatKey } from './materials';
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -466,4 +466,77 @@ export function buildTryOnPiece(product: Product): { group: THREE.Group; kind: T
   // Pendants are modelled on a smaller bust; bring them back to a wearable size.
   if (product.category === 'pendant') wrap.scale.setScalar(1 / PENDANT_SCALE);
   return { group: wrap, kind: 'necklace' };
+}
+
+// --- display pieces --------------------------------------------------------------------------
+
+/**
+ * Unnamed display pieces that fill out a vitrine the way a real boutique case is dressed (several
+ * pieces on small stands around the featured one). They are not catalogue products: never named,
+ * priced, listed or sold; selecting the case always opens its featured piece.
+ */
+export type DisplayPiece = 'bangles' | 'studs' | 'rings' | 'chain' | 'drops';
+
+export function buildDisplayPiece(kind: DisplayPiece, tone: Tone, seed = 0): THREE.Group {
+  const metal = toneMat(tone);
+  const p = new Parts();
+  const tray = (w: number, d: number) => {
+    p.add(new RoundedBoxGeometry(w, 0.014, d, 2, 0.005), 'blackSatin', V(0, 0.007, 0));
+    p.add(new RoundedBoxGeometry(w - 0.012, 0.006, d - 0.012, 2, 0.002), 'velvet', V(0, 0.016, 0));
+  };
+  switch (kind) {
+    case 'bangles': {
+      // Three bangles leaning on a slim black cone.
+      p.add(new THREE.CylinderGeometry(0.012, 0.03, 0.1, 24), 'blackSatin', V(0, 0.05, 0));
+      [0, 1, 2].forEach((i) => {
+        const g = i === 1 ? hammeredTorus(0.034, 0.0032, seed + i) : torus(0.034, 0.0028 + i * 0.0004, TAU, 10, 64);
+        p.add(g, metal, V(0, 0.04 + i * 0.012, 0), new THREE.Euler(Math.PI / 2 + 0.18 - i * 0.12, 0, 0.08 * (i - 1)));
+      });
+      break;
+    }
+    case 'studs': {
+      tray(0.11, 0.07);
+      [-0.022, 0.022].forEach((x) => flower(p, V(x, 0.024, 0), 0.0045, metal, seed % 2 ? 'pearl' : 'polki', new THREE.Euler(-Math.PI / 2, 0, 0)));
+      [-0.022, 0.022].forEach((x) => p.add(sphere(0.0035, 12), seed % 2 ? 'polki' : 'pearl', V(x, 0.024, 0.022)));
+      break;
+    }
+    case 'rings': {
+      tray(0.13, 0.06);
+      [-0.04, 0, 0.04].forEach((x, i) => {
+        p.add(torus(0.0085, 0.0014 + (i === 1 ? 0.0006 : 0), TAU, 8, 40), metal, V(x, 0.03, 0));
+        if (i === 1) p.add(sphere(0.003, 12), seed % 2 ? 'emerald' : 'polki', V(x, 0.0395, 0));
+      });
+      break;
+    }
+    case 'chain': {
+      // A small neck form with a fine chain and a single drop.
+      const s = 0.46;
+      p.add(new RoundedBoxGeometry(0.14, 0.014, 0.1, 2, 0.005), 'blackSatin', V(0, 0.007, 0));
+      const base = new Parts();
+      addBust(base, s);
+      const bust = base.build();
+      const g = new THREE.Group();
+      bust.position.y = 0.014;
+      g.add(bust);
+      const c = bustCurve(0.335 * s, 0.09 * s, 1.3, 0.003, s);
+      p.add(new THREE.TubeGeometry(c, 64, 0.0008, 5), metal, V(0, 0.014, 0));
+      const b = c.getPointAt(0.5);
+      p.add(sphere(0.003, 10), seed % 2 ? 'ruby' : 'polki', b.clone().add(V(0, 0.01, 0.002)));
+      g.add(p.build());
+      return g;
+    }
+    case 'drops': {
+      // A small T-bar with a pair of drop earrings.
+      p.add(new THREE.CylinderGeometry(0.025, 0.028, 0.008, 24), 'blackMetal', V(0, 0.004, 0));
+      p.add(new THREE.CylinderGeometry(0.0025, 0.0025, 0.1, 10), 'blackMetal', V(0, 0.054, 0));
+      p.add(new THREE.CylinderGeometry(0.002, 0.002, 0.08, 10), 'blackMetal', V(0, 0.102, 0), new THREE.Euler(0, 0, Math.PI / 2));
+      [-0.028, 0.028].forEach((x) => {
+        p.add(torus(0.004, 0.0007, TAU, 6, 24), metal, V(x, 0.097, 0), new THREE.Euler(0, Math.PI / 2, 0));
+        p.add(new THREE.CylinderGeometry(0.0006, 0.0006, 0.018, 6), metal, V(x, 0.084, 0));
+        p.add(sphere(0.0045, 12), seed % 2 ? 'pearl' : 'emerald', V(x, 0.072, 0), new THREE.Euler(), V(1, 1.3, 1));
+      });
+      break;
+    }
+  }
+  return p.build();
 }

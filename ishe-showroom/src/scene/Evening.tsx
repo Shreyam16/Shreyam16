@@ -19,7 +19,7 @@ const DUSK_SKY_FILL = new THREE.Color('#ffd6a6');
 const DUSK = {
   // Dusk: lower ambient and bounce, brighter case lights, coves and sconces, for the warm, lit-from-within look.
   // Inside stays bright (the film's interior glows well above the street); coves and strips stay soft.
-  hemi: 0.2, sun: 0.1, env: 0.5, baked: 0.92, sconce: 4, neighbour: 1.8, glass: 0.1, cove: 0.7, street: 0.3, strip: 1.7, pool: 0.5, lens: 3.2, wash: 0.9,
+  hemi: 0.2, sun: 0.1, env: 0.5, baked: 0.92, sconce: 4, neighbour: 1.8, glass: 0.1, cove: 0.7, street: 0.3, strip: 1.7, pool: 0.7, lens: 3.2, wash: 0.9,
   fog: new THREE.Color('#161b29'), bg: new THREE.Color('#0d1120'), sunColor: new THREE.Color('#9fb0d4'),
 };
 
