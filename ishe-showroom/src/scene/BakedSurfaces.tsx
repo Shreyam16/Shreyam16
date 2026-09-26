@@ -13,10 +13,10 @@ let warmK = 0;
 const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
 /** Warm 2700 K cast at dusk (multiplies each surface's own colour): the room is bright, so this
  *  reads cream-amber as in the film; a little less on the ceiling so it never turns peach. */
-const WARM = new THREE.Color('#ffdcb8');
-const CEILING_WARM = new THREE.Color('#ffe8cf');
+const WARM = new THREE.Color('#ffd6ac');
+const CEILING_WARM = new THREE.Color('#ffe4c6');
 /** The terrazzo stays a pale cream, brighter than the walls, as in the film. */
-const FLOOR_WARM = new THREE.Color('#ffecd9');
+const FLOOR_WARM = new THREE.Color('#ffe6cc');
 const warmOf = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
 const tmp = new THREE.Color();
 function applyWarmth(m: THREE.MeshBasicMaterial) {

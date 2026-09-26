@@ -6,8 +6,9 @@ import { Effect, ToneMappingMode } from 'postprocessing';
 import { useShowroom } from '@/store/showroom';
 
 /**
- * White balance toward the film's 2700 K amber on mid-tones, easing off in the highlights so true
- * whites (the ISHÉ plaque, lamp diffusers) stay white and the logo is never tinted.
+ * White balance toward the film's 2700 K amber, easing off only at the very top so the lit ISHÉ
+ * plaque (drawn a touch brighter than any wall) and the lamp diffusers stay white: the logo is
+ * never tinted.
  */
 class WarmGradeEffect extends Effect {
   constructor() {
@@ -15,12 +16,12 @@ class WarmGradeEffect extends Effect {
       uniform vec3 tint;
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         float l = dot(inputColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        vec3 t = mix(tint, vec3(1.0), smoothstep(0.55, 0.85, l));
+        vec3 t = mix(tint, vec3(1.0), smoothstep(0.8, 0.9, l));
         outputColor = vec4(inputColor.rgb * t, inputColor.a);
       }`, { uniforms: new Map([['tint', new THREE.Uniform(new THREE.Vector3(1, 1, 1))]]) });
   }
 }
-const DUSK_TINT = new THREE.Vector3(1.05, 0.97, 0.84);
+const DUSK_TINT = new THREE.Vector3(1.06, 0.96, 0.8);
 const DAY_TINT = new THREE.Vector3(1.01, 1, 0.97);
 
 function WarmGrade({ evening }: { evening: boolean }) {

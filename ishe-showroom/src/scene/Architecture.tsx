@@ -50,6 +50,8 @@ const WIN = { x0: 2.2, x1: 6.5, y0: 0.3, y1: 3.05 };
 
 /** The official ISHÉ plaque (black lettering on a white rectangle), used exactly as supplied. */
 const PLAQUE_ASPECT = 599 / 1099;
+/** A lit sign: the plaque's white sits just above the brightest wall, so the dusk grade leaves it white. */
+const PLAQUE_LIT = new THREE.Color(1.2, 1.2, 1.2);
 
 /** Ashlar limestone: 60 cm courses with staggered vertical joints (blocks about 1.2 m long). */
 function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: number }) {
@@ -136,7 +138,7 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
         <Box size={[2.08, 2.0 * PLAQUE_ASPECT + 0.08, 0.06]} pos={[0, 0, 0]} mat="bronze" />
         <mesh position={[0, 0, 0.032]}>
           <planeGeometry args={[2.0, 2.0 * PLAQUE_ASPECT]} />
-          <meshBasicMaterial map={plaque} />
+          <meshBasicMaterial map={plaque} color={PLAQUE_LIT} />
         </mesh>
       </group>
     </group>
@@ -290,7 +292,7 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
       {/* The official plaque on the black feature wall, above the hero pedestal. */}
       <mesh position={[0, 2.75, -DEPTH + 0.14]}>
         <planeGeometry args={[1.3, 1.3 * PLAQUE_ASPECT]} />
-        <meshBasicMaterial map={logoWall} />
+        <meshBasicMaterial map={logoWall} color={PLAQUE_LIT} />
       </mesh>
       <SalonWalls />
     </group>
