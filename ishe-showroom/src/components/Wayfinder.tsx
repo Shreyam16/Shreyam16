@@ -18,17 +18,19 @@ export function JunctionChooser() {
     <motion.div
       initial={{ opacity: 0, y: reduced ? 0 : 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
       transition={{ duration: reduced ? 0 : 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="pointer-events-auto fixed inset-x-0 bottom-0 z-20 px-3 pb-4 md:bottom-8 md:px-0"
+      className="on-dark pointer-events-auto fixed inset-x-0 bottom-0 z-20 px-3 pb-4 md:bottom-6 md:px-0"
       role="group" aria-label="Choose a room" data-testid="junction-chooser"
     >
-      <p className="plaque-label mb-3 text-center text-ink/70">Where would you like to begin?</p>
-      <div className="mx-auto grid max-w-3xl grid-cols-3 gap-2 md:gap-3">
+      <p className="plaque-label mb-2 text-center text-bone/80 [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">Where would you like to begin?</p>
+      {/* A slim, translucent row: the showroom stays the picture. */}
+      <div className="mx-auto grid max-w-2xl grid-cols-3 gap-1.5 md:gap-2">
         {ROOM_ORDER.map((r) => (
           <button key={r} type="button" onClick={() => goTo({ kind: 'node', node: ROOM_ENTRY[r] })} data-testid={`choose-${r}`}
-            className="group glass-panel flex min-h-[96px] flex-col items-center justify-center gap-1 px-2 py-3 text-center hover:bg-ink hover:text-bone md:min-h-[120px]">
-            <Icon name={ARROW[r]} className="h-6 w-6" />
-            <span className="plaque-label">{ROOMS[r].direction}</span>
-            <span className="editorial text-[17px] leading-tight md:text-[22px]">{ROOMS[r].label}</span>
+            className="group flex min-h-[64px] flex-col items-center justify-center gap-0.5 border border-bone/25 bg-ink/45 px-2 py-2 text-center text-bone backdrop-blur-md transition-colors hover:bg-bone hover:text-ink md:min-h-[72px]">
+            <span className="flex items-center gap-1.5 font-ui text-[10px] uppercase tracking-[0.22em] text-bone/75 group-hover:text-ink/70">
+              <Icon name={ARROW[r]} className="h-3.5 w-3.5" /> {ROOMS[r].direction}
+            </span>
+            <span className="editorial text-[16px] leading-tight md:text-[19px]">{ROOMS[r].label}</span>
           </button>
         ))}
       </div>

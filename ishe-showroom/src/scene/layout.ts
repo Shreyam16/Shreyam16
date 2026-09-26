@@ -158,8 +158,9 @@ export function nodePose(id: NodeId): Pose {
 /** Camera pose that frames one display from the front at close range. */
 export function focusPose(sku: string): Pose {
   const d = DISPLAY_BY_SKU[sku];
-  const dist = { bust: 1.05, cushion: 0.66, earringStand: 0.8, pendantStand: 0.85, ringCushion: 0.62 }[d.kind];
-  const zoom = { bust: 0.62, cushion: 0.5, earringStand: 0.48, pendantStand: 0.56, ringCushion: 0.36 }[d.kind];
+  // Framed like a photograph of the case: the piece reads clearly without the case filling the screen.
+  const dist = { bust: 1.1, cushion: 0.7, earringStand: 0.85, pendantStand: 0.9, ringCushion: 0.66 }[d.kind];
+  const zoom = { bust: 0.74, cushion: 0.62, earringStand: 0.6, pendantStand: 0.68, ringCushion: 0.5 }[d.kind];
   const fx = Math.sin(d.rotY), fz = Math.cos(d.rotY);
   // A visitor leans in a little over the low table vitrines.
   const eye = d.style === 'tall' ? 1.6 : 1.5;

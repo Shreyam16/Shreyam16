@@ -373,9 +373,9 @@ function build() {
     boucle: std({ color: '#e7dfd1', roughness: 1, normalMap: velvetNormal, normalScale: new THREE.Vector2(0.8, 0.8) }),
     rug: std({ map: rug, roughness: 1 }),
     // Try-on mirrors: a sharp reflection of the environment map, no render targets.
-    mirror: std({ color: '#eef1f2', metalness: 1, roughness: 0.03, envMapIntensity: 1.5 }),
+    mirror: std({ color: '#ece6dc', metalness: 1, roughness: 0.04, envMapIntensity: 1.25 }),
     sheer: std({
-      color: '#f7f2e8', roughness: 1, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false,
+      color: '#f7f2e8', roughness: 1, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false,
       normalMap: folds, normalScale: new THREE.Vector2(1, 1),
     }),
     candle: std({ color: '#fff5e3', emissive: '#ffcf8f', emissiveIntensity: 2.6 }),
@@ -394,16 +394,20 @@ function build() {
       envMapIntensity: 2.4, depthWrite: false, side: THREE.DoubleSide,
     }),
     doorGlass: phys({
-      color: '#dfe7ea', transparent: true, opacity: 0.18, roughness: 0.02, metalness: 0,
-      envMapIntensity: 1.8, depthWrite: false, side: THREE.DoubleSide,
+      // Clear low-iron glass: the lit interior reads through it; reflections stay faint.
+      color: '#e6ecee', transparent: true, opacity: 0.09, roughness: 0.02, metalness: 0,
+      envMapIntensity: 1.1, depthWrite: false, side: THREE.DoubleSide,
       // Warm glow seen from the street in evening mode (intensity driven by Evening.tsx).
       emissive: '#ffc98a', emissiveIntensity: 0,
     }),
     lightStrip: std({ color: '#fff4e0', emissive: '#ffd6a0', emissiveIntensity: 1.6 }),
     ceilingPanel: std({ color: '#ffffff', emissive: '#fff6ea', emissiveIntensity: 0.9 }),
     sconce: std({ color: '#fff0d6', emissive: '#ffcf8a', emissiveIntensity: 2.2 }),
-    plant: std({ color: '#2f4a33', roughness: 0.9 }),
-    planter: std({ color: '#161616', roughness: 0.5 }),
+    // Clipped boxwood: deep green with a fine leafy surface, not a smooth ball.
+    plant: std({ color: '#2a4029', roughness: 0.95, normalMap: velvetNormal, normalScale: new THREE.Vector2(1.6, 1.6) }),
+    planter: std({ color: '#141312', roughness: 0.42, envMapIntensity: 0.7 }),
+    // Warm light spilling from the façade sconces onto the stone (strength driven by Evening.tsx).
+    facadeWash: new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.05 }),
     ao: new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false }),
     wash: new THREE.MeshBasicMaterial({ map: washTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.32 }),
     cove: std({ color: '#fff3e2', emissive: '#ffd9a8', emissiveIntensity: 1.1 }),

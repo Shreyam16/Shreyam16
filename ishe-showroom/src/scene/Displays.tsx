@@ -24,9 +24,9 @@ function Plaque({ sku, width, y, z }: { sku: string; width: number; y: number; z
   const p = PRODUCT_BY_SKU[sku];
   const tex = useMemo(
     () => textPlaque([
-      { text: p.name, font: '500 64px "Cormorant Garamond"' },
-      { text: `${p.sku}  ·  ${formatINR(p.priceINR)} SAMPLE`, font: '400 30px Jost', color: '#b9b2a4' },
-    ], { w: 1024, h: 220 }),
+      { text: p.name, font: '500 64px "Cormorant Garamond"', color: '#e6d9bf' },
+      { text: `${p.sku}  ·  ${formatINR(p.priceINR)} SAMPLE`, font: '400 30px Jost', color: '#9d8f76' },
+    ], { w: 1024, h: 220, bg: '#241a13' }),
     [p],
   );
   useEffect(() => () => tex.dispose(), [tex]);
@@ -160,7 +160,8 @@ function Display({ spec, fontsReady }: { spec: DisplaySpec; fontsReady: boolean 
       <mesh ref={setGlow} visible={false} position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} material={highlight}>
         <planeGeometry args={[spec.w * 2.2, spec.d * 2.2]} />
       </mesh>
-      {fontsReady && <Plaque sku={spec.sku} width={Math.min(0.3, spec.w * 0.5)} y={spec.style === 'tall' ? 0.74 : 0.7} z={spec.d / 2 + 0.003} />}
+      {/* A small engraved-looking plate, flush and in the cabinet's own colour: legible up close, quiet from afar. */}
+      {fontsReady && <Plaque sku={spec.sku} width={Math.min(0.24, spec.w * 0.4)} y={spec.style === 'tall' ? 0.76 : 0.72} z={spec.d / 2 + 0.003} />}
     </group>
   );
 }

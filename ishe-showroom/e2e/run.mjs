@@ -197,7 +197,7 @@ console.log('Desktop 3D (1440x900)');
     const sku = await page.getByTestId('product-sku').textContent();
     assert(name === 'Layered Gold-Tone Necklace' && sku === 'ISH-N02', `${name} ${sku}`);
     const cam = await page.evaluate(() => window.__isheCamera());
-    assert(Math.hypot(cam.x - -5.85, cam.z - -3.7) < 0.05, `focus camera ${JSON.stringify(cam)}`);
+    assert(Math.hypot(cam.x - -5.8, cam.z - -3.7) < 0.05, `focus camera ${JSON.stringify(cam)}`);
     await canvasNotBlank(page, '05-focus-n02.png');
   });
 
@@ -630,7 +630,8 @@ console.log('Mobile 3D (390x844, touch)');
     await page.getByTestId('enter-button').tap();
     await page.getByTestId('junction-chooser').waitFor({ timeout: 20000 });
     const box = await page.getByTestId('choose-centre').boundingBox();
-    assert(box.height >= 88 && box.width >= 100, `target ${JSON.stringify(box)}`);
+    // Comfortable touch targets (well above the 44 px minimum) without covering the showroom.
+    assert(box.height >= 56 && box.width >= 100, `target ${JSON.stringify(box)}`);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     assert(overflow <= 0, `horizontal overflow ${overflow}px`);
     await page.screenshot({ path: `${OUT}/12-mobile-junction.png` });

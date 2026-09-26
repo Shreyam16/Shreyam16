@@ -111,9 +111,17 @@ function Downlights() {
   return (
     <group>
       {DOWNLIGHTS.map((d, i) => (
-        <group key={i} position={[d.x, ceilingAt(d.x, d.z, CEILING) - 0.004, d.z]}>
-          <mesh material={M.downlightTrim}><cylinderGeometry args={[0.075, 0.075, 0.008, 24]} /></mesh>
-          <mesh position={[0, -0.0045, 0]} rotation={[Math.PI / 2, 0, 0]} material={M.downlightLens}><circleGeometry args={[0.05, 24]} /></mesh>
+        <group key={i}>
+          <group position={[d.x, ceilingAt(d.x, d.z, CEILING) - 0.004, d.z]}>
+            <mesh material={M.downlightTrim}><cylinderGeometry args={[0.075, 0.075, 0.008, 24]} /></mesh>
+            <mesh position={[0, -0.0045, 0]} rotation={[Math.PI / 2, 0, 0]} material={M.downlightLens}><circleGeometry args={[0.05, 24]} /></mesh>
+          </group>
+          {/* The soft pool each open-floor downlight throws on the terrazzo. */}
+          {d.kind === 'general' && (
+            <mesh position={[d.x, 0.005, d.z]} rotation={[-Math.PI / 2, 0, 0]} material={M.pool}>
+              <planeGeometry args={[1.7, 1.7]} />
+            </mesh>
+          )}
         </group>
       ))}
     </group>

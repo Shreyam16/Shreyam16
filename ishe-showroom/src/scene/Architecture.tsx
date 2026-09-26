@@ -1,8 +1,8 @@
 'use client';
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { mats, textPlaque, type MatKey } from './materials';
+import { mats, type MatKey } from './materials';
 import { CEILING, COLUMN, DEPTH, FAR_END_Z, FRONT_DOOR, HALF_W } from './layout';
 import { useShowroom } from '@/store/showroom';
 import { CURTAINS, PILASTER, PILASTER_Z, SALON, THRESHOLDS } from './features';
@@ -49,16 +49,39 @@ const WIN = { x0: 2.2, x1: 6.5, y0: 0.45, y1: 3.1 };
 /** The official ISHÉ plaque (black lettering on a white rectangle), used exactly as supplied. */
 const PLAQUE_ASPECT = 599 / 1099;
 
-/** Rusticated limestone: shallow horizontal joints every 45 cm across a facade panel. */
+/** Ashlar limestone: 45 cm courses with staggered vertical joints (blocks about 90 cm long). */
 function Joints({ x0, x1, y0, y1 }: { x0: number; x1: number; y0: number; y1: number }) {
   const rows: number[] = [];
   for (let y = Math.ceil((y0 + 0.05) / 0.45) * 0.45; y < y1 - 0.05; y += 0.45) rows.push(y);
+  const lo = Math.min(x0, x1), hi = Math.max(x0, x1);
+  const verticals: { x: number; y: number; h: number }[] = [];
+  rows.forEach((y, i) => {
+    const top = Math.min(y + 0.45, y1);
+    const off = i % 2 ? 0.45 : 0;
+    for (let x = Math.ceil((lo - off) / 0.9) * 0.9 + off; x < hi - 0.08; x += 0.9) if (x > lo + 0.08) verticals.push({ x, y: (y + top) / 2, h: top - y - 0.014 });
+  });
   return (
     <group>
-      {rows.map((y) => <Box key={y} size={[Math.abs(x1 - x0), 0.014, 0.01]} pos={[(x0 + x1) / 2, y, 0.103]} mat="limestoneJoint" />)}
+      {rows.map((y) => <Box key={y} size={[hi - lo, 0.012, 0.01]} pos={[(lo + hi) / 2, y, 0.103]} mat="limestoneJoint" />)}
+      {verticals.map((v) => <Box key={`${v.x}-${v.y}`} size={[0.01, v.h, 0.01]} pos={[v.x, v.y, 0.103]} mat="limestoneJoint" />)}
     </group>
   );
 }
+
+/** Clipped boxwood: a sphere with a soft, irregular leafy surface (deterministic, built once). */
+const BOXWOOD = (() => {
+  const g = new THREE.IcosahedronGeometry(0.33, 5);
+  const p = g.getAttribute('position') as THREE.BufferAttribute;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const n = Math.sin(v.x * 41) * Math.sin(v.y * 37) * Math.sin(v.z * 43) * 0.018 + Math.sin(v.x * 9 + v.z * 7) * 0.012;
+    v.multiplyScalar(1 + n / 0.33);
+    p.setXYZ(i, v.x, v.y * 1.04, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+})();
 
 function Facade({ plaque }: { plaque: THREE.Texture }) {
   const hw = HALF_W + 0.1;
@@ -82,16 +105,17 @@ function Facade({ plaque }: { plaque: THREE.Texture }) {
           </mesh>
           <Frame x={s * (WIN.x0 + WIN.x1) / 2} y={(WIN.y0 + WIN.y1) / 2} w={WIN.x1 - WIN.x0} h={WIN.y1 - WIN.y0} t={0.07} z={0.1} />
           <Box size={[0.05, WIN.y1 - WIN.y0, 0.08]} pos={[s * (WIN.x0 + WIN.x1) / 2, (WIN.y0 + WIN.y1) / 2, 0.06]} mat="blackMetal" />
-          {/* Tall linear sconce on each pier beside the door: dark bronze body, warm glowing lens. */}
+          {/* Tall linear sconce on each pier beside the door, with its warm wash on the stone. */}
           <Box size={[0.1, 0.62, 0.1]} pos={[s * 1.65, 2.35, 0.16]} mat="blackMetal" />
           <Box size={[0.05, 0.52, 0.02]} pos={[s * 1.65, 2.35, 0.215]} mat="sconce" />
-          {/* Square tapered black planter with a clipped boxwood ball. */}
-          <mesh position={[s * 1.75, 0.38, 0.55]} rotation={[0, Math.PI / 4, 0]} material={mats().planter}>
-            <cylinderGeometry args={[0.36, 0.28, 0.76, 4]} />
+          <mesh position={[s * 1.65, 2.35, 0.104]} material={mats().facadeWash}>
+            <planeGeometry args={[1.0, 2.0]} />
           </mesh>
-          <mesh position={[s * 1.75, 1.08, 0.55]} material={mats().plant} scale={[1, 1.05, 1]}>
-            <icosahedronGeometry args={[0.36, 3]} />
+          {/* Tall square black planter with a clipped boxwood ball. */}
+          <mesh position={[s * 1.75, 0.45, 0.55]} rotation={[0, Math.PI / 4, 0]} material={mats().planter}>
+            <cylinderGeometry args={[0.33, 0.27, 0.9, 4]} />
           </mesh>
+          <mesh geometry={BOXWOOD} position={[s * 1.75, 1.2, 0.55]} material={mats().plant} />
         </group>
       ))}
       <Span a={[-dw, FRONT_DOOR.height, z0]} b={[dw, FACADE_H, z1]} mat="wallExterior" />
@@ -201,51 +225,6 @@ function Street() {
       <mesh position={[0, 0, 0]} material={M.sky}>
         <sphereGeometry args={[80, 24, 16]} />
       </mesh>
-    </group>
-  );
-}
-
-function Wayfinding() {
-  const tex = useMemo(() => {
-    const f = (t: string) => ({ text: t, font: '500 88px "Cormorant Garamond"', color: '#111' });
-    const s = (t: string) => ({ text: t, font: '400 34px Jost', color: '#555' });
-    return {
-      left: textPlaque([f('←  Necklaces & Bracelets'), s('LEFT')], { bg: '#ffffff' }),
-      right: textPlaque([f('Earrings & Pendants  →'), s('RIGHT')], { bg: '#ffffff' }),
-      centre: textPlaque([f('Rings & Combos'), s('STRAIGHT AHEAD')], { bg: '#ffffff' }),
-    };
-  }, []);
-  const sign = (t: THREE.Texture, pos: V3, rotY: number) => (
-    <group position={pos} rotation={[0, rotY, 0]}>
-      <Box size={[1.36, 0.36, 0.03]} pos={[0, 0, -0.018]} mat="bronze" />
-      <mesh>
-        <planeGeometry args={[1.3, 0.325]} />
-        <meshBasicMaterial map={t} toneMapped={false} />
-      </mesh>
-    </group>
-  );
-  return (
-    <group>
-      {/* Hung between the first two columns on each side, facing the aisle; readable from the junction. */}
-      {([-1, 1] as const).map((s) => (
-        <group key={s}>
-          {[-0.5, 0.5].map((dz) => (
-            <mesh key={dz} position={[s * COLUMN.x, 3.55, -3.7 + dz]} material={mats().bronze}>
-              <cylinderGeometry args={[0.005, 0.005, 0.5, 6]} />
-            </mesh>
-          ))}
-          {sign(s < 0 ? tex.left : tex.right, [s * COLUMN.x, 3.15, -3.7], s < 0 ? Math.PI / 2 : -Math.PI / 2)}
-        </group>
-      ))}
-      {/* Hanging over the aisle where it opens into the far end. */}
-      <group>
-        {[-0.5, 0.5].map((x) => (
-          <mesh key={x} position={[x, 3.55, FAR_END_Z + 0.2]} material={mats().bronze}>
-            <cylinderGeometry args={[0.005, 0.005, 0.5, 6]} />
-          </mesh>
-        ))}
-        {sign(tex.centre, [0, 3.15, FAR_END_Z + 0.2], 0)}
-      </group>
     </group>
   );
 }
@@ -426,7 +405,6 @@ export default function Architecture() {
         <Street />
         <Facade plaque={plaque} />
         <Interior logoWall={plaque} />
-        <Wayfinding />
         <Moulding />
         <Thresholds />
         <Curtains />
