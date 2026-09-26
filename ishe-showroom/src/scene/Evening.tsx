@@ -24,7 +24,7 @@ const DUSK = {
  * added: the same hemisphere + directional pair is re-balanced and emissive materials brightened.
  */
 export default function Evening() {
-  const { scene } = useThree();
+  const { scene, gl } = useThree();
   const hemi = useRef<THREE.HemisphereLight>(null);
   const sun = useRef<THREE.DirectionalLight>(null);
   const t = useRef(-1);
@@ -41,8 +41,10 @@ export default function Evening() {
     const s = useShowroom.getState();
     const want = s.evening ? 1 : 0;
     const prev = t.current;
-    if (prev === want) return;
-    if (prev < 0 && want === 0) { t.current = 0; return; } // materials already hold the day values
+    // QA marker: always reflects the settled state, whichever path below runs.
+    const mark = (v: number) => { const m = v === 1 ? 'on' : v === 0 ? 'off' : 'changing'; if (gl.domElement.dataset.evening !== m) gl.domElement.dataset.evening = m; };
+    if (prev === want) { mark(prev); return; }
+    if (prev < 0 && want === 0) { t.current = 0; mark(0); return; } // materials already hold the day values
     const step = s.reducedMotion || prev < 0 ? 1 : Math.min(1, dtRaw) / 1.4;
     const next = prev < 0 ? want : prev + Math.sign(want - prev) * Math.min(step, Math.abs(want - prev));
     t.current = next;
@@ -77,8 +79,7 @@ export default function Evening() {
     fog.copy(DAY.fog).lerp(DUSK.fog, k);
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(fog);
     if (scene.background instanceof THREE.Color) scene.background.copy(DAY.bg).lerp(DUSK.bg, k);
-    const el = document.querySelector<HTMLElement>('[data-testid="showroom-canvas"]');
-    if (el) el.dataset.evening = next === 1 ? 'on' : next === 0 ? 'off' : 'changing';
+    mark(next);
   });
 
   return (
