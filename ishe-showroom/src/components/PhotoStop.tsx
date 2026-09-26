@@ -34,7 +34,22 @@ export default function PhotoStop() {
     return () => window.removeEventListener('resize', fit);
   }, []);
 
-  const key = still && evening && variant && manifest?.stops.includes(still) ? still : null;
+  // The still goes the instant the visitor starts to move or look (a movement key, or pressing on
+  // the 3D view), even before the next frame is drawn; it can return at the next stop.
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  useEffect(() => {
+    const MOVE = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    const now = () => setDismissed(useShowroom.getState().still);
+    const onKey = (e: KeyboardEvent) => { if (MOVE.has(e.code)) now(); };
+    const onPointer = (e: PointerEvent) => { if ((e.target as HTMLElement | null)?.tagName === 'CANVAS') now(); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onPointer);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('pointerdown', onPointer); };
+  }, []);
+  // Arriving anywhere else (or back after moving away) clears the dismissal.
+  useEffect(() => { if (still !== dismissed) setDismissed(null); }, [still, dismissed]);
+
+  const key = still && still !== dismissed && evening && variant && manifest?.stops.includes(still) ? still : null;
   const src = key && manifest ? `/stops/${key}.${variant}.webp?v=${manifest.v}` : null;
 
   useEffect(() => {

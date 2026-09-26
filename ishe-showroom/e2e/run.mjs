@@ -536,8 +536,11 @@ console.log('Keyboard walking and collision (3D, small viewport)');
     await page.locator('[data-testid="photo-stop"][data-stop="left"]').waitFor({ timeout: 8000 });
     await page.waitForTimeout(1200);
     await page.screenshot({ path: `${OUT}/05b-photo-stop-left.png` });
-    await page.keyboard.down('KeyW'); await page.waitForTimeout(300); await page.keyboard.up('KeyW');
-    await page.locator('[data-testid="photo-stop"]').waitFor({ state: 'detached', timeout: 2000 });
+    // The still goes on the key press itself (before the next frame), then the camera moves.
+    await page.keyboard.down('KeyW');
+    await page.locator('[data-testid="photo-stop"]').waitFor({ state: 'detached', timeout: 1500 });
+    await page.waitForTimeout(1200); await page.keyboard.up('KeyW');
+    await page.waitForFunction(() => window.__ishe.getState().still === null, null, { timeout: 5000 });
     await page.evaluate(() => window.__ishe.getState().goTo({ kind: 'node', node: 'left' }));
     await page.waitForTimeout(800);
   });
