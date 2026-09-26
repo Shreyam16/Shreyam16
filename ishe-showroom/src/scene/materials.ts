@@ -271,6 +271,20 @@ export function artworkTexture() {
   });
 }
 
+function filmPainting() {
+  const t = new THREE.TextureLoader().load('/art/film-painting.webp', (tex) => {
+    // Panel 1.1 x 1.45 m; the film's painting is taller: show its middle band, full width.
+    const img = tex.image as HTMLImageElement;
+    const k = (img.width / img.height) / (1.1 / 1.45);
+    tex.repeat.set(1, k);
+    tex.offset.set(0, (1 - k) / 2);
+    tex.needsUpdate = true;
+  });
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
 function build() {
   const std = (p: THREE.MeshStandardMaterialParameters) => new THREE.MeshStandardMaterial(p);
   const phys = (p: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(p);
@@ -365,7 +379,9 @@ function build() {
     bronzeCeiling: std({ color: '#f6f3ee', metalness: 0, roughness: 0.95, emissive: '#6e5f4c', emissiveIntensity: 0.45 }),
     // Black lacquered panelling for the salon feature wall.
     ebony: phys({ color: '#0e0c0b', roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.7 }),
-    goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
+    // The gilded painting from the reference film (cut from its frames, public/art/film-painting.webp),
+    // cropped to the panel's proportion (10 KB, loaded with the scene).
+    goldLeaf: std({ color: '#ffffff', map: filmPainting(), metalness: 0.35, roughness: 0.55, envMapIntensity: 1 }),
     taupeVelvet: phys({
       // Golden-tan suede deck, brightly lit by the case LEDs (the glass boxes glow warm in the video).
       color: '#c9a877', roughness: 0.9, sheen: 0.45, sheenColor: new THREE.Color('#f0d6a4'), sheenRoughness: 0.6,
