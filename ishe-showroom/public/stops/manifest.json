@@ -1,0 +1,23 @@
+{
+  "v": "muidqd8fg",
+  "stops": [
+    "cashier",
+    "centre",
+    "centreL",
+    "centreL2",
+    "centreR",
+    "centreR2",
+    "junction",
+    "left",
+    "left2",
+    "leftBack",
+    "leftBack2",
+    "leftDoor",
+    "leftMid",
+    "right",
+    "right2",
+    "rightBack",
+    "rightBack2",
+    "rightDoor"
+  ]
+}

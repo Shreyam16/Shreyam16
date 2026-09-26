@@ -1,0 +1,243 @@
+# ISHÉ showroom: light bake, lite stills and browser QA on a GitHub runner.
+# Runs only when a commit on a claude/** branch carries a tag in its message:
+#   [ishe-assets]        checks + bake + lite stills + e2e (commits bake and stills back)
+#   [ishe-assets:qa]     checks + e2e only
+#   [ishe-assets:stills] checks + lite stills + e2e
+#   [ishe-assets:art]    checks + art-direction frames only (fast visual iteration, no e2e)
+#   [ishe-assets:stops]  photoreal stills of every room stop (export, Cycles render in 6 shards,
+#                        WebP into public/stops); add samples=N to change Cycles samples (default 64)
+# e2e screenshots (JPEG) and results are force-pushed to the `qa-screenshots` branch for review.
+name: ISHÉ assets and QA
+
+on:
+  push:
+    branches: ['claude/**']
+
+permissions:
+  contents: write
+
+concurrency:
+  # Photo-stop renders take long: they queue among themselves, not in front of QA runs.
+  group: ishe-assets-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[ishe-assets:stops]') && 'cycles-stills' || 'qa' }}
+  cancel-in-progress: false
+
+jobs:
+  assets:
+    if: contains(github.event.head_commit.message, '[ishe-assets') && !contains(github.event.head_commit.message, '[ishe-assets:stops]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    defaults:
+      run:
+        working-directory: ishe-showroom
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide what to run
+        id: plan
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          bake=false; lite=false; e2e=true
+          if [[ "$MSG" == *"[ishe-assets:art]"* ]]; then e2e=false; fi
+          if [[ "$MSG" == *"[ishe-assets]"* ]]; then bake=true; lite=true; fi
+          if [[ "$MSG" == *"[ishe-assets:stills]"* ]]; then lite=true; fi
+          samples=$(echo "$MSG" | grep -oP 'samples=\K[0-9]+' || echo 128)
+          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"; echo "bake=$bake" >> "$GITHUB_OUTPUT"; echo "lite=$lite" >> "$GITHUB_OUTPUT"; echo "samples=$samples" >> "$GITHUB_OUTPUT"
+          echo "bake=$bake lite=$lite samples=$samples"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ishe-showroom/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Lint, typecheck, unit tests
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: Export floor plan for Blender
+        run: npx vitest run --config bake/vitest.config.ts
+
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.bake == 'true'
+        with:
+          python-version: '3.11'
+
+      - name: Blender Cycles light bake
+        if: steps.plan.outputs.bake == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libxrender1 libxxf86vm1 libxfixes3 libxi6 libxkbcommon0 libsm6 libgl1 libegl1 > /dev/null
+          pip install -q bpy==4.2.0 numpy
+          time python bake/bake.py --samples ${{ steps.plan.outputs.samples }}
+          node bake/to-png.mjs
+          mv public/bake/*.webp bake/raw/
+          mv public/bake/exposure.npy bake/raw/exposure.npy
+          node bake/postprocess.mjs
+          ls -la bake/raw public/bake
+
+      - name: Build and start
+        run: |
+          npm run build
+          (npx next start -p 3000 > /tmp/next.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/ > /dev/null && break; sleep 1; done
+
+      - name: Install Chromium
+        run: |
+          npx -y playwright@$(node -p "require('playwright-core/package.json').version") install --with-deps chromium
+          echo "CHROMIUM_PATH=$(node -p "require('playwright-core').chromium.executablePath()")" >> "$GITHUB_ENV"
+
+      - name: Re-capture lite stills
+        if: steps.plan.outputs.lite == 'true'
+        run: node scripts/render-lite-backdrops.mjs
+
+      - name: Commit baked lighting and lite stills
+        # Not on a cancelled run: a superseded run must never commit half-captured assets.
+        if: ${{ !cancelled() && (steps.plan.outputs.bake == 'true' || steps.plan.outputs.lite == 'true') }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/bake bake/raw bake/layout.json public/lite
+          if git diff --cached --quiet; then echo "No asset changes"; exit 0; fi
+          git commit -m "Re-bake lighting and re-capture lite stills (CI)"
+          # Generated files: if another run touched them meanwhile, keep this run's output.
+          git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Art-direction frames (film moments, desktop and phone)
+        continue-on-error: true
+        timeout-minutes: 20
+        run: node scripts/art-capture.mjs
+
+      - name: End-to-end checks
+        id: e2e
+        if: steps.plan.outputs.e2e == 'true'
+        continue-on-error: true
+        timeout-minutes: 75
+        run: mkdir -p e2e/output && node e2e/run.mjs 2>&1 | tee e2e/output/log.txt; exit ${PIPESTATUS[0]}
+
+      - name: Publish screenshots to qa-screenshots
+        if: always()
+        run: |
+          mkdir -p e2e/output
+          node scripts/ci-screenshots.mjs e2e/output /tmp/qa
+          cp e2e/output/results.json e2e/output/log.txt /tmp/qa/ 2>/dev/null || true
+          echo "${GITHUB_SHA} ${GITHUB_REF_NAME} e2e=${{ steps.e2e.outcome }}" > /tmp/qa/RUN.txt
+          cd /tmp/qa
+          git init -q -b qa-screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "QA screenshots for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:qa-screenshots
+
+      - name: Fail if e2e failed
+        if: steps.e2e.outcome == 'failure'
+        run: exit 1
+
+  stops-export:
+    if: contains(github.event.head_commit.message, '[ishe-assets:stops]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: ishe-showroom
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ishe-showroom/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Build and start
+        run: |
+          npm run build
+          (npx next start -p 3000 > /tmp/next.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/ > /dev/null && break; sleep 1; done
+      - name: Install Chromium
+        run: |
+          npx -y playwright@$(node -p "require('playwright-core/package.json').version") install --with-deps chromium
+          echo "CHROMIUM_PATH=$(node -p "require('playwright-core').chromium.executablePath()")" >> "$GITHUB_ENV"
+      - name: Export the scene and stop poses
+        run: node scripts/export-stops.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stops-scene
+          path: ishe-showroom/bake/stops/
+          retention-days: 3
+
+  stops-render:
+    needs: stops-export
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    defaults:
+      run:
+        working-directory: ishe-showroom
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: stops-scene
+          path: ishe-showroom/bake/stops/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Blender Cycles render
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libxrender1 libxxf86vm1 libxfixes3 libxi6 libxkbcommon0 libsm6 libgl1 libegl1 > /dev/null
+          pip install -q bpy==4.2.0 numpy
+          samples=$(echo "$MSG" | grep -oP 'samples=\K[0-9]+' || echo 64)
+          time python bake/render_stops.py --shard ${{ matrix.shard }} --of 6 --samples "$samples"
+          ls -la bake/stops/out
+      - uses: actions/upload-artifact@v4
+        # Keep every still that was saved, even if the render step failed part-way.
+        if: ${{ !cancelled() }}
+        with:
+          name: stops-out-${{ matrix.shard }}
+          if-no-files-found: ignore
+          path: ishe-showroom/bake/stops/out/
+          retention-days: 3
+
+  stops-commit:
+    needs: stops-render
+    # Commit whatever rendered (a failed shard only leaves its stops on live 3D), never on cancel.
+    if: ${{ !cancelled() && contains(github.event.head_commit.message, '[ishe-assets:stops]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ishe-showroom
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ishe-showroom/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stops-out-*
+          merge-multiple: true
+          path: ishe-showroom/bake/stops/out/
+      - name: Convert to WebP and commit
+        run: |
+          node scripts/stops-to-webp.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/stops
+          if git diff --cached --quiet; then echo "No stills"; exit 0; fi
+          git commit -m "Render photoreal room-stop stills (CI)"
+          git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
