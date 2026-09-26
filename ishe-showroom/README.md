@@ -301,6 +301,14 @@ node bake/to-png.mjs && mv public/bake/*.webp public/bake/exposure.npy bake/raw/
 node bake/postprocess.mjs   # partial white balance (35% of the warmth kept), denoise, ceiling lift
 ```
 
+### Dressed vitrines
+
+Each wide table case holds its featured catalogue piece plus three unnamed display pieces on
+small stands (bangles, stud and ring trays, a small neck form with a chain, drop earrings), as a
+real boutique case is dressed. They are not catalogue products: never named, priced, listed or
+sold, and selecting the case opens its featured piece; the product panel says so. To sell them,
+add them to `src/data/catalogue.ts` with approved names, SKUs and prices.
+
 ### Photo stops
 
 When the camera rests at a room stop at dusk, a Blender Cycles still of the same view fades in over
