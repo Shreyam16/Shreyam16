@@ -7,6 +7,7 @@ import Entrance from './Entrance';
 import Overlay from './Overlay';
 import LoadingScreen from './LoadingScreen';
 import PhotoStop from './PhotoStop';
+import FilmEntrance from './FilmEntrance';
 import { decodeBox } from '@/lib/share';
 import { startDwellTracking } from '@/lib/analytics';
 import { startHistorySync } from '@/lib/history';
@@ -63,6 +64,7 @@ export default function Experience() {
             <Showroom3D onSlow={() => setSlow(true)} />
           </SceneBoundary>
           <Entrance />
+          {!capture && <FilmEntrance />}
           {!capture && <PhotoStop />}
         </>
       )}
@@ -70,6 +72,7 @@ export default function Experience() {
         <>
           <LiteShowroom />
           <Entrance />
+          {!capture && <FilmEntrance />}
         </>
       )}
       {mode !== 'detecting' && !capture && <Overlay slow={slow} onDismissSlow={() => setSlow(false)} />}

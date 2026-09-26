@@ -145,12 +145,27 @@ console.log('Desktop 3D (1440x900)');
     await canvasNotBlank(page, '02-doors-opening.png');
   });
 
+  await check('at dusk the approach is the reference film, scrubbed by scroll, with the ISHÉ plaque', async () => {
+    const film = page.getByTestId('film-entrance');
+    await film.waitFor({ timeout: 10000 });
+    await page.waitForFunction(() => Number(document.querySelector('[data-testid="film-entrance"]')?.dataset.frame) > 0, null, { timeout: 20000 });
+    const f1 = Number(await film.getAttribute('data-frame'));
+    for (let i = 0; i < 3; i++) { await page.mouse.wheel(0, 300); await page.waitForTimeout(150); }
+    await page.waitForTimeout(1500);
+    const f2 = Number(await film.getAttribute('data-frame'));
+    assert(f2 > f1, `film frame did not advance (${f1} -> ${f2})`);
+    const plaque = await page.evaluate(() => fetch('/film/f000.webp').then((r) => r.ok));
+    assert(plaque, 'film frames missing');
+  });
+
   await check('"Walk me in" carries the visitor through the doors to the junction', async () => {
     await page.getByTestId('enter-button').click();
     await page.waitForFunction(() => window.__ishe.getState().phase === 'inside', null, { timeout: 40000 });
     await page.getByTestId('junction-chooser').waitFor({ timeout: 8000 });
     const cam = await page.evaluate(() => window.__isheCamera());
     assert(cam.z < -2 && Math.abs(cam.y - 1.65) < 0.01, `camera ${JSON.stringify(cam)}`);
+    // The film has dissolved into the live showroom.
+    await page.getByTestId('film-entrance').waitFor({ state: 'detached', timeout: 5000 });
     await canvasNotBlank(page, '03-junction.png');
     metrics.drawCallsJunction = await page.evaluate(() => window.__isheRenderInfo());
   });

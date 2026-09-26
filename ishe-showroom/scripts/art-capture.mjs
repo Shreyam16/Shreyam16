@@ -41,5 +41,20 @@ const film = [
   ['7-product', product, 'ISH-B03'],
 ];
 await shoot('desk', { width: 1600, height: 900 }, 'high', film);
+// What visitors see at dusk outside: the film entrance (interface shown), then the dissolve inside.
+async function shootFilm(tag, viewport) {
+  const page = await browser.newPage({ viewport });
+  await page.goto(`${BASE}/?mode=3d`);
+  await page.waitForFunction(() => window.__ishe?.getState().sceneReady, null, { timeout: 240000 });
+  await page.evaluate(() => window.__ishe.getState().setReducedMotion(true));
+  for (const p of [0, 0.2, 0.45, 0.8, 0.97]) {
+    await page.evaluate((v) => window.__ishe.getState().setEntrance(v), p);
+    await page.waitForTimeout(2500);
+    await page.screenshot({ path: `${OUT}/art-${tag}-film-${Math.round(p * 100)}.png` });
+  }
+  await page.close();
+}
+await shootFilm('desk', { width: 1600, height: 900 });
+await shootFilm('phone', { width: 390, height: 844 });
 await shoot('phone', { width: 390, height: 844 }, 'standard', [film[0], film[2], film[3], film[5]]);
 await browser.close();

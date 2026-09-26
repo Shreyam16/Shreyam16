@@ -18,8 +18,8 @@ export function playEntrance() {
     window.scrollTo({ top: max, behavior: 'smooth' });
     return;
   }
-  // A slow, even glide (sine in-out), like the camera move in a showroom film.
-  lenisRef.scrollTo(max, { duration: 11, easing: (t: number) => -(Math.cos(Math.PI * t) - 1) / 2 });
+  // A slow, even glide (sine in-out) at close to the reference film's own pace.
+  lenisRef.scrollTo(max, { duration: 13, easing: (t: number) => -(Math.cos(Math.PI * t) - 1) / 2 });
 }
 
 /**
