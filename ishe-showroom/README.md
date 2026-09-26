@@ -301,6 +301,16 @@ node bake/to-png.mjs && mv public/bake/*.webp public/bake/exposure.npy bake/raw/
 node bake/postprocess.mjs   # partial white balance (35% of the warmth kept), denoise, ceiling lift
 ```
 
+### Film entrance and film palette
+
+At dusk the street, the doors and the walk-in are the reference film itself (`public/film/`, 181
+frames at 12 fps), scrubbed by scroll in `src/components/FilmEntrance.tsx`; the supplied ISHÉ
+plaque's lettering is set onto the film's blank sign frame by frame (tracked sign box, multiply
+blend so the lettering stays black and the sign keeps the film's light). Crossing the threshold,
+the film dissolves into the live showroom. Daylight keeps the 3D street. The gallery painting is
+cut from the film's frames (`public/art/film-painting.webp`), and the interior colours (plaster,
+ceiling, terrazzo, cabinets, far wall, dusk limestone) are set from colours measured in the film.
+
 ### Dressed vitrines
 
 Each wide table case holds its featured catalogue piece plus three unnamed display pieces on
