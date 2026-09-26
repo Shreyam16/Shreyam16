@@ -201,8 +201,11 @@ jobs:
           time python bake/render_stops.py --shard ${{ matrix.shard }} --of 6 --samples "$samples"
           ls -la bake/stops/out
       - uses: actions/upload-artifact@v4
+        # Keep every still that was saved, even if the render step failed part-way.
+        if: ${{ !cancelled() }}
         with:
           name: stops-out-${{ matrix.shard }}
+          if-no-files-found: ignore
           path: ishe-showroom/bake/stops/out/
           retention-days: 3
 

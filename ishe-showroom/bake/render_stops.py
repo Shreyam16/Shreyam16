@@ -191,3 +191,5 @@ for i, (s, v) in enumerate(jobs):
     print('rendering', s['key'], v, flush=True)
     bpy.ops.render.render(write_still=True)
 print('done', flush=True)
+# bpy can crash while tearing down the interpreter (after every still is saved); skip teardown.
+os._exit(0)
