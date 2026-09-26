@@ -312,6 +312,15 @@ look. The stills are rendered from the live scene itself, so nothing is invented
 `scripts/stops-to-webp.mjs` writes `public/stops/*.webp` and `manifest.json`. Stops missing from the
 manifest, daylight mode and screens wider than 2.4:1 keep the live 3D.
 
+### Art direction QA
+
+`scripts/art-capture.mjs` shoots clean frames of the live 3D at the reference film's key moments
+(street, doors opening, threshold, first view down the aisle, a side gallery, a piece) on desktop
+("high" tier, 16:9) and phone. CI runs it on every tagged push; `[ishe-assets:art]` runs only the
+checks and these frames, for quick visual iteration. The dusk look: a warm 2700 K cast on plaster,
+ceiling and terrazzo; a warm grade on desktop that eases off at the very top so the lit ISHÉ plaque
+stays white; a blended Fresnel floor reflection; darker warm limestone outside so the lit shop leads.
+
 ### CI workflow
 
 `.github/workflows/ishe-assets.yml` runs on pushes to `claude/**` branches whose commit message
