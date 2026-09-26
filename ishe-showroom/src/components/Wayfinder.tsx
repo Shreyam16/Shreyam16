@@ -156,9 +156,10 @@ export function MovePad() {
     onPointerLeave: () => { held[k] = false; },
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   });
-  const cls = 'grid h-14 w-14 place-items-center bg-paper/90 text-ink shadow active:bg-ink active:text-bone touch-none select-none';
+  // Small, translucent and tucked into the corner so it never hides the cases (44 px targets).
+  const cls = 'grid h-11 w-11 place-items-center rounded-full bg-ink/35 text-bone backdrop-blur-sm active:bg-ink/70 touch-none select-none';
   return (
-    <div className="pointer-events-auto fixed bottom-[168px] right-3 z-20 grid grid-cols-3 gap-1 md:hidden" role="group" aria-label="Walk controls (hold)" data-testid="move-pad">
+    <div className="on-dark pointer-events-auto fixed bottom-[176px] right-2 z-20 grid grid-cols-3 gap-1 opacity-90 md:hidden" role="group" aria-label="Walk controls (hold)" data-testid="move-pad">
       <span />
       <button type="button" aria-label="Walk forward" className={cls} {...bind('forward')}><Icon name="arrowUp" /></button>
       <span />

@@ -95,8 +95,17 @@ function bustRadiusAt(y: number) {
   }
   return 0.05;
 }
+/** Chest half-depth: below the neck the form is flat front and back, like a real display neck form. */
+const BUST_CHEST_Z = 0.078;
 function addBust(p: Parts, scale = 1) {
-  p.add(new THREE.LatheGeometry(smoothProfile(scale), 64), 'velvet', V(), new THREE.Euler(), V(BUST_SX, 1, BUST_SZ));
+  const geo = new THREE.LatheGeometry(smoothProfile(scale), 64);
+  const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i) * BUST_SZ;
+    pos.setXYZ(i, pos.getX(i) * BUST_SX, pos.getY(i), Math.sign(z) * Math.min(Math.abs(z), BUST_CHEST_Z * scale));
+  }
+  geo.computeVertexNormals();
+  p.add(geo, 'velvet');
   // Lacquered cap on the neck, as on real display busts.
   p.add(new THREE.CylinderGeometry(0.056 * scale, 0.056 * scale, 0.012 * scale, 32), 'blackSatin', V(0, 0.506 * scale, 0), new THREE.Euler(), V(BUST_SX, 1, BUST_SZ));
 }
@@ -108,7 +117,7 @@ function bustCurve(yTop: number, drop: number, spread = 1.35, lift = 0.006, scal
     const a = t * spread;
     const y = yTop - drop * (1 - t * t);
     const r = bustRadiusAt(y / scale) * scale + lift;
-    pts.push(V(Math.sin(a) * r * BUST_SX, y, Math.cos(a) * r * BUST_SZ + lift));
+    pts.push(V(Math.sin(a) * r * BUST_SX, y, Math.min(Math.cos(a) * r * BUST_SZ, BUST_CHEST_Z * scale) + lift));
   }
   return new THREE.CatmullRomCurve3(pts);
 }
