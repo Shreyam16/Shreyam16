@@ -340,7 +340,9 @@ function build() {
     // Espresso lacquer: near-black with a warm brown undertone, as on the boutique's cabinets.
     blackSatin: phys({ color: '#1b1511', roughness: 0.45, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.9 }),
     // Thin dark-bronze frames on the glass boxes.
-    darkBronze: std({ color: '#4a3622', metalness: 0.85, roughness: 0.32, envMapIntensity: 1.2 }),
+    darkBronze: std({ color: '#5b4128', metalness: 0.85, roughness: 0.35, envMapIntensity: 1.1 }),
+    // Display cabinets: dark chocolate-brown satin lacquer with a soft, warm sheen (not glossy black).
+    caseWood: phys({ color: '#241a13', roughness: 0.55, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.4, envMapIntensity: 0.45 }),
     blackMetal: std({ color: '#0b0b0b', roughness: 0.32, metalness: 0.8, normalMap: brushed, normalScale: new THREE.Vector2(0.25, 0.25) }),
     velvet: phys({
       // Champagne suede busts, bolsters and cushions, as in the boutique's cases.
@@ -363,9 +365,9 @@ function build() {
     ebony: phys({ color: '#0e0c0b', roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.7 }),
     goldLeaf: std({ color: '#ffffff', map: artworkTexture(), metalness: 0.85, roughness: 0.42, envMapIntensity: 1.3 }),
     taupeVelvet: phys({
-      // Cream suede deck, brightly lit by the case LEDs (the glass boxes glow warm in the video).
-      color: '#e9dcc3', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#fff1d6'), sheenRoughness: 0.45,
-      emissive: '#7a5a2e', emissiveIntensity: 0.45,
+      // Golden-tan suede deck, brightly lit by the case LEDs (the glass boxes glow warm in the video).
+      color: '#c9a877', roughness: 0.9, sheen: 1, sheenColor: new THREE.Color('#ffe3b0'), sheenRoughness: 0.45,
+      emissive: '#6a4a20', emissiveIntensity: 0.5,
       normalMap: velvetNormal, normalScale: new THREE.Vector2(0.3, 0.3),
     }),
     boucle: std({ color: '#e7dfd1', roughness: 1, normalMap: velvetNormal, normalScale: new THREE.Vector2(0.8, 0.8) }),

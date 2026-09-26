@@ -30,7 +30,7 @@ export function Box({ size, pos, mat, rot }: { size: V3; pos: V3; mat: MatKey; r
 function Sconce({ x, z, face }: { x: number; z: number; face: number }) {
   return (
     <group position={[x, 2.2, z]}>
-      <Box size={[0.05, 0.56, 0.15]} pos={[face * 0.025, 0, 0]} mat="darkBronze" />
+      <Box size={[0.05, 0.56, 0.15]} pos={[face * 0.025, 0, 0]} mat="brass" />
       <Box size={[0.012, 0.48, 0.1]} pos={[face * 0.052, 0, 0]} mat="sconce" />
     </group>
   );

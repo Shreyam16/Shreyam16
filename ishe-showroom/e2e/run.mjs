@@ -139,7 +139,7 @@ console.log('Desktop 3D (1440x900)');
 
   await check('"Walk me in" carries the visitor through the doors to the junction', async () => {
     await page.getByTestId('enter-button').click();
-    await page.waitForFunction(() => window.__ishe.getState().phase === 'inside', null, { timeout: 20000 });
+    await page.waitForFunction(() => window.__ishe.getState().phase === 'inside', null, { timeout: 40000 });
     await page.getByTestId('junction-chooser').waitFor({ timeout: 8000 });
     const cam = await page.evaluate(() => window.__isheCamera());
     assert(cam.z < -2 && Math.abs(cam.y - 1.65) < 0.01, `camera ${JSON.stringify(cam)}`);

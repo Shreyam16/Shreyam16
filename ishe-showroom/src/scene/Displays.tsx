@@ -62,7 +62,7 @@ function Case({ spec }: { spec: DisplaySpec }) {
   return (
     <group>
       {/* Black lacquered cabinet on a recessed plinth, with a slim bronze reveal under the deck. */}
-      <Box size={[w, top - 0.07, d]} pos={[0, (top - 0.07) / 2 + 0.06, 0]} mat="blackSatin" />
+      <Box size={[w, top - 0.07, d]} pos={[0, (top - 0.07) / 2 + 0.06, 0]} mat="caseWood" />
       <Box size={[w - 0.06, 0.06, d - 0.06]} pos={[0, 0.03, 0]} mat="blackMetal" />
       <Box size={[w + 0.004, 0.01, d + 0.004]} pos={[0, top - 0.017, 0]} mat="bronze" />
       {/* Deck the jewellery sits on. */}
@@ -77,7 +77,7 @@ function Case({ spec }: { spec: DisplaySpec }) {
       {[-gw / 2, gw / 2].map((x) => <Box key={`s${x}`} size={[0.01, 0.012, gd]} pos={[x, top + 0.006, 0]} mat="darkBronze" />)}
       {tall ? (
         <>
-          <Box size={[w, 0.05, d]} pos={[0, h - 0.025, 0]} mat="blackSatin" />
+          <Box size={[w, 0.05, d]} pos={[0, h - 0.025, 0]} mat="caseWood" />
           <mesh position={[0, h - 0.051, 0]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
             <planeGeometry args={[w * 0.8, 0.02]} />
           </mesh>
