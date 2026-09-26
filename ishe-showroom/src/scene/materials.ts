@@ -406,7 +406,7 @@ function build() {
     ceilingPanel: std({ color: '#ffffff', emissive: '#fff6ea', emissiveIntensity: 0.9 }),
     sconce: std({ color: '#fff0d6', emissive: '#ffcf8a', emissiveIntensity: 2.2 }),
     // Clipped boxwood: deep green with a fine leafy surface, not a smooth ball.
-    plant: std({ color: '#2a4029', roughness: 0.95, normalMap: velvetNormal, normalScale: new THREE.Vector2(1.6, 1.6) }),
+    plant: std({ color: '#3a5631', roughness: 0.95, normalMap: velvetNormal, normalScale: new THREE.Vector2(1.6, 1.6) }),
     planter: std({ color: '#141312', roughness: 0.42, envMapIntensity: 0.7 }),
     // Warm light spilling from the façade sconces onto the stone (strength driven by Evening.tsx).
     facadeWash: new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.05 }),

@@ -10,6 +10,8 @@ const DAY = {
   hemi: 0.45, sun: 0.9, env: 1, baked: 1, sconce: 1.2, neighbour: 0.35, glass: 0, cove: 1.1, street: 1, strip: 1.6, pool: 0.35, lens: 2.4, wash: 0.05,
   fog: new THREE.Color('#2a3140'), bg: new THREE.Color('#1b2330'), sunColor: new THREE.Color('#fff4e6'),
 };
+/** Warm cast on unbaked plaster at dusk (multiplied with its day colour). */
+const WALL_DUSK = new THREE.Color('#ffdcb4');
 /** Warm fill inside at dusk (the amber of the reference). */
 const DUSK_SKY_FILL = new THREE.Color('#ffd6a6');
 const DUSK = {
@@ -34,7 +36,14 @@ export default function Evening() {
   // Street-side finishes lose most of their daylight at dusk; remember their day colours.
   const street = useMemo(() => {
     const M = mats();
-    return (['wallExterior', 'paving', 'asphalt', 'kerb', 'plinth', 'neighbourA', 'neighbourB', 'planter', 'plant', 'darkWindow'] as const)
+    // (The planters and boxwood stand in the shop's light, so they keep theirs.)
+    return (['wallExterior', 'paving', 'asphalt', 'kerb', 'plinth', 'neighbourA', 'neighbourB', 'darkWindow'] as const)
+      .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
+  }, []);
+  // Interior plaster and stone take the same warm cast as the baked surfaces at dusk.
+  const warm = useMemo(() => {
+    const M = mats();
+    return (['wall', 'travertine', 'bronzeCeiling'] as const)
       .map((k) => { const m = M[k] as THREE.MeshStandardMaterial; return { m, day: m.color.clone() }; });
   }, []);
 
@@ -72,6 +81,7 @@ export default function Evening() {
     (M.pool as THREE.MeshBasicMaterial).opacity = L(DAY.pool, DUSK.pool);
     (M.facadeWash as THREE.MeshBasicMaterial).opacity = L(DAY.wash, DUSK.wash);
     for (const { m, day } of street) m.color.copy(day).multiplyScalar(L(1, DUSK.street));
+    for (const { m, day } of warm) m.color.setRGB(1, 1, 1).lerp(WALL_DUSK, k * 0.8).multiply(day);
     // Sky: dip and swap textures halfway so the change reads as a fade.
     const skyMat = M.sky as THREE.MeshBasicMaterial;
     const map = next > 0.5 ? sky.dusk : sky.day;

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { mats, type MatKey } from './materials';
-import { CEILING, COLUMN, DEPTH, FAR_END_Z, FRONT_DOOR, HALF_W } from './layout';
+import { CEILING, COLUMN, DEPTH, FRONT_DOOR, HALF_W } from './layout';
 import { useShowroom } from '@/store/showroom';
 import { CURTAINS, PILASTER, PILASTER_Z, SALON, THRESHOLDS } from './features';
 import { DISPLAYS } from './layout';
@@ -204,17 +204,18 @@ function Street() {
   const M = mats();
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 2.6]} material={M.paving}>
-        <planeGeometry args={[40, 5.2]} />
+      {/* A wide stone pavement, as in the film (the road starts well behind the visitor). */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 4.6]} material={M.paving}>
+        <planeGeometry args={[40, 9.2]} />
       </mesh>
-      <Box size={[40, 0.14, 0.25]} pos={[0, 0.07, 5.3]} mat="kerb" />
+      <Box size={[40, 0.14, 0.25]} pos={[0, 0.07, 9.3]} mat="kerb" />
       {/* Warm light from the shop windows and doors pooling on the pavement at dusk. */}
       {[-4.35, 0, 4.35].map((x) => (
         <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.004, 1.1]} material={M.facadeWash}>
           <planeGeometry args={[x === 0 ? 3.2 : 5.2, 2.6]} />
         </mesh>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 12]} material={M.asphalt}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 16]} material={M.asphalt}>
         <planeGeometry args={[60, 14]} />
       </mesh>
       {/* Neighbouring buildings frame the storefront. */}
@@ -248,7 +249,6 @@ function Street() {
 }
 
 function Interior({ logoWall }: { logoWall: THREE.Texture }) {
-  const M = mats();
   const hw = HALF_W;
   const wallH = CEILING;
   return (
@@ -281,10 +281,6 @@ function Interior({ logoWall }: { logoWall: THREE.Texture }) {
               {[-1, 1].map((f) => <Sconce key={f} x={f * (COLUMN.size / 2)} z={0} face={f} />)}
             </group>
           ))}
-          {/* Linear light slots in the ceiling along the aisle, as in a gallery. */}
-          <mesh position={[s * 1.25, CEILING - 0.006, (FAR_END_Z - 0.6) / 2]} rotation={[Math.PI / 2, 0, 0]} material={M.lightStrip}>
-            <planeGeometry args={[0.04, -FAR_END_Z - 0.6]} />
-          </mesh>
         </group>
       ))}
       <Atmosphere />

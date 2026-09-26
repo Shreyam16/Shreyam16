@@ -11,10 +11,10 @@ const baked: THREE.MeshBasicMaterial[] = [];
 let gainK = 1;
 let warmK = 0;
 const base = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
-/** Warm cast at dusk (multiplies each surface's own colour): creamy on floor and walls, and only a
- *  touch on the ceiling, which reads warm white in the reference, not peach. */
-const WARM = new THREE.Color('#ffeedd');
-const CEILING_WARM = new THREE.Color('#fff7ee');
+/** Warm 2700 K cast at dusk (multiplies each surface's own colour): the room is bright, so this
+ *  reads cream-amber as in the film; a little less on the ceiling so it never turns peach. */
+const WARM = new THREE.Color('#ffdcb8');
+const CEILING_WARM = new THREE.Color('#ffe8cf');
 const warmOf = new WeakMap<THREE.MeshBasicMaterial, THREE.Color>();
 const tmp = new THREE.Color();
 function applyWarmth(m: THREE.MeshBasicMaterial) {
